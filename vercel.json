@@ -2,7 +2,7 @@
     "rewrites": [
       {
         "source": "/app/:path*",
-        "destination": "https://valifye-app.vercel.app/:path*"
+        "destination": "https://vailfye-app.vercel.app/:path*"
       }
     ],
     "crons": [
