@@ -6,7 +6,8 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis
+  YAxis,
+  Cell
 } from 'recharts'
 
 type CompetitorDensityChartProps = {
@@ -60,17 +61,17 @@ export function CompetitorDensityChart({
 
       <div className="h-40">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+          <BarChart
+            data={data}
+            margin={{ top: 8, right: 8, left: 0, bottom: 8 }}
+          >
             <XAxis
               dataKey="name"
               tickLine={false}
               axisLine={false}
               tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
             />
-            <YAxis
-              hide
-              domain={[0, 1.2]}
-            />
+            <YAxis hide domain={[0, 1.2]} />
             <Tooltip
               cursor={{ fill: 'hsl(var(--muted))' }}
               contentStyle={{
@@ -83,10 +84,13 @@ export function CompetitorDensityChart({
             />
             <Bar dataKey="value" radius={[6, 6, 0, 0]}>
               {data.map((entry) => (
-                <cell
-                  // eslint-disable-next-line react/no-array-index-key
+                <Cell
                   key={entry.band}
-                  fill={entry.band === activeBand ? activeColor : inactiveColor}
+                  fill={
+                    entry.band === activeBand
+                      ? activeColor
+                      : inactiveColor
+                  }
                 />
               ))}
             </Bar>
@@ -95,10 +99,9 @@ export function CompetitorDensityChart({
       </div>
 
       <p className="mt-3 text-xs text-muted-foreground">
-        Highlighted band shows how crowded {`this city’s ${'niche'} market`} is
-        relative to others.
+        Highlighted band shows how crowded this local market is relative to
+        others.
       </p>
     </div>
   )
 }
-
