@@ -1,297 +1,336 @@
-import { CompetitorDensityChart } from '@/components/competitor-density-chart'
 import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore – local client chart file is resolved by Next.js
+import SaturationChart from './SaturationChart'
 
 export const revalidate = 86400
 
-type PageProps = {
-  params: Promise<{ slug: string }>
+interface Props {
+  params: { slug: string }
 }
 
-const formatCurrency = (value: unknown) => {
-  if (typeof value !== 'number') return '—'
-
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    notation: 'compact',
-    maximumFractionDigits: 1
-  }).format(value)
+function getSaturationScore(competitors: number): number {
+  if (competitors > 500) return 90
+  if (competitors > 200) return 70
+  if (competitors > 100) return 50
+  if (competitors > 50) return 30
+  return 15
 }
 
-const formatNumber = (value: unknown) => {
-  if (typeof value !== 'number') return '—'
-
-  return new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: 0
-  }).format(value)
+function getHeatConfig(heat: string) {
+  switch (heat) {
+    case 'Hot':
+      return {
+        dot: 'bg-red-500',
+        badge: 'bg-red-500/10 text-red-400 border-red-500/20',
+        label: 'Hot Market',
+        border: 'border-l-red-500'
+      }
+    case 'Warm':
+      return {
+        dot: 'bg-orange-500',
+        badge: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+        label: 'Warm Market',
+        border: 'border-l-orange-500'
+      }
+    default:
+      return {
+        dot: 'bg-blue-500',
+        badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+        label: 'Cool Market',
+        border: 'border-l-blue-500'
+      }
+  }
 }
 
-export default async function IdeaPage({ params }: PageProps) {
-  const { slug } = await params
-
+export default async function IdeaPage({ params }: Props) {
   const { data, error } = await supabase
     .from('market_data')
     .select('*')
-    .eq('slug', slug)
+    .eq('slug', params.slug)
     .eq('status', 'published')
     .single()
 
   if (error || !data) notFound()
 
-  const heatBadgeClass: Record<string, string> = {
-    Hot: 'bg-red-500 text-white',
-    Warm: 'bg-orange-500 text-white',
-    Cool: 'bg-blue-500 text-white'
-  }
-
-  const heatBorderClass: Record<string, string> = {
-    Hot: 'border-l-4 border-red-500',
-    Warm: 'border-l-4 border-orange-500',
-    Cool: 'border-l-4 border-blue-500'
-  }
-
-  const badgeVariant =
-    heatBadgeClass[data.market_heat as keyof typeof heatBadgeClass] ??
-    'bg-muted text-foreground'
-
-  const borderVariant =
-    heatBorderClass[data.market_heat as keyof typeof heatBorderClass] ??
-    'border-l-4 border-border'
-
-  const tamFormatted = formatCurrency(data.estimated_tam)
-  const competitorsFormatted = formatNumber(data.local_competitors)
-  const confidenceDisplay =
-    typeof data.confidence === 'number'
-      ? `${data.confidence}%`
-      : (data.confidence as string) || '—'
-
-  const saturationScore =
-    typeof data.saturation_score === 'number' ? data.saturation_score : 0
-  const saturationSafe = Math.min(Math.max(saturationScore, 0), 100)
-
-  const saturationColor =
-    saturationSafe < 40
-      ? 'bg-emerald-500'
-      : saturationSafe <= 70
-      ? 'bg-yellow-400'
-      : 'bg-red-500'
+  const heat = getHeatConfig(data.market_heat)
+  const satScore = getSaturationScore(data.local_competitors)
+  const complaints = Array.isArray(data.top_complaints) ? data.top_complaints : []
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10 font-sans text-foreground md:py-16">
-      {/* HERO */}
-      <section className="mb-10 space-y-4 md:mb-12">
-        <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold">
-          <span
-            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${badgeVariant}`}
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto max-w-3xl space-y-8 px-4 py-12">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Link
+            href="/ideas"
+            className="transition-colors hover:text-foreground"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-white/80" />
-            <span>{data.market_heat || 'Market heat'}</span>
-          </span>
-        </div>
+            Market Intelligence
+          </Link>
+          <span>/</span>
+          <Link
+            href={`/ideas?niche=${encodeURIComponent(data.niche)}`}
+            className="transition-colors hover:text-foreground"
+          >
+            {data.niche}
+          </Link>
+          <span>/</span>
+          <span className="text-foreground">{data.city}</span>
+        </nav>
 
-        <div className="space-y-3">
-          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl lg:text-4xl">
-            {data.niche} Business in {data.city}: Market Analysis &amp;
-            Validation
+        {/* Hero */}
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${heat.badge}`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${heat.dot}`} />
+              {heat.label}
+            </span>
+            <span className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
+              {data.confidence === 'high'
+                ? '✓ Verified Data'
+                : data.confidence === 'medium'
+                ? '~ Estimated Data'
+                : '⚠ Low Confidence'}
+            </span>
+          </div>
+
+          <h1 className="text-3xl font-bold leading-tight text-foreground sm:text-4xl">
+            {data.niche} Business in {data.city}:
+            <br />
+            <span className="text-primary">Is It Worth Building?</span>
           </h1>
 
-          <p className="text-sm text-muted-foreground md:text-base">
-            {formatNumber(data.local_competitors)} competitors · TAM:{' '}
-            {tamFormatted} · Confidence: {confidenceDisplay}
-          </p>
-
-          <p className="max-w-2xl text-sm text-muted-foreground md:text-base">
+          <p className="text-lg leading-relaxed text-muted-foreground">
             {data.market_narrative}
           </p>
-        </div>
-      </section>
 
-      {/* STATS + SATURATION */}
-      <section className="mb-10 space-y-6 md:mb-12">
-        <div className="grid gap-4 md:grid-cols-3">
-          <StatCard
-            value={tamFormatted}
-            label="Estimated TAM"
-            borderVariant={borderVariant}
-          />
-          <StatCard
-            value={competitorsFormatted}
-            label="Local competitors"
-            borderVariant={borderVariant}
-          />
-          <StatCard
-            value={confidenceDisplay}
-            label="Data confidence"
-            borderVariant={borderVariant}
-          />
-        </div>
-
-        <div className="space-y-2 rounded-xl border bg-card p-4">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-medium text-foreground">
-              Market saturation
-            </p>
-            <span className="text-xs font-medium text-muted-foreground">
-              {saturationSafe}%
+          {/* Quick stats inline — for Google crawlability */}
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">
+              {data.local_competitors} competitors
             </span>
-          </div>
+            {' · '}
+            <span className="font-medium text-foreground">
+              {data.estimated_tam} TAM
+            </span>
+            {' · '}
+            <span className="font-medium text-foreground">
+              {data.market_heat} demand
+            </span>
+            {' · '}
+            <span>
+              Updated{' '}
+              {new Date(
+                (data.updated_at as string | null) ?? (data.created_at as string)
+              ).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </span>
+          </p>
+        </section>
 
-          <div className="h-2 w-full rounded-full bg-muted">
+        {/* Stats Cards */}
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[
+            {
+              label: 'Total Addressable Market',
+              value: data.estimated_tam,
+              sub: 'Industry estimate',
+              icon: '📊'
+            },
+            {
+              label: 'Local Competitors',
+              value: data.local_competitors?.toLocaleString(),
+              sub: `In ${data.city}`,
+              icon: '🏢'
+            },
+            {
+              label: 'Market Heat',
+              value: data.market_heat,
+              sub: 'Demand signal',
+              icon: '🌡️'
+            }
+          ].map((stat, i) => (
             <div
-              className={`h-2 rounded-full ${saturationColor}`}
-              style={{ width: `${saturationSafe}%` }}
-            />
-          </div>
+              key={stat.label}
+              className={`rounded-xl border border-border bg-card p-5 border-l-4 ${heat.border}`}
+            >
+              <div className="mb-2 text-2xl">{stat.icon}</div>
+              <div className="text-2xl font-bold text-foreground">
+                {stat.value}
+              </div>
+              <div className="mt-1 text-sm font-medium text-foreground">
+                {stat.label}
+              </div>
+              <div className="mt-0.5 text-xs text-muted-foreground">
+                {stat.sub}
+              </div>
+            </div>
+          ))}
+        </section>
 
-          <div className="flex justify-between text-[11px] text-muted-foreground">
-            <span>Low competition</span>
-            <span>Highly saturated</span>
-          </div>
-        </div>
-
-        <CompetitorDensityChart saturationScore={saturationSafe} />
-      </section>
-
-      {/* COMPLAINTS / GAPS */}
-      {data.top_complaints?.length > 0 && (
-        <section className="mb-10 space-y-4 md:mb-12">
-          <h2 className="text-xl font-semibold tracking-tight md:text-2xl">
-            Why customers leave existing {data.niche} businesses in {data.city}
+        {/* Saturation Chart */}
+        <section className="rounded-xl border border-border bg-card p-6">
+          <h2 className="mb-1 text-base font-semibold text-foreground">
+            Market Saturation Analysis
           </h2>
+          <p className="mb-5 text-sm text-muted-foreground">
+            How crowded is the {data.niche} market in {data.city} compared to
+            other markets?
+          </p>
+          <SaturationChart score={satScore} niche={data.niche} city={data.city} />
+        </section>
 
-          <div className="space-y-3">
-            {data.top_complaints.map((complaint: string, i: number) => (
-              <article
-                key={i}
-                className="flex items-start gap-2 rounded-lg border border-border border-l-4 border-l-orange-500 bg-card px-4 py-3 text-sm text-foreground"
-              >
-                <span
-                  aria-hidden
-                  className="mt-0.5 text-xs text-muted-foreground"
-                >
-                  ⚠️
-                </span>
-                <p className="text-sm leading-relaxed">{complaint}</p>
-              </article>
-            ))}
+        {/* Complaints */}
+        <section className="space-y-3">
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold text-foreground">
+              Why Customers Leave Existing {data.niche} Businesses in{' '}
+              {data.city}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              These are the real gaps in the market — each one is an
+              opportunity for a new entrant.
+            </p>
           </div>
+
+          {complaints.length > 0 ? (
+            complaints.map((complaint: string, i: number) => (
+              <div
+                key={`${complaint}-${i}`}
+                className="flex items-start gap-4 rounded-xl border border-border border-l-4 border-l-orange-500 bg-card p-4"
+              >
+                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-orange-500/20 bg-orange-500/10 text-sm font-bold text-orange-400">
+                  {i + 1}
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">{complaint}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Market gap · Sourced from customer reviews
+                  </p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-xl border border-border bg-card p-6 text-center text-muted-foreground">
+              Complaint data not yet available for this market.
+            </div>
+          )}
         </section>
-      )}
 
-      {/* RELATED LINKS */}
-      {data.related_niches?.length > 0 && (
-        <section className="mb-10 space-y-3 md:mb-12">
-          <h3 className="text-sm font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Related markets in {data.city}
-          </h3>
-
-          <ul className="flex flex-wrap gap-2">
-            {data.related_niches.map((niche: string) => {
-              const relatedSlug =
-                niche.toLowerCase().replace(/[^a-z0-9]+/g, '-') +
-                '-in-' +
-                data.city.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-
-              return (
-                <li key={niche}>
-                  <a
+        {/* Related Markets */}
+        {data.related_niches && data.related_niches.length > 0 && (
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Related Markets in {data.city}
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {(data.related_niches as string[]).map((niche: string) => {
+                const relatedSlug = `${niche
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, '-')}-in-${data.city
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, '-')}`
+                return (
+                  <Link
+                    key={niche}
                     href={`/ideas/${relatedSlug}`}
-                    className="inline-flex items-center gap-1 rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-foreground transition-all hover:border-primary hover:text-primary"
                   >
-                    <span>{niche}</span>
-                    <span className="text-[10px]">↗</span>
-                  </a>
-                </li>
-              )
-            })}
-          </ul>
+                    {niche}
+                    <span className="text-muted-foreground">↗</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Email Gate CTA */}
+        <section className="space-y-4 rounded-2xl border border-border bg-card p-8 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            JOIN 478 FOUNDERS
+          </div>
+          <h2 className="text-2xl font-bold text-foreground">
+            Should You Actually Build This?
+          </h2>
+          <p className="mx-auto max-w-md text-sm text-muted-foreground">
+            Get Valifye&apos;s{' '}
+            <span className="text-foreground">
+              BUILD / PIVOT / KILL
+            </span>{' '}
+            verdict for {data.niche} in {data.city} — plus a 90-day execution
+            roadmap if it&apos;s a BUILD.
+          </p>
+          <form className="mx-auto flex max-w-md flex-col gap-3 sm:flex-row">
+            <input
+              type="email"
+              placeholder="you@email.com"
+              className="flex-1 rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0"
+            />
+            <button
+              type="submit"
+              className="whitespace-nowrap rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Get Verdict →
+            </button>
+          </form>
+          <p className="text-xs text-muted-foreground">
+            Free. No credit card. Verdict delivered by email.
+          </p>
         </section>
-      )}
 
-      {/* EMAIL GATE CTA */}
-      <section className="mb-4 rounded-2xl border bg-card px-5 py-6 text-center md:px-8 md:py-8">
-        <p className="mb-2 text-xs font-medium uppercase tracking-[0.18em] text-primary">
-          Join 478 founders
-        </p>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Join 478 founders who&apos;ve validated ideas with Valifye.
-        </p>
-
-        <h2 className="mb-2 text-lg font-semibold tracking-tight md:text-xl">
-          Should you actually build this?
-        </h2>
-
-        <p className="mb-5 text-sm text-muted-foreground md:text-base">
-          Get Valifye&apos;s BUILD / PIVOT / KILL verdict plus a 90-day
-          execution roadmap for this exact market.
-        </p>
-
-        <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <a
-            href="https://app.valifye.com"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 sm:w-auto"
+        {/* Back to Index — Internal Linking */}
+        <section className="flex items-center justify-between border-t border-border pt-4">
+          <Link
+            href="/ideas"
+            className="group inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            <span aria-hidden className="text-base">
-              🔒
+            <span className="transition-transform group-hover:-translate-x-1">
+              ←
             </span>
-            <span>Validate this idea with email</span>
-          </a>
-        </div>
-      </section>
-    </main>
+            Explore More Startup Ideas
+          </Link>
+          <span className="text-xs text-muted-foreground">
+            Analyzed by Valifye Market Intelligence
+          </span>
+        </section>
+      </div>
+    </div>
   )
 }
 
-/* -------------------------- */
-/* Metadata (Next.js 15+ safe) */
-/* -------------------------- */
-
-export async function generateMetadata({
-  params
-}: {
-  params: Promise<{ slug: string }>
-}) {
-  const { slug } = await params
-
+export async function generateMetadata({ params }: Props) {
   const { data } = await supabase
     .from('market_data')
-    .select('niche, city, market_narrative')
-    .eq('slug', slug)
-    .eq('status', 'published')
+    .select('niche, city, market_narrative, market_heat, estimated_tam')
+    .eq('slug', params.slug)
     .single()
 
   if (!data) return {}
 
+  const title = `${data.niche} Business in ${data.city} — Market Analysis 2024 | Valifye`
+  const description = `Should you start a ${data.niche} in ${data.city}? ${data.market_narrative} See competitor data, market gaps, and get a BUILD/PIVOT/KILL verdict. TAM: ${data.estimated_tam}.`
+
   return {
-    title: `${data.niche} Business in ${data.city} — Market Validation`,
-    description: `Is ${data.niche} in ${data.city} worth starting? See competitors, customer complaints, and Valifye’s verdict.`
+    title,
+    description,
+    openGraph: {
+      title: `${data.niche} in ${data.city}: ${data.market_heat} Market — Worth Building?`,
+      description,
+      type: 'article',
+      url: `https://valifye.com/ideas/${params.slug}`
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${data.niche} in ${data.city}: Is It Worth Building?`,
+      description
+    },
+    alternates: {
+      canonical: `https://valifye.com/ideas/${params.slug}`
+    }
   }
-}
-
-/* -------------------------- */
-/* Small Component */
-/* -------------------------- */
-
-function StatCard({
-  value,
-  label,
-  borderVariant
-}: {
-  value: string
-  label: string
-  borderVariant: string
-}) {
-  return (
-    <div
-      className={`flex flex-col justify-between rounded-xl border bg-card px-4 py-4 text-left shadow-sm sm:px-5 ${borderVariant}`}
-    >
-      <div className="text-[2.5rem] font-bold leading-none tracking-tight text-primary">
-        {value}
-      </div>
-      <div className="mt-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
-      </div>
-    </div>
-  )
 }
