@@ -242,14 +242,17 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+  const { data, error } = await supabase
+  .from('market_data')
+  .select('*')
+  .eq('slug', slug)
+  .eq('status', 'published')
+  .maybeSingle()
 
-  const { data } = await supabase
-    .from('market_data')
-    .select('niche, city, market_narrative, market_heat, estimated_tam')
-    .eq('slug', slug)
-    .single()
-
-  if (!data) return {}
+if (!data) {
+  console.log('Slug not found:', slug)
+  notFound()
+}
 
   return {
     title: `${data.niche} Business in ${data.city} — Market Analysis 2024 | Valifye`,
