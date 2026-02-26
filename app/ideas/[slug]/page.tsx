@@ -7,10 +7,6 @@ import SaturationChart from './SaturationChart'
 
 export const revalidate = 86400
 
-interface Props {
-  params: { slug: string }
-}
-
 function getSaturationScore(competitors: number): number {
   if (competitors > 500) return 90
   if (competitors > 200) return 70
@@ -45,11 +41,18 @@ function getHeatConfig(heat: string) {
   }
 }
 
-export default async function IdeaPage({ params }: Props) {
+export default async function IdeaPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  // ✅ Next 15 requires awaiting params
+  const { slug } = await params
+
   const { data, error } = await supabase
     .from('market_data')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .eq('status', 'published')
     .single()
 
@@ -62,12 +65,10 @@ export default async function IdeaPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-3xl space-y-8 px-4 py-12">
+
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link
-            href="/ideas"
-            className="transition-colors hover:text-foreground"
-          >
+          <Link href="/ideas" className="transition-colors hover:text-foreground">
             Market Intelligence
           </Link>
           <span>/</span>
@@ -84,9 +85,7 @@ export default async function IdeaPage({ params }: Props) {
         {/* Hero */}
         <section className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${heat.badge}`}
-            >
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${heat.badge}`}>
               <span className={`h-1.5 w-1.5 rounded-full ${heat.dot}`} />
               {heat.label}
             </span>
@@ -109,7 +108,7 @@ export default async function IdeaPage({ params }: Props) {
             {data.market_narrative}
           </p>
 
-          {/* Quick stats inline — for Google crawlability */}
+          {/* SEO inline stats */}
           <p className="text-sm text-muted-foreground">
             <span className="font-medium text-foreground">
               {data.local_competitors} competitors
@@ -153,7 +152,7 @@ export default async function IdeaPage({ params }: Props) {
               sub: 'Demand signal',
               icon: '🌡️'
             }
-          ].map((stat, i) => (
+          ].map((stat) => (
             <div
               key={stat.label}
               className={`rounded-xl border border-border bg-card p-5 border-l-4 ${heat.border}`}
@@ -178,8 +177,7 @@ export default async function IdeaPage({ params }: Props) {
             Market Saturation Analysis
           </h2>
           <p className="mb-5 text-sm text-muted-foreground">
-            How crowded is the {data.niche} market in {data.city} compared to
-            other markets?
+            How crowded is the {data.niche} market in {data.city} compared to other markets?
           </p>
           <SaturationChart score={satScore} niche={data.niche} city={data.city} />
         </section>
@@ -188,12 +186,10 @@ export default async function IdeaPage({ params }: Props) {
         <section className="space-y-3">
           <div className="space-y-1">
             <h2 className="text-xl font-bold text-foreground">
-              Why Customers Leave Existing {data.niche} Businesses in{' '}
-              {data.city}
+              Why Customers Leave Existing {data.niche} Businesses in {data.city}
             </h2>
             <p className="text-sm text-muted-foreground">
-              These are the real gaps in the market — each one is an
-              opportunity for a new entrant.
+              These are real gaps in the market — each one is an opportunity.
             </p>
           </div>
 
@@ -209,128 +205,68 @@ export default async function IdeaPage({ params }: Props) {
                 <div>
                   <p className="font-medium text-foreground">{complaint}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    Market gap · Sourced from customer reviews
+                    Market gap · Sourced from reviews
                   </p>
                 </div>
               </div>
             ))
           ) : (
             <div className="rounded-xl border border-border bg-card p-6 text-center text-muted-foreground">
-              Complaint data not yet available for this market.
+              Complaint data not yet available.
             </div>
           )}
         </section>
 
-        {/* Related Markets */}
-        {data.related_niches && data.related_niches.length > 0 && (
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Related Markets in {data.city}
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {(data.related_niches as string[]).map((niche: string) => {
-                const relatedSlug = `${niche
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, '-')}-in-${data.city
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, '-')}`
-                return (
-                  <Link
-                    key={niche}
-                    href={`/ideas/${relatedSlug}`}
-                    className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-foreground transition-all hover:border-primary hover:text-primary"
-                  >
-                    {niche}
-                    <span className="text-muted-foreground">↗</span>
-                  </Link>
-                )
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* Email Gate CTA */}
-        <section className="space-y-4 rounded-2xl border border-border bg-card p-8 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            JOIN 478 FOUNDERS
-          </div>
-          <h2 className="text-2xl font-bold text-foreground">
-            Should You Actually Build This?
-          </h2>
-          <p className="mx-auto max-w-md text-sm text-muted-foreground">
-            Get Valifye&apos;s{' '}
-            <span className="text-foreground">
-              BUILD / PIVOT / KILL
-            </span>{' '}
-            verdict for {data.niche} in {data.city} — plus a 90-day execution
-            roadmap if it&apos;s a BUILD.
-          </p>
-          <form className="mx-auto flex max-w-md flex-col gap-3 sm:flex-row">
-            <input
-              type="email"
-              placeholder="you@email.com"
-              className="flex-1 rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0"
-            />
-            <button
-              type="submit"
-              className="whitespace-nowrap rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Get Verdict →
-            </button>
-          </form>
-          <p className="text-xs text-muted-foreground">
-            Free. No credit card. Verdict delivered by email.
-          </p>
-        </section>
-
-        {/* Back to Index — Internal Linking */}
+        {/* Back link */}
         <section className="flex items-center justify-between border-t border-border pt-4">
           <Link
             href="/ideas"
             className="group inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            <span className="transition-transform group-hover:-translate-x-1">
-              ←
-            </span>
+            <span className="transition-transform group-hover:-translate-x-1">←</span>
             Explore More Startup Ideas
           </Link>
           <span className="text-xs text-muted-foreground">
             Analyzed by Valifye Market Intelligence
           </span>
         </section>
+
       </div>
     </div>
   )
 }
 
-export async function generateMetadata({ params }: Props) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+
   const { data } = await supabase
     .from('market_data')
     .select('niche, city, market_narrative, market_heat, estimated_tam')
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .single()
 
   if (!data) return {}
 
-  const title = `${data.niche} Business in ${data.city} — Market Analysis 2024 | Valifye`
-  const description = `Should you start a ${data.niche} in ${data.city}? ${data.market_narrative} See competitor data, market gaps, and get a BUILD/PIVOT/KILL verdict. TAM: ${data.estimated_tam}.`
-
   return {
-    title,
-    description,
+    title: `${data.niche} Business in ${data.city} — Market Analysis 2024 | Valifye`,
+    description: `Should you start a ${data.niche} in ${data.city}? ${data.market_narrative} TAM: ${data.estimated_tam}.`,
     openGraph: {
       title: `${data.niche} in ${data.city}: ${data.market_heat} Market — Worth Building?`,
-      description,
+      description: data.market_narrative,
       type: 'article',
-      url: `https://valifye.com/ideas/${params.slug}`
+      url: `https://valifye.com/ideas/${slug}`
     },
     twitter: {
       card: 'summary_large_image',
       title: `${data.niche} in ${data.city}: Is It Worth Building?`,
-      description
+      description: data.market_narrative
     },
     alternates: {
-      canonical: `https://valifye.com/ideas/${params.slug}`
+      canonical: `https://valifye.com/ideas/${slug}`
     }
   }
 }
