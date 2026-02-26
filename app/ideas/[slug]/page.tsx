@@ -175,7 +175,7 @@ export default async function IdeaPage({ params }: PageProps) {
         </p>
 
         <a
-          href="/app"
+          href="https://app.valifye.com"
           style={{
             background: '#f97316',
             color: 'white',
