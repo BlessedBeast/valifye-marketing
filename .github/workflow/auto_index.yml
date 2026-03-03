@@ -1,0 +1,34 @@
+name: Nightly pSEO Indexer
+
+on:
+  schedule:
+    # This runs at 01:00 AM UTC (approx 6:30 AM IST) every night
+    - cron: '0 1 * * *'
+  workflow_dispatch: # This adds a 'Run Now' button in GitHub for testing
+
+jobs:
+  index_new_pages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          pip install google-api-python-client google-auth supabase python-dotenv
+
+      - name: Create Service Account File
+        # This converts your secret key back into the file the script needs
+        run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > service-account.json
+
+      - name: Run Indexing Bridge
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PUBLISH_BATCH_LIMIT: 200 # Google's daily limit is 200
+        run: python publish_and_index.py

@@ -1,8 +1,14 @@
 {
-    "crons": [
-      {
-        "path": "/api/cron/publish",
-        "schedule": "0 9 * * *"
-      }
-    ]
-  }
+  "crons": [
+    {
+      "path": "/api/cron/publish",
+      "schedule": "0 9 * * *"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/app/:path*",
+      "destination": "https://your-lovable-app-url.vercel.app/app/:path*"
+    }
+  ]
+}

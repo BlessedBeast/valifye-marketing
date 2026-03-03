@@ -1,37 +1,45 @@
-import { supabase } from "@/lib/supabase"
+import type { MetadataRoute } from 'next'
+import { createClient } from '@/utils/supabase/server'
 
 export const revalidate = 86400
 
-export default async function sitemap() {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL || "https://valifye.com"
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const supabase = createClient()
+  const ideaPages: MetadataRoute.Sitemap = []
 
-  const { data: pages } = await supabase
-    .from("market_data")
-    .select("slug, updated_at")
-    .eq("status", "published")
+  try {
+    const { data, error } = await supabase
+      .from('market_data')
+      .select('slug, updated_at')
+      .eq('status', 'published')
 
-  const ideaPages =
-    pages?.map((page) => ({
-      url: `${baseUrl}/ideas/${page.slug}`,
-      lastModified: page.updated_at || new Date(),
-      changeFrequency: "monthly" as const,
-      priority: 0.7,
-    })) ?? []
+    if (!error && data) {
+      for (const page of data as { slug: string; updated_at: string | null }[]) {
+        ideaPages.push({
+          url: `https://valifye.com/ideas/${page.slug}`,
+          lastModified: page.updated_at ? new Date(page.updated_at) : new Date(),
+          changeFrequency: 'monthly',
+          priority: 0.8
+        })
+      }
+    }
+  } catch {
+    // Swallow errors — sitemap should still return static routes
+  }
 
   return [
     {
-      url: baseUrl,
+      url: 'https://valifye.com',
       lastModified: new Date(),
-      changeFrequency: "daily" as const,
-      priority: 1,
+      changeFrequency: 'daily',
+      priority: 1.0
     },
     {
-      url: `${baseUrl}/ideas`,
+      url: 'https://valifye.com/ideas',
       lastModified: new Date(),
-      changeFrequency: "weekly" as const,
-      priority: 0.9,
+      changeFrequency: 'weekly',
+      priority: 0.9
     },
-    ...ideaPages,
+    ...ideaPages
   ]
 }

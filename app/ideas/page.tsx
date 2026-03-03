@@ -1,371 +1,206 @@
-import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import { MapPin } from 'lucide-react'
+import { ValifyeNavbar } from '@/components/valifye-navbar'
+import { ValifyeFooter } from '@/components/valifye-footer'
+import { createClient } from '@/utils/supabase/server'
 import type { Metadata } from 'next'
 
-export const revalidate = 3600 // Refresh every hour
-
 export const metadata: Metadata = {
-  title: 'Startup Ideas by City & Niche | Valifye Market Intelligence',
+  title: 'Startup Ideas Directory | Valifye Market Intelligence',
   description:
-    'Explore validated startup opportunities by industry and city. Real market size, competitor counts, and growth insights for 500+ niche/city combinations. Find your next idea.',
+    'High-authority directory of startup ideas by niche and city. Explore published market analyses across thousands of city/niche combinations.',
   openGraph: {
-    title: 'Startup Ideas by City & Niche | Valifye',
+    title: 'Startup Ideas Directory | Valifye',
     description:
-      'Market analysis for 500+ startup ideas. Find where demand exists and competition is low.',
+      'Browse startup ideas by niche and city. See where each market has a full Valifye analysis.',
     type: 'website',
     url: 'https://valifye.com/ideas'
   },
-  twitter: { card: 'summary_large_image' },
   alternates: { canonical: 'https://valifye.com/ideas' }
 }
 
-function getHeatConfig(heat: string) {
-  switch (heat) {
-    case 'Hot':
-      return {
-        badge: 'bg-red-500/10 text-red-400 border-red-500/20',
-        dot: 'bg-red-500'
-      }
-    case 'Warm':
-      return {
-        badge: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-        dot: 'bg-orange-500'
-      }
-    default:
-      return {
-        badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-        dot: 'bg-blue-500'
-      }
-  }
-}
+type SearchParams = Promise<{ q?: string }>
 
-interface MarketRow {
-  slug: string
-  niche: string
-  city: string
-  market_heat: string
-  estimated_tam: string
-  local_competitors: number
-  market_narrative: string
-  confidence: string
-}
+export const revalidate = 86400
 
-export default async function IdeasIndexPage({
+export default async function IdeasPage({
   searchParams
 }: {
-  searchParams: { niche?: string; city?: string; heat?: string }
+  searchParams: SearchParams
 }) {
-  let query = supabase
+  const { q = '' } = await searchParams
+  const query = q.trim().toLowerCase()
+
+  const supabase = createClient()
+  const { data, error } = await supabase
     .from('market_data')
-    .select(
-      'slug, niche, city, market_heat, estimated_tam, local_competitors, market_narrative, confidence'
-    )
-    .eq('status', 'published')
-    .order('created_at', { ascending: false })
-    .limit(120)
-
-  if (searchParams.niche) {
-    query = query.ilike('niche', `%${searchParams.niche}%`)
-  }
-  if (searchParams.city) {
-    query = query.ilike('city', `%${searchParams.city}%`)
-  }
-  if (searchParams.heat) {
-    query = query.eq('market_heat', searchParams.heat)
-  }
-
-  const { data: ideas } = await query
-  const rows = (ideas || []) as MarketRow[]
-
-  const { data: allPublished } = await supabase
-    .from('market_data')
-    .select('niche, city, market_heat')
+    .select('slug, niche, city')
     .eq('status', 'published')
 
-  const allRows = allPublished || []
-  const uniqueNiches = [...new Set(allRows.map((r) => r.niche))].sort().slice(0, 15)
-  const uniqueCities = [...new Set(allRows.map((r) => r.city))].sort().slice(0, 15)
-  const totalCount = allRows.length
+  const rows: { slug: string; niche: string; city: string }[] =
+    !error && data ? (data as { slug: string; niche: string; city: string }[]) : []
 
-  const activeFilter =
-    searchParams.niche || searchParams.city || searchParams.heat
+  const filteredRows =
+    query.length === 0
+      ? rows
+      : rows.filter((row) => {
+          const niche = row.niche?.toLowerCase() ?? ''
+          const city = row.city?.toLowerCase() ?? ''
+          return niche.includes(query) || city.includes(query)
+        })
+
+  const groups = new Map<
+    string,
+    { niche: string; cities: { slug: string; city: string }[] }
+  >()
+
+  for (const row of filteredRows) {
+    const key = row.niche || 'Other'
+    if (!groups.has(key)) {
+      groups.set(key, { niche: key, cities: [] })
+    }
+    groups.get(key)!.cities.push({ slug: row.slug, city: row.city })
+  }
+
+  const grouped = Array.from(groups.values()).sort((a, b) =>
+    a.niche.localeCompare(b.niche)
+  )
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto max-w-6xl space-y-10 px-4 py-12">
-        {/* Header */}
-        <header className="max-w-2xl space-y-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            VALIFYE MARKET INTELLIGENCE
+    <div className="min-h-screen bg-background">
+      <ValifyeNavbar />
+
+      {/* HERO */}
+      <section className="relative overflow-hidden pb-16 pt-28">
+        <div className="pointer-events-none absolute left-1/4 top-0 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
+        <div className="pointer-events-none absolute right-1/4 top-10 h-64 w-64 rounded-full bg-blue-500/5 blur-3xl" />
+
+        <div className="relative mx-auto max-w-6xl space-y-6 px-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+            <span className="text-xs font-semibold tracking-wide text-primary">
+              VALIFYE MARKET INTELLIGENCE
+            </span>
           </div>
-          <h1 className="text-4xl font-bold text-foreground">
-            Startup Ideas by City &amp; Niche
+
+          <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-foreground sm:text-5xl">
+            Startup ideas by{' '}
+            <span className="bg-gradient-to-r from-primary to-sky-400 bg-clip-text text-transparent dark:from-primary dark:to-orange-300">
+              niche &amp; city
+            </span>
           </h1>
-          <p className="text-lg text-muted-foreground">
-            Real market data for {totalCount}+ startup opportunities. Find where
-            customer demand is high and competition is low — before you build.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Browse validated startup ideas by industry (SaaS, coffee shop, pet
-            grooming, fitness) and city (Austin, New York, London, Bangalore).
-            Each analysis includes estimated market size, local competitor
-            count, and the top gaps in the market.
-          </p>
-        </header>
 
-        {/* Stats Bar */}
-        <section className="grid grid-cols-3 gap-4 rounded-xl border border-border bg-card p-4">
-          {[
-            { value: `${totalCount}+`, label: 'Markets Analyzed' },
-            { value: `${uniqueNiches.length}+`, label: 'Industries Covered' },
-            { value: `${uniqueCities.length}+`, label: 'Cities Tracked' }
-          ].map((s) => (
-            <div key={s.label} className="text-center">
-              <div className="text-2xl font-bold text-primary">{s.value}</div>
-              <div className="text-xs text-muted-foreground">{s.label}</div>
+          <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground">
+            A high-authority index of every published Valifye market analysis.
+            Browse by category, then jump into the full city-level breakdowns.
+          </p>
+
+          <form
+            action="/ideas"
+            className="mt-6 max-w-xl"
+          >
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2">
+              <input
+                type="search"
+                name="q"
+                defaultValue={q}
+                placeholder='Search by niche or city (e.g. "MedSpa" or "Denver")'
+                className="h-10 w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+              >
+                Search
+              </button>
             </div>
-          ))}
-        </section>
+          </form>
+        </div>
+      </section>
 
-        {/* Filter Pills */}
-        <section className="space-y-3">
-          {/* Heat Filter */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-xs font-medium text-muted-foreground">
-              Market Heat:
-            </span>
-            {['Hot', 'Warm', 'Cool'].map((heat) => {
-              const config = getHeatConfig(heat)
-              const isActive = searchParams.heat === heat
-              return (
-                <Link
-                  key={heat}
-                  href={isActive ? '/ideas' : `/ideas?heat=${heat}`}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-all ${
-                    isActive
-                      ? config.badge
-                      : 'border-border bg-card text-muted-foreground hover:border-primary hover:text-foreground'
-                  }`}
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
-                  {heat}
-                </Link>
-              )
-            })}
-          </div>
+      {/* DIRECTORY INDEX */}
+      <section className="mx-auto max-w-6xl space-y-6 px-4 pb-12">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            Showing{' '}
+            <span className="font-semibold text-foreground">
+              {grouped.length}
+            </span>{' '}
+            market categories
+            {query && (
+              <span className="text-primary"> (filtered)</span>
+            )}
+          </p>
+        </div>
 
-          {/* Niche Filter */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-xs font-medium text-muted-foreground">
-              By Industry:
-            </span>
-            {uniqueNiches.map((niche) => {
-              const isActive = searchParams.niche === niche
-              return (
-                <Link
-                  key={niche}
-                  href={
-                    isActive
-                      ? '/ideas'
-                      : `/ideas?niche=${encodeURIComponent(niche)}`
-                  }
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-all ${
-                    isActive
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-border bg-card text-muted-foreground hover:border-primary hover:text-foreground'
-                  }`}
-                >
-                  {niche}
-                </Link>
-              )
-            })}
-          </div>
-
-          {/* City Filter */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-xs font-medium text-muted-foreground">
-              By City:
-            </span>
-            {uniqueCities.map((city) => {
-              const isActive = searchParams.city === city
-              return (
-                <Link
-                  key={city}
-                  href={
-                    isActive
-                      ? '/ideas'
-                      : `/ideas?city=${encodeURIComponent(city)}`
-                  }
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-all ${
-                    isActive
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-border bg-card text-muted-foreground hover:border-primary hover:text-foreground'
-                  }`}
-                >
-                  {city}
-                </Link>
-              )
-            })}
-          </div>
-
-          {/* Clear Filter */}
-          {activeFilter && (
-            <Link
-              href="/ideas"
-              className="text-xs text-primary hover:underline"
-            >
-              ✕ Clear filters
-            </Link>
-          )}
-        </section>
-
-        {/* Ideas Grid */}
-        {rows.length === 0 ? (
-          <section className="space-y-2 rounded-xl border border-border bg-card p-12 text-center">
-            <p className="font-medium text-foreground">No markets found</p>
+        {grouped.length === 0 ? (
+          <div className="space-y-3 rounded-2xl border border-dashed border-border p-16 text-center">
+            <p className="font-semibold text-foreground">
+              No categories match this search
+            </p>
             <p className="text-sm text-muted-foreground">
-              Try a different filter or check back soon — we publish 100 new
-              analyses daily.
+              Try a different niche or city keyword.
             </p>
             <Link
               href="/ideas"
               className="text-sm text-primary hover:underline"
             >
-              View all markets →
+              Clear search and view all →
             </Link>
-          </section>
+          </div>
         ) : (
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {rows.map((idea) => {
-              const heat = getHeatConfig(idea.market_heat)
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {grouped.map((group) => {
+              const cities = group.cities
+              const firstFive = cities.slice(0, 5)
+              const extraCount = Math.max(0, cities.length - firstFive.length)
+
               return (
-                <Link
-                  key={idea.slug}
-                  href={`/ideas/${idea.slug}`}
-                  className="group flex flex-col space-y-4 rounded-xl border border-border bg-card p-5 transition-all hover:border-primary hover:shadow-lg hover:shadow-primary/5"
+                <div
+                  key={group.niche}
+                  className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5"
                 >
-                  {/* Card Header */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <h2 className="truncate font-semibold text-foreground transition-colors group-hover:text-primary">
-                        {idea.niche}
-                      </h2>
-                      <p className="text-sm text-muted-foreground">
-                        {idea.city}
-                      </p>
-                    </div>
-                    <span
-                      className={`inline-flex flex-shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${heat.badge}`}
-                    >
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${heat.dot}`}
-                      />
-                      {idea.market_heat}
-                    </span>
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Market Category
+                    </p>
+                    <h2 className="text-base font-semibold text-foreground">
+                      {group.niche}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {cities.length}{' '}
+                      {cities.length === 1 ? 'city' : 'cities'} with published
+                      analysis
+                    </p>
                   </div>
 
-                  {/* Key Stats */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-lg border border-border bg-background p-2.5">
-                      <div className="text-sm font-semibold text-foreground">
-                        {idea.estimated_tam}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Market TAM
-                      </div>
-                    </div>
-                    <div className="rounded-lg border border-border bg-background p-2.5">
-                      <div className="text-sm font-semibold text-foreground">
-                        {idea.local_competitors?.toLocaleString()}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Competitors
-                      </div>
-                    </div>
-                  </div>
+                  <ul className="space-y-1.5 text-sm">
+                    {firstFive.map((city) => (
+                      <li key={city.slug}>
+                        <Link
+                          href={`/ideas/${city.slug}`}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+                        >
+                          <MapPin size={12} className="text-muted-foreground" />
+                          <span>{city.city}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
 
-                  {/* Narrative Snippet */}
-                  <p className="flex-1 text-sm leading-relaxed text-muted-foreground line-clamp-2">
-                    {idea.market_narrative}
-                  </p>
-
-                  {/* CTA */}
-                  <div className="flex items-center justify-between border-t border-border pt-1">
-                    <span className="text-xs text-muted-foreground">
-                      {idea.confidence === 'high'
-                        ? '✓ Verified'
-                        : idea.confidence === 'medium'
-                        ? '~ Estimated'
-                        : '⚠ Low confidence'}
-                    </span>
-                    <span className="text-xs font-medium text-primary transition-transform group-hover:translate-x-0.5">
-                      Analyze →
-                    </span>
-                  </div>
-                </Link>
+                  {extraCount > 0 && (
+                    <p className="text-xs font-medium text-muted-foreground">
+                      + {extraCount} more {extraCount === 1 ? 'city' : 'cities'}
+                    </p>
+                  )}
+                </div>
               )
             })}
-          </section>
-        )}
-
-        {/* SEO Footer */}
-        <footer className="space-y-4 border-t border-border pt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Popular Searches
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {[
-              {
-                label: 'SaaS ideas in Austin',
-                href: '/ideas?niche=B2B+SaaS&city=Austin'
-              },
-              { label: 'Coffee shop ideas', href: '/ideas?niche=Coffee+Shop' },
-              { label: 'Hot markets', href: '/ideas?heat=Hot' },
-              {
-                label: 'Pet business ideas',
-                href: '/ideas?niche=Pet+Grooming'
-              },
-              {
-                label: 'London startup ideas',
-                href: '/ideas?city=London'
-              },
-              {
-                label: 'EV charging opportunities',
-                href: '/ideas?niche=EV+Charging+Station'
-              },
-              {
-                label: 'Fitness business ideas',
-                href: '/ideas?niche=Online+Fitness+Coaching'
-              },
-              { label: 'NYC markets', href: '/ideas?city=New+York' }
-            ].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-all hover:border-primary hover:text-foreground"
-              >
-                {link.label}
-              </Link>
-            ))}
           </div>
+        )}
+      </section>
 
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            Valifye analyzes startup ideas across hundreds of cities and
-            industries. Our market intelligence covers B2B SaaS, consumer apps,
-            food and beverage, health and wellness, professional services, and
-            more. Each analysis is based on real competitor data and customer
-            review patterns.
-          </p>
-
-          <Link
-            href="/waitlist"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Validate your own idea with Valifye →
-          </Link>
-        </footer>
-      </div>
+      <ValifyeFooter />
     </div>
   )
 }
-

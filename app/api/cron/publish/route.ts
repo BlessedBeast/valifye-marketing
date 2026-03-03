@@ -11,8 +11,11 @@ if (
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+  const isProductionUrl =
+    baseUrl &&
+    !baseUrl.includes('localhost') &&
+    (baseUrl.startsWith('https://') || baseUrl.startsWith('http://'))
 
   // 1️⃣ Get draft rows
   const { data: rows, error } = await supabaseAdmin
@@ -42,19 +45,21 @@ if (
     })
     .in('id', rows.map((r) => r.id))
 
-  // 3️⃣ Revalidate each page
-  for (const row of rows) {
-    try {
-      await fetch(
-        `${baseUrl}/api/revalidate?slug=${row.slug}&secret=${process.env.REVALIDATION_SECRET}`
-      )
-    } catch (e) {
-      console.error('Revalidate failed for:', row.slug)
+  // 3️⃣ Revalidate each page (only when production URL is set)
+  if (baseUrl) {
+    for (const row of rows) {
+      try {
+        await fetch(
+          `${baseUrl}/api/revalidate?slug=${row.slug}&secret=${process.env.REVALIDATION_SECRET}`
+        )
+      } catch (e) {
+        console.error('Revalidate failed for:', row.slug)
+      }
     }
   }
 
-  // 4️⃣ Google Indexing API (optional)
-  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+  // 4️⃣ Google Indexing API — only when GOOGLE_SERVICE_ACCOUNT_JSON and a production NEXT_PUBLIC_APP_URL are set (never send localhost to Google)
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON && isProductionUrl && baseUrl) {
     try {
       const auth = new google.auth.GoogleAuth({
         credentials: JSON.parse(
