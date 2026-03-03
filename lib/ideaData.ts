@@ -10,6 +10,7 @@ export type BusinessShape = 'Service' | 'SaaS' | 'E-commerce' | 'Info'
 
 export interface Idea {
   slug: string
+  region?: string
   niche: string
   city: string
   market_heat: HeatType

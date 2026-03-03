@@ -20,7 +20,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install google-api-python-client google-auth supabase python-dotenv
+          pip install google-api-python-client google-auth supabase python-dotenv requests
 
       - name: Create Service Account File
         # This converts your secret key back into the file the script needs
@@ -32,3 +32,42 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           PUBLISH_BATCH_LIMIT: 200 # Google's daily limit is 200
         run: python publish_and_index.py
+
+      - name: Run Sitemap Audit
+        id: sitemap_audit
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          python verify_sitemap.py > sitemap_audit.out
+          cat sitemap_audit.out
+          TOTAL_DB=$(grep '^TOTAL_DB=' sitemap_audit.out | cut -d '=' -f2)
+          TOTAL_SITEMAP=$(grep '^TOTAL_SITEMAP=' sitemap_audit.out | cut -d '=' -f2)
+          ORPHAN_COUNT=$(grep '^ORPHAN_COUNT=' sitemap_audit.out | cut -d '=' -f2)
+          echo "TOTAL_DB=$TOTAL_DB" >> $GITHUB_ENV
+          echo "TOTAL_SITEMAP=$TOTAL_SITEMAP" >> $GITHUB_ENV
+          echo "TOTAL_ORPHAN=$ORPHAN_COUNT" >> $GITHUB_ENV
+
+      - name: Notify Slack
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          HEALTH="0%"
+          if [ "${{ env.TOTAL_DB }}" != "0" ]; then
+            HEALTH=$(python - << 'PY'
+total_db = int("${{ env.TOTAL_DB }}" or 0)
+total_sitemap = int("${{ env.TOTAL_SITEMAP }}" or 0)
+health = 0
+if total_db > 0:
+    health = round((total_sitemap / total_db) * 100)
+print(f"{health}%")
+PY
+)
+          fi
+
+          payload=$(cat <<EOF
+{"text":"🚀 Valifye Nightly Audit Complete\n📈 Published Today: ${{ env.TOTAL_DB }}\n🗺️ Sitemap Health: $HEALTH\n🛑 Missing Slugs: ${{ env.TOTAL_ORPHAN }}\n🔗 Sitemap: https://valifye.com/sitemap.xml"}
+EOF
+)
+          curl -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"

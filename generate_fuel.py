@@ -1,166 +1,309 @@
 import os
+import sys
 import time
 import json
+import re
+from datetime import datetime, timezone
+
 from google import genai
 from supabase import create_client
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Wiring check
+# ─── WIRING CHECK ─────────────────────────────────────────────────────────────
 url = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 gemini_key = os.getenv("GEMINI_API_KEY")
 
 if not all([url, key, gemini_key]):
     print("❌ ERROR: Missing .env variables.")
-    exit()
+    sys.exit(1)
 
 supabase = create_client(url, key)
 client = genai.Client(api_key=gemini_key)
 
-# 2026 GLOBAL ECONOMIC ANCHORS - BATCH 2: HIGH-TICKET
-GLOBAL_ANCHORS = {
-    "USA": {
-        "currency": "USD",
-        "Commercial Roof Repair SaaS": "Avg contract: $15,000; 1% annual commercial building turnover.",
-        "Legal AI for Personal Injury": "Avg case value: $30,000; 0.5% of pop involved in incidents/year.",
-        "Luxury Short-Term Rental Mgmt": "25% mgmt fee on $12,000/mo avg revenue; 2% of local housing stock.",
-        "Fractional CFO Services": "Avg retainer: $3,500/mo; 10% of businesses > $2M revenue.",
-        "Custom Home EV Charger Installation": "Avg install: $2,800; 15% of homeowners with EVs."
-    },
-    "INDIA": {
-        "currency": "INR",
-        "Commercial Roof Repair SaaS": "Avg contract: ₹1,50,000; 0.5% turnover in industrial zones.",
-        "Legal AI for Personal Injury": "Avg case value: ₹5,00,000; 0.2% of urban pop involved in claims/year.",
-        "Luxury Short-Term Rental Mgmt": "20% fee on ₹1,50,000/mo revenue; 1% of luxury villas.",
-        "Fractional CFO Services": "Avg retainer: ₹60,000/mo; 5% of startups/SMEs.",
-        "Custom Home EV Charger Installation": "Avg install: ₹45,000; 5% of high-end apartment owners."
-    }
-}
+# ─── GOVERNOR SETTINGS ────────────────────────────────────────────────────────
+DAILY_LIMIT = 600
+BATCH_LIMIT = 200
 
-# --- ACTIVE BATCH SETTINGS ---
+# ─── ACTIVE BATCH SETTINGS ────────────────────────────────────────────────────
 CURRENT_REGION = "USA"
 CITIES = [
-    "New York, NY", "Los Angeles, CA", "Chicago, IL", "Houston, TX", "Phoenix, AZ", 
-    "Philadelphia, PA", "San Antonio, TX", "San Diego, CA", "Dallas, TX", "San Jose, CA", 
-    "Austin, TX", "Jacksonville, FL", "Fort Worth, TX", "Columbus, OH", "Indianapolis, IN", 
-    "Charlotte, NC", "San Francisco, CA", "Seattle, WA", "Denver, CO", "Oklahoma City, OK", 
-    "Nashville, TN", "El Paso, TX", "Washington, DC", "Las Vegas, NV", "Boston, MA", 
-    "Portland, OR", "Louisville, KY", "Memphis, TN", "Detroit, MI", "Baltimore, MD", 
-    "Milwaukee, WI", "Albuquerque, NM", "Tucson, AZ", "Fresno, CA", "Sacramento, CA", 
-    "Mesa, AZ", "Kansas City, MO", "Atlanta, GA", "Omaha, NE", "Colorado Springs, CO", 
-    "Raleigh, NC", "Long Beach, CA", "Virginia Beach, VA", "Miami, FL", "Oakland, CA", 
-    "Minneapolis, MN", "Tulsa, OK", "Bakersfield, CA", "Wichita, KS", "Arlington, TX", 
-    "Aurora, CO", "Tampa, FL", "New Orleans, LA", "Cleveland, OH", "Honolulu, HI", 
-    "Anaheim, CA", "Lexington, KY", "Stockton, CA", "Corpus Christi, TX", "Henderson, NV", 
-    "Riverside, CA", "Newark, NJ", "Saint Paul, MN", "Santa Ana, CA", "Cincinnati, OH", 
-    "Irvine, CA", "Orlando, FL", "Pittsburgh, PA", "St. Louis, MO", "Greensboro, NC", 
-    "Jersey City, NJ", "Anchorage, AK", "Lincoln, NE", "Plano, TX", "Durham, NC", 
-    "Buffalo, NY", "Chandler, AZ", "Chula Vista, CA", "Toledo, OH", "Madison, WI", 
-    "Gilbert, AZ", "Reno, NV", "Fort Wayne, IN", "North Las Vegas, NV", "St. Petersburg, FL", 
-    "Lubbock, TX", "Irving, TX", "Laredo, TX", "Winston-Salem, NC", "Chesapeake, VA", 
-    "Glendale, AZ", "Garland, TX", "Scottsdale, AZ", "Norfolk, VA", "Boise, ID", 
-    "Fremont, CA", "Spokane, WA", "Santa Clarita, CA", "Baton Rouge, LA", "Richmond, VA"
+    "New York City", "Los Angeles", "Chicago", "Houston", "Phoenix",
+    "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose",
+    "Austin", "Seattle", "Denver", "Nashville", "Miami",
+    "Atlanta", "Boston", "Portland", "Las Vegas", "Charlotte",
+    "Minneapolis", "Tampa", "Orlando", "Raleigh", "Salt Lake City",
+    "Sacramento", "Kansas City", "Pittsburgh", "Cincinnati", "Indianapolis",
+    "Columbus", "Louisville", "Memphis", "Oklahoma City", "Albuquerque",
+    "Tucson", "Fresno", "Richmond", "Omaha", "Buffalo",
+    "Boise", "Spokane", "Des Moines", "Chattanooga", "Knoxville",
+    "Greenville", "Madison", "Fort Collins", "Provo", "Huntsville",
 ]
 
-def get_market_data(niche, city, anchor, currency):
-    prompt = f"""
-    Analyze the '{niche}' market in '{city}' for 2026. 
-    ECONOMIC ANCHOR: {anchor}
-    LOCAL CURRENCY: {currency}
 
-    LOGIC PROTOCOL 2.0 (BRUTAL & REALISTIC):
-    1. Identify {city} 2026 population and total business count.
-    2. CALCULATE TAM: [Addressable Units] x [Anchor Pricing] x [Annual Frequency]. 
-    3. CALCULATE STARTUP REVENUE: A single startup usually captures 0.1% to 1.5% of the TAM. 
-    4. REVENUE POTENTIAL: "Low" should be a realistic Year 1 target (capturing 0.1% of TAM). "High" should be Year 3 at scale (capturing 2% of TAM).
-    5. No trillion-dollar TAMs for local niches. Ensure the TAM for {city} is proportionally consistent with its size.
+def parse_tam_to_numeric(tam_str: str) -> int:
+    """Converts 'USD 1.01 Billion' or 'INR 420 Million' to a full integer."""
+    if not tam_str or not isinstance(tam_str, str):
+        return 0
+    try:
+        match = re.search(r'([\d\.]+)\s*(Million|Billion|Trillion)', tam_str, re.I)
+        if not match:
+            return 0
+        val = float(match.group(1))
+        multiplier = match.group(2).lower()
+        if 'billion' in multiplier:
+            val *= 1_000_000_000
+        elif 'million' in multiplier:
+            val *= 1_000_000
+        elif 'trillion' in multiplier:
+            val *= 1_000_000_000_000
+        return int(val)
+    except Exception:
+        return 0
 
-    Return EXACT JSON:
-    1. estimated_tam: (e.g., '{currency} 150.4 Million')
-    2. local_competitors: (Integer)
-    3. top_complaints: (Array of 3 strings. Must mention a specific {city} local problem like 'Traffic on I-35', 'Miami salt-air', etc.)
-    4. market_narrative: (2 sentences. Must mention a specific 2026 local landmark.)
-    5. market_heat: (Exactly: 'Hot', 'Warm', 'Cool')
-    6. faq_outlook: (1-2 sentence expert verdict)
-    7. opportunity_score: (Integer 0-100)
-    8. difficulty_score: (Integer 0-100)
-    9. revenue_potential: {{ "low": int, "mid": int, "high": int }} (Individual startup targets in thousands, NOT TAM)
+
+def build_slug(niche: str, city: str) -> str:
     """
-    
+    Generate a URL-safe slug from niche + city.
+    Rules:
+    - lowercase
+    - non-alphanumeric characters -> hyphens
+    - collapse duplicate hyphens, trim edges
+    """
+    base = f"{niche} in {city}".lower()
+    slug = ''.join(ch if ch.isalnum() else '-' for ch in base)
+    while '--' in slug:
+        slug = slug.replace('--', '-')
+    return slug.strip('-')
+
+
+def get_today_created_count() -> int:
+    """Count how many market_data rows were created today (UTC)."""
+    today = datetime.now(timezone.utc).date().isoformat()
+    try:
+        resp = (
+            supabase.table("market_data")
+            .select("id", count="exact")
+            .gte("created_at", today)
+            .execute()
+        )
+        return resp.count or 0
+    except Exception as e:
+        print(f"⚠️ Could not read today's count: {e}", file=sys.stderr)
+        return 0
+
+
+def get_latest_niches_for_region(region: str) -> list[dict]:
+    """
+    Fetch the latest 5 niches from niche_metadata for the given region.
+    Expects columns: niche, expert_guide_text, global_anchor.
+    """
+    try:
+        resp = (
+            supabase.table("niche_metadata")
+            .select("niche, expert_guide_text, global_anchor")
+            .eq("region", region)
+            .order("id", desc=True)
+            .limit(5)
+            .execute()
+        )
+        return resp.data or []
+    except Exception as e:
+        print(f"❌ Failed to fetch niches from niche_metadata: {e}", file=sys.stderr)
+        return []
+
+
+def get_market_data(
+    niche: str,
+    city: str,
+    region: str,
+    currency: str,
+    expert_guide_text: str,
+    global_anchor: dict,
+) -> dict | None:
+    anchor_json = json.dumps(global_anchor or {}, ensure_ascii=False)
+
+    prompt = f"""
+You are a 2026 market analyst for {region}.
+
+EXPERT GUIDE CONTEXT (verbatim from niche_metadata.expert_guide_text):
+{expert_guide_text}
+
+GLOBAL ANCHOR JSON (unit price, startup costs, TAM logic):
+{anchor_json}
+
+TASK:
+- Analyze the '{niche}' business opportunity in '{city}', {region} for 2026.
+- Use the expert guide and global anchor to ground your numbers.
+
+LOGIC PROTOCOL (STRICT — DO NOT GUESS BEYOND CONTEXT):
+1. Use LOCAL CURRENCY {currency} consistently for reasoning (the output TAM string may include the currency code).
+2. Estimate the 2026 TAM for this niche in {city} based on:
+   - realistic addressable units in {city},
+   - the global_anchor.unit_price,
+   - a realistic penetration rate for a single strong operator.
+3. Express estimated_tam as text like '{currency} 45.2 Million' or '{currency} 1.8 Billion'.
+4. Set revenue_potential.low/mid/high as FULL INTEGERS (no currency symbols, no commas) that represent annual revenue in {currency}.
+5. Enforce this hard cap: revenue_potential.high MUST NOT exceed 5% of numeric TAM.
+
+Return ONLY valid JSON in this exact shape:
+{{
+  "estimated_tam": "{currency} X.X Million",
+  "local_competitors": 10,
+  "top_complaints": ["complaint 1", "complaint 2", "complaint 3"],
+  "market_narrative": "2 sentences with city-specific context.",
+  "market_heat": "Hot",
+  "faq_outlook": "Expert verdict.",
+  "opportunity_score": 80,
+  "difficulty_score": 40,
+  "trend": "growing",
+  "trend_pct": 15,
+  "revenue_potential": {{"low": 100000, "mid": 300000, "high": 500000}},
+  "avg_revenue_per_unit": 150.0,
+  "startup_cost_range": {{"low": 5000, "high": 50000}},
+  "breakeven_months": 12,
+  "business_shape": "Service"
+}}
+"""
+
     for attempt in range(3):
         try:
             response = client.models.generate_content(
-                model="gemini-2.5-flash-lite", 
+                model="gemini-2.5-flash-lite",
                 contents=prompt,
-                config={'response_mime_type': 'application/json'}
+                config={"response_mime_type": "application/json"},
             )
             return json.loads(response.text)
         except Exception as e:
-            if "429" in str(e):
-                wait_time = (attempt + 1) * 45 
-                print(f"😴 Quota hit. Cool-off for {wait_time}s...")
-                time.sleep(wait_time)
+            err_msg = str(e).upper()
+            if "429" in err_msg or "503" in err_msg or "UNAVAILABLE" in err_msg:
+                wait = (attempt + 1) * 60
+                print(f" 😴 API Busy/Unavailable. Cooling off for {wait}s...")
+                time.sleep(wait)
             else:
-                print(f"⚠️ API Error on {city}: {e}")
-                return None
+                print(f" ⚠️ API error: {e}")
+                time.sleep(5)
     return None
 
+
 def main():
-    anchors = GLOBAL_ANCHORS[CURRENT_REGION]
-    currency = anchors["currency"]
-    
-    print(f"🚀 Valifye Engine: Starting Batch 2 (High-Ticket) for {CURRENT_REGION}...")
+    today_count = get_today_created_count()
+    if today_count >= DAILY_LIMIT:
+        print(
+            f"⏹ Daily governor: {today_count} rows already created today "
+            f"(limit {DAILY_LIMIT}). Exiting."
+        )
+        return
+
+    remaining_today = max(0, DAILY_LIMIT - today_count)
+    effective_batch = min(BATCH_LIMIT, remaining_today)
+    if effective_batch <= 0:
+        print("⏹ No remaining capacity for today. Exiting.")
+        return
+
+    # For region-aware currency; extend as needed.
+    region_currency = {
+        "USA": "USD",
+        "INDIA": "INR",
+    }
+    currency = region_currency.get(CURRENT_REGION, "USD")
+
+    niche_rows = get_latest_niches_for_region(CURRENT_REGION)
+    if not niche_rows:
+        print(f"❌ No niche_metadata rows found for region {CURRENT_REGION}.")
+        return
 
     total_saved = 0
-    for niche, anchor_text in anchors.items():
-        if niche == "currency": continue
-        
+    for niche_row in niche_rows:
+        niche = str(niche_row.get("niche", "")).strip()
+        if not niche:
+            continue
+        expert_text = str(niche_row.get("expert_guide_text", "")).strip()
+        global_anchor = niche_row.get("global_anchor") or {}
+
+        print(f"\n📦 Niche: {niche}")
         for city in CITIES:
-            # SKIP CHECK: Don't waste money/quota on data you already have
-            existing = supabase.table("market_data").select("id").match({"niche": niche, "city": city}).execute()
+            if total_saved >= effective_batch:
+                break
+
+            # Check for existing data using niche/city match
+            existing = (
+                supabase.table("market_data")
+                .select("id")
+                .match({"niche": niche, "city": city})
+                .execute()
+            )
             if existing.data:
-                print(f"⏩ Skipping {niche} in {city} (Already exists)")
+                print(f" ⏩ Skip: {city} (already exists)")
                 continue
 
-            print(f"⚡ Analyzing: {niche} in {city}...")
-            data = get_market_data(niche, city, anchor_text, currency)
-            
+            print(f" ⚡ Generating: {niche} in {city}...")
+            data = get_market_data(niche, city, CURRENT_REGION, currency, expert_text, global_anchor)
+
             if data:
                 try:
-                    raw_complaints = data.get('top_complaints')
-                    if isinstance(raw_complaints, list):
-                        top_complaints = [str(c) for c in raw_complaints]
-                    elif isinstance(raw_complaints, str):
-                        top_complaints = [raw_complaints]
-                    else:
-                        top_complaints = []
+                    tam_str = str(data.get("estimated_tam", f"{currency} 0"))
+                    tam_numeric = parse_tam_to_numeric(tam_str)
+                    max_rev = int(tam_numeric * 0.05) if tam_numeric > 0 else 0
 
-                    # Note: We do NOT insert 'slug' here because your DB handles it via Generated Column logic
-                    supabase.table("market_data").upsert({
+                    rev = data.get("revenue_potential", {}) or {}
+                    low = int(rev.get("low", 0) or 0)
+                    mid = int(rev.get("mid", 0) or 0)
+                    high = int(rev.get("high", 0) or 0)
+
+                    if max_rev > 0:
+                        if high > max_rev:
+                            high = max_rev
+                        if mid > max_rev:
+                            mid = max_rev // 2
+                        if low > max_rev:
+                            low = max_rev // 10
+
+                    revenue_potential = {
+                        "low": low,
+                        "mid": mid,
+                        "high": high,
+                    }
+
+                    slug = build_slug(niche, city)
+
+                    row = {
+                        "slug": slug,
+                        "region": CURRENT_REGION,
                         "niche": niche,
                         "city": city,
-                        "estimated_tam": str(data.get('estimated_tam')),
-                        "local_competitors": int(data.get('local_competitors', 0)),
-                        "top_complaints": top_complaints,
-                        "market_narrative": data.get('market_narrative'),
-                        "market_heat": data.get('market_heat'),
+                        "estimated_tam": tam_str,
+                        "local_competitors": int(data.get("local_competitors", 0)),
+                        "top_complaints": data.get("top_complaints", []),
+                        "market_narrative": str(data.get("market_narrative", "")),
+                        "market_heat": data.get("market_heat", "Warm"),
                         "confidence": "medium",
-                        "faq_outlook": data.get('faq_outlook'),
-                        "opportunity_score": int(data.get('opportunity_score', 70)),
-                        "difficulty_score": int(data.get('difficulty_score', 50)),
-                        "revenue_potential": data.get('revenue_potential', {"low": 0, "mid": 0, "high": 0}),
+                        "faq_outlook": str(data.get("faq_outlook", "")),
+                        "opportunity_score": int(data.get("opportunity_score", 70)),
+                        "difficulty_score": int(data.get("difficulty_score", 50)),
+                        "trend": data.get("trend", "stable"),
+                        "trend_pct": int(data.get("trend_pct", 0)),
+                        "revenue_potential": revenue_potential,
+                        "avg_revenue_per_unit": float(data.get("avg_revenue_per_unit", 0)),
+                        "startup_cost_range": data.get("startup_cost_range", {}),
+                        "breakeven_months": int(data.get("breakeven_months", 12)),
+                        "business_shape": data.get("business_shape", "Service"),
                         "status": "draft",
-                        "data_source": f"Gemini-2026-Industrial-Batch2-{CURRENT_REGION}"
-                    }, on_conflict="niche,city").execute()
-                    
+                        "data_source": f"Gemini-2026-Batch3-HighSearch-{CURRENT_REGION}",
+                    }
+
+                    supabase.table("market_data").upsert(row, on_conflict="niche,city").execute()
                     total_saved += 1
-                    print(f"✅ SAVED ({total_saved}): {niche} in {city} | Heat: {data.get('market_heat')}")
+                    print(f" ✅ Saved ({total_saved}/{effective_batch}): {city}")
                 except Exception as db_error:
-                    print(f"❌ DB Error: {db_error}")
-            
-            time.sleep(1)
+                    print(f" ❌ DB error: {db_error}")
+
+            time.sleep(1)  # Safety delay
+
+        if total_saved >= effective_batch:
+            break
 
 if __name__ == "__main__":
     main()

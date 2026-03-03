@@ -8,6 +8,7 @@ import type { HeatType, ConfidenceType, TrendType, BusinessShape } from '@/lib/i
  */
 export interface MarketDataRow {
   slug: string
+  region: string
   niche: string
   city: string
   market_heat: HeatType
@@ -27,13 +28,23 @@ export interface MarketDataRow {
   breakeven_months: number
   business_shape: BusinessShape | null
   status: string
+  data_source: string
+}
+
+export interface NicheMetadataRow {
+  id: number
+  region: string
+  niche: string
+  expert_guide_text: string
+  global_anchor: Record<string, unknown> | null
+  business_shape: BusinessShape | null
 }
 
 const SELECT_COLS = `
-  slug, niche, city, market_heat, estimated_tam, local_competitors,
+  slug, region, niche, city, market_heat, estimated_tam, local_competitors,
   market_narrative, confidence, top_complaints, faq_outlook, opportunity_score, difficulty_score,
   trend, trend_pct, revenue_potential, avg_revenue_per_unit, startup_cost_range,
-  breakeven_months, business_shape, status
+  breakeven_months, business_shape, status, data_source
 `
 
 function mapRowToIdea(row: MarketDataRow): Idea {
@@ -191,4 +202,22 @@ export async function getSameCityIdeas(
 
   if (error || !data) return []
   return (data as MarketDataRow[]).map(mapRowToIdea)
+}
+
+/**
+ * Fetch niche-level metadata (expert guide, anchor) for a given niche.
+ */
+export async function getNicheMetadataByNiche(
+  niche: string
+): Promise<NicheMetadataRow | null> {
+  const { data, error } = await supabase
+    .from('niche_metadata')
+    .select('id, region, niche, expert_guide_text, global_anchor, business_shape')
+    .eq('niche', niche)
+    .order('id', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return data as NicheMetadataRow
 }

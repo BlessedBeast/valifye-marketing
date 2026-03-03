@@ -14,7 +14,7 @@ Environment:
 
 import os
 import sys
-from typing import Set
+from typing import Set, Dict, Any
 
 import requests
 import xml.etree.ElementTree as ET
@@ -86,32 +86,32 @@ def fetch_sitemap_slugs() -> Set[str]:
   return slugs
 
 
-def main() -> None:
+def run() -> Dict[str, Any]:
+  """Run sitemap verification and return a summary dictionary."""
   supabase = get_supabase_client()
 
-  print("🔄 Fetching published slugs from Supabase...")
   db_slugs = fetch_published_slugs(supabase)
-  print(f"   Found {len(db_slugs)} published rows in market_data.")
-
-  print(f"🔄 Fetching sitemap from {SITEMAP_URL}...")
   sitemap_slugs = fetch_sitemap_slugs()
-  print(f"   Found {len(sitemap_slugs)} idea URLs in sitemap.")
-
   orphan_slugs = sorted(db_slugs - sitemap_slugs)
 
-  print("\n📊 Sitemap Verification Summary")
-  print(f"Total Published in DB   : {len(db_slugs)}")
-  print(f"Total Found in Sitemap  : {len(sitemap_slugs)}")
-  print(f"Orphan Slugs (DB-only)  : {len(orphan_slugs)}")
+  summary: Dict[str, Any] = {
+    "total_published_db": len(db_slugs),
+    "total_in_sitemap": len(sitemap_slugs),
+    "orphan_count": len(orphan_slugs),
+  }
 
-  if orphan_slugs:
-    print("\n❗ Orphan Slugs (present in DB, missing in sitemap):")
-    for slug in orphan_slugs:
-      print(f"- {slug}")
-  else:
-    print("\n✅ No orphan slugs detected. All published slugs appear in the sitemap.")
+  print("📊 Sitemap Verification Summary")
+  print(f"Total Published in DB   : {summary['total_published_db']}")
+  print(f"Total Found in Sitemap  : {summary['total_in_sitemap']}")
+  print(f"Orphan Slugs (DB-only)  : {summary['orphan_count']}")
+
+  return summary
 
 
 if __name__ == "__main__":
-  main()
+  summary = run()
+  # Simple key=value lines so GitHub Actions / shell can parse easily
+  print(f"TOTAL_DB={summary['total_published_db']}")
+  print(f"TOTAL_SITEMAP={summary['total_in_sitemap']}")
+  print(f"ORPHAN_COUNT={summary['orphan_count']}")
 

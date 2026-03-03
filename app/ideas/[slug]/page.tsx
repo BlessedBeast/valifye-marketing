@@ -15,7 +15,8 @@ import {
   getIdeaBySlug,
   getPublishedSlugs,
   getSameNicheIdeas,
-  getSameCityIdeas
+  getSameCityIdeas,
+  getNicheMetadataByNiche
 } from '@/lib/marketData'
 import { ScoreRing } from '@/components/market/ScoreRing'
 import { TrendIndicator } from '@/components/market/TrendIndicator'
@@ -76,15 +77,48 @@ export default async function IdeaSlugPage({
   const oppLabel = getOpportunityLabel(idea.opportunity_score)
   const diffLabel = getDifficultyLabel(idea.difficulty_score)
 
-  const [sameNicheIdeas, sameCityIdeas] = await Promise.all([
+  const [sameNicheIdeas, sameCityIdeas, nicheMeta] = await Promise.all([
     getSameNicheIdeas(slug, idea.niche),
-    getSameCityIdeas(slug, idea.city)
+    getSameCityIdeas(slug, idea.city),
+    getNicheMetadataByNiche(idea.niche)
   ])
   const relatedBySlug = new Map<string, typeof idea>()
   for (const i of [...sameNicheIdeas, ...sameCityIdeas]) {
     if (i.slug !== idea.slug) relatedBySlug.set(i.slug, i)
   }
   const related = Array.from(relatedBySlug.values()).slice(0, 12)
+  const nearbyMarkets = sameNicheIdeas.slice(0, 3)
+
+  const opportunityGrade =
+    idea.opportunity_score >= 85
+      ? 'A'
+      : idea.opportunity_score >= 70
+      ? 'B'
+      : idea.opportunity_score >= 55
+      ? 'C'
+      : 'D'
+
+  const parseTamToNumeric = (tam: string): number => {
+    if (!tam) return 0
+    const match = tam.match(/([\d.]+)\s*(Million|Billion|Trillion)/i)
+    if (!match) return 0
+    const value = parseFloat(match[1] || '0')
+    const unit = match[2].toLowerCase()
+    if (unit.includes('billion')) return Math.round(value * 1_000_000_000)
+    if (unit.includes('million')) return Math.round(value * 1_000_000)
+    if (unit.includes('trillion')) return Math.round(value * 1_000_000_000_000)
+    return 0
+  }
+
+  const cityTam = parseTamToNumeric(idea.estimated_tam)
+  const allSameNiche = [idea, ...sameNicheIdeas]
+  const avgTam =
+    allSameNiche.length > 0
+      ? Math.round(
+          allSameNiche.reduce((sum, i) => sum + parseTamToNumeric(i.estimated_tam), 0) /
+            allSameNiche.length
+        )
+      : 0
 
   const SCORE_STROKE: Record<string, string> = {
     'text-green-400': '#4ade80',
@@ -185,6 +219,17 @@ export default async function IdeaSlugPage({
                   Should you build it? Here&apos;s the data.
                 </span>
               </h1>
+              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background/80 px-3 py-1 text-xs font-semibold text-muted-foreground">
+                <span className="text-[11px] uppercase tracking-wide">
+                  Opportunity Grade
+                </span>
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                  {opportunityGrade}
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  Based on opportunity score ({idea.opportunity_score}/100)
+                </span>
+              </div>
               <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
                 {idea.market_narrative}
               </p>
@@ -300,6 +345,23 @@ export default async function IdeaSlugPage({
           ))}
         </div>
 
+        {/* EXPERT ANALYSIS / GUIDE */}
+        {nicheMeta?.expert_guide_text && (
+          <section className="space-y-3 rounded-2xl border border-border bg-card p-6">
+            <h2 className="text-lg font-bold text-foreground">
+              Expert Analysis: {idea.niche} in {idea.city}
+            </h2>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              Niche Playbook · 2026 Outlook
+            </p>
+            <div className="prose prose-sm max-w-none text-sm leading-relaxed text-muted-foreground dark:prose-invert">
+              <p className="whitespace-pre-line">
+                {nicheMeta.expert_guide_text}
+              </p>
+            </div>
+          </section>
+        )}
+
         {/* SATURATION */}
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <div className="border-b border-border px-6 py-4">
@@ -319,6 +381,56 @@ export default async function IdeaSlugPage({
             />
           </div>
         </div>
+
+        {/* BENCHMARKING: TAM VS AVERAGE */}
+        {cityTam > 0 && avgTam > 0 && (
+          <section className="space-y-3 rounded-2xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  TAM in {idea.city} vs Niche Average
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Comparing {idea.estimated_tam} to the average TAM across{' '}
+                  {allSameNiche.length} {allSameNiche.length === 1 ? 'city' : 'cities'} for this niche.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {[
+                {
+                  label: `${idea.city} TAM`,
+                  value: cityTam,
+                  tone: 'from-primary to-sky-400'
+                },
+                {
+                  label: 'Niche Average TAM',
+                  value: avgTam,
+                  tone: 'from-muted to-muted-foreground/60'
+                }
+              ].map((row) => {
+                const max = Math.max(cityTam, avgTam)
+                const width = max > 0 ? Math.max(5, Math.round((row.value / max) * 100)) : 0
+                return (
+                  <div key={row.label} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{row.label}</span>
+                      <span className="font-semibold text-foreground">
+                        {row.value.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={`h-full rounded-full bg-gradient-to-r ${row.tone}`}
+                        style={{ width: `${width}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
 
         {idea.business_shape && (
           <div className="space-y-3">
@@ -404,6 +516,30 @@ export default async function IdeaSlugPage({
               ))}
             </div>
           </div>
+        )}
+
+        {nearbyMarkets.length > 0 && (
+          <section className="space-y-3 border-t border-border/60 pt-6">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Nearby Markets for {idea.niche}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {nearbyMarkets.map((m) => (
+                <Link
+                  key={m.slug}
+                  href={`/ideas/${m.slug}`}
+                  className="group inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground transition-all hover:border-primary/50 hover:text-foreground"
+                >
+                  <MapPin size={12} className="text-muted-foreground" />
+                  <span>{m.city}</span>
+                  <ArrowUpRight
+                    size={11}
+                    className="text-muted-foreground transition-colors group-hover:text-primary"
+                  />
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* EMAIL GATE CTA */}
