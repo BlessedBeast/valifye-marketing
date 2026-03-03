@@ -19,6 +19,23 @@ if not all([url, key, gemini_key]):
 supabase = create_client(url, key)
 client = genai.Client(api_key=gemini_key)
 
+
+def make_slug(niche: str, city: str) -> str:
+    """
+    Generate a URL-safe slug from niche + city.
+    Rules:
+    - lowercase
+    - spaces and punctuation -> hyphens
+    - no commas, slashes, or duplicate hyphens
+    """
+    base = f"{niche} in {city}".lower()
+    # Replace non-alphanumeric characters with hyphen
+    slug = ''.join(ch if ch.isalnum() else '-' for ch in base)
+    # Collapse multiple hyphens and trim
+    while '--' in slug:
+        slug = slug.replace('--', '-')
+    return slug.strip('-')
+
 # 2026 GLOBAL ECONOMIC ANCHORS
 GLOBAL_ANCHORS = {
     "USA": {
@@ -70,11 +87,11 @@ def get_market_data(niche, city, anchor, currency):
     ECONOMIC ANCHOR: {anchor}
     LOCAL CURRENCY: {currency}
 
-    LOGIC PROTOCOL:
-    1. Identify the 2026 population of {city}.
-    2. Use the LOCAL CURRENCY ({currency}) for all financial values. 
-    3. CALCULATE the estimated_tam by multiplying Target Units x Anchor Pricing x Penetration.
-    4. Cross-check: Ensure the TAM for {city} reflects its specific size compared to other major cities.
+    LOGIC PROTOCOL (STRICT -- DO NOT GUESS):
+    1. Identify the 2026 population of {city} and the realistic addressable segment.
+    2. Use the LOCAL CURRENCY ({currency}) for all financial values. No USD if {currency} is different.
+    3. CALCULATE estimated_tam by multiplying Target Units x Anchor Pricing x Penetration (show your reasoning internally before outputting JSON).
+    4. Cross-check: Ensure the TAM for {city} is proportionally consistent with its size vs. other US cities. No trillion-dollar TAMs for local niches.
 
     Return EXACT JSON:
     1. estimated_tam: (e.g., '{currency} 45.2 Million')
@@ -129,9 +146,17 @@ def main():
             if data:
                 try:
                     raw_complaints = data.get('top_complaints')
-                    top_complaints = [str(c) for c in raw_complaints] if isinstance(raw_complaints, list) else []
+                    if isinstance(raw_complaints, list):
+                        top_complaints = [str(c) for c in raw_complaints]
+                    elif isinstance(raw_complaints, str):
+                        top_complaints = [raw_complaints]
+                    else:
+                        top_complaints = []
+
+                    slug = make_slug(niche, city)
 
                     supabase.table("market_data").upsert({
+                        "slug": slug,
                         "niche": niche,
                         "city": city,
                         "estimated_tam": str(data.get('estimated_tam')),
