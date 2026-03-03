@@ -153,10 +153,10 @@ def main():
                     else:
                         top_complaints = []
 
-                    slug = make_slug(niche, city)
+                
 
                     supabase.table("market_data").upsert({
-                        "slug": slug,
+                        
                         "niche": niche,
                         "city": city,
                         "estimated_tam": str(data.get('estimated_tam')),
