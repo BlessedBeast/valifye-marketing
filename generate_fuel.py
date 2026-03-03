@@ -19,44 +19,27 @@ if not all([url, key, gemini_key]):
 supabase = create_client(url, key)
 client = genai.Client(api_key=gemini_key)
 
-
-def make_slug(niche: str, city: str) -> str:
-    """
-    Generate a URL-safe slug from niche + city.
-    Rules:
-    - lowercase
-    - spaces and punctuation -> hyphens
-    - no commas, slashes, or duplicate hyphens
-    """
-    base = f"{niche} in {city}".lower()
-    # Replace non-alphanumeric characters with hyphen
-    slug = ''.join(ch if ch.isalnum() else '-' for ch in base)
-    # Collapse multiple hyphens and trim
-    while '--' in slug:
-        slug = slug.replace('--', '-')
-    return slug.strip('-')
-
-# 2026 GLOBAL ECONOMIC ANCHORS
+# 2026 GLOBAL ECONOMIC ANCHORS - BATCH 2: HIGH-TICKET
 GLOBAL_ANCHORS = {
     "USA": {
         "currency": "USD",
-        "AI Automation Agency": "Avg retainer: $1,500/mo; 5% SMB penetration.",
-        "MedSpa": "Avg spend: $450/visit; 1.5 visits/year for 15% of affluent pop.",
-        "Vertical SaaS for HVAC": "Subscription: $150/mo; 10% of local HVAC businesses.",
-        "Mobile EV Detailing": "Avg detail: $350; 2x/year for 5% of registered EVs.",
-        "Solar Panel Installation": "Avg system: $25,000; 2% annual adoption rate."
+        "Commercial Roof Repair SaaS": "Avg contract: $15,000; 1% annual commercial building turnover.",
+        "Legal AI for Personal Injury": "Avg case value: $30,000; 0.5% of pop involved in incidents/year.",
+        "Luxury Short-Term Rental Mgmt": "25% mgmt fee on $12,000/mo avg revenue; 2% of local housing stock.",
+        "Fractional CFO Services": "Avg retainer: $3,500/mo; 10% of businesses > $2M revenue.",
+        "Custom Home EV Charger Installation": "Avg install: $2,800; 15% of homeowners with EVs."
     },
     "INDIA": {
         "currency": "INR",
-        "AI Automation Agency": "Avg retainer: ₹40,000/mo; 3% SMB penetration.",
-        "MedSpa": "Avg spend: ₹12,000/visit; 2 visits/year for 5% of high-income pop.",
-        "Vertical SaaS for HVAC": "Subscription: ₹3,500/mo; 8% of local MEP contractors.",
-        "Mobile EV Detailing": "Avg detail: ₹5,000; 2x/year for 2% of luxury EV owners.",
-        "Solar Panel Installation": "Avg system: ₹2,50,000; 1% annual adoption rate."
+        "Commercial Roof Repair SaaS": "Avg contract: ₹1,50,000; 0.5% turnover in industrial zones.",
+        "Legal AI for Personal Injury": "Avg case value: ₹5,00,000; 0.2% of urban pop involved in claims/year.",
+        "Luxury Short-Term Rental Mgmt": "20% fee on ₹1,50,000/mo revenue; 1% of luxury villas.",
+        "Fractional CFO Services": "Avg retainer: ₹60,000/mo; 5% of startups/SMEs.",
+        "Custom Home EV Charger Installation": "Avg install: ₹45,000; 5% of high-end apartment owners."
     }
 }
 
-# --- ACTIVE BATCH (Stick to USA for now as requested) ---
+# --- ACTIVE BATCH SETTINGS ---
 CURRENT_REGION = "USA"
 CITIES = [
     "New York, NY", "Los Angeles, CA", "Chicago, IL", "Houston, TX", "Phoenix, AZ", 
@@ -87,22 +70,23 @@ def get_market_data(niche, city, anchor, currency):
     ECONOMIC ANCHOR: {anchor}
     LOCAL CURRENCY: {currency}
 
-    LOGIC PROTOCOL (STRICT -- DO NOT GUESS):
-    1. Identify the 2026 population of {city} and the realistic addressable segment.
-    2. Use the LOCAL CURRENCY ({currency}) for all financial values. No USD if {currency} is different.
-    3. CALCULATE estimated_tam by multiplying Target Units x Anchor Pricing x Penetration (show your reasoning internally before outputting JSON).
-    4. Cross-check: Ensure the TAM for {city} is proportionally consistent with its size vs. other US cities. No trillion-dollar TAMs for local niches.
+    LOGIC PROTOCOL 2.0 (BRUTAL & REALISTIC):
+    1. Identify {city} 2026 population and total business count.
+    2. CALCULATE TAM: [Addressable Units] x [Anchor Pricing] x [Annual Frequency]. 
+    3. CALCULATE STARTUP REVENUE: A single startup usually captures 0.1% to 1.5% of the TAM. 
+    4. REVENUE POTENTIAL: "Low" should be a realistic Year 1 target (capturing 0.1% of TAM). "High" should be Year 3 at scale (capturing 2% of TAM).
+    5. No trillion-dollar TAMs for local niches. Ensure the TAM for {city} is proportionally consistent with its size.
 
     Return EXACT JSON:
-    1. estimated_tam: (e.g., '{currency} 45.2 Million')
+    1. estimated_tam: (e.g., '{currency} 150.4 Million')
     2. local_competitors: (Integer)
-    3. top_complaints: (Array of 3 strings. Must mention a local problem like 'Traffic on I-35', 'Miami salt-air', etc.)
+    3. top_complaints: (Array of 3 strings. Must mention a specific {city} local problem like 'Traffic on I-35', 'Miami salt-air', etc.)
     4. market_narrative: (2 sentences. Must mention a specific 2026 local landmark.)
     5. market_heat: (Exactly: 'Hot', 'Warm', 'Cool')
     6. faq_outlook: (1-2 sentence expert verdict)
     7. opportunity_score: (Integer 0-100)
     8. difficulty_score: (Integer 0-100)
-    9. revenue_potential: {{ "low": int, "mid": int, "high": int }}
+    9. revenue_potential: {{ "low": int, "mid": int, "high": int }} (Individual startup targets in thousands, NOT TAM)
     """
     
     for attempt in range(3):
@@ -127,7 +111,7 @@ def main():
     anchors = GLOBAL_ANCHORS[CURRENT_REGION]
     currency = anchors["currency"]
     
-    print(f"🚀 Valifye Engine: Starting 500-Page Batch for {CURRENT_REGION}...")
+    print(f"🚀 Valifye Engine: Starting Batch 2 (High-Ticket) for {CURRENT_REGION}...")
 
     total_saved = 0
     for niche, anchor_text in anchors.items():
@@ -153,10 +137,8 @@ def main():
                     else:
                         top_complaints = []
 
-                
-
+                    # Note: We do NOT insert 'slug' here because your DB handles it via Generated Column logic
                     supabase.table("market_data").upsert({
-                        
                         "niche": niche,
                         "city": city,
                         "estimated_tam": str(data.get('estimated_tam')),
@@ -170,15 +152,14 @@ def main():
                         "difficulty_score": int(data.get('difficulty_score', 50)),
                         "revenue_potential": data.get('revenue_potential', {"low": 0, "mid": 0, "high": 0}),
                         "status": "draft",
-                        "data_source": f"Gemini-2026-Industrial-{CURRENT_REGION}"
+                        "data_source": f"Gemini-2026-Industrial-Batch2-{CURRENT_REGION}"
                     }, on_conflict="niche,city").execute()
                     
                     total_saved += 1
-                    print(f"✅ SAVED ({total_saved}): {niche} in {city} | TAM: {data.get('estimated_tam')}")
+                    print(f"✅ SAVED ({total_saved}): {niche} in {city} | Heat: {data.get('market_heat')}")
                 except Exception as db_error:
                     print(f"❌ DB Error: {db_error}")
             
-            # Since you are on Paid Tier, 0.5s is safe, but let's use 1s for 'Thick Data' stability
             time.sleep(1)
 
 if __name__ == "__main__":
