@@ -1,9 +1,13 @@
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { ValidationBlueprintDashboard } from '@/components/market/ValidationBlueprint'
 import { BenchmarkingModule } from '@/components/market/BenchmarkingModule'
 import { RelatedMarkets } from '@/components/market/RelatedMarkets'
+import { CityHubSidebar } from '@/components/market/CityHubSidebar'
 import { getIdeaBySlug } from '@/lib/marketData'
 
 type Props = { params: Promise<{ slug: string }> }
@@ -29,10 +33,20 @@ export default async function IdeaDossierPage({ params }: Props) {
           <ArrowLeft className="h-3 w-3" />
           Back to archive
         </Link>
-        <span className="inline-flex items-center gap-2">
-          <span>Validation blueprint for</span>
-          <span className="text-foreground">{idea.niche} in {idea.city}</span>
-        </span>
+        <div className="flex flex-col items-end gap-1">
+          <span className="inline-flex items-center gap-2">
+            <span>Validation blueprint for</span>
+            <span className="text-foreground">{idea.niche} in {idea.city}</span>
+          </span>
+          {idea.region && (
+            <Link
+              href={`/countries/${encodeURIComponent(idea.region.toLowerCase())}`}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground hover:border-primary hover:text-primary"
+            >
+              <span>{idea.region}</span>
+            </Link>
+          )}
+        </div>
       </header>
 
       {/* PRIMARY BLUEPRINT DASHBOARD / FALLBACK */}
@@ -54,20 +68,24 @@ export default async function IdeaDossierPage({ params }: Props) {
         </section>
       )}
 
-      {/* CITY KNOWLEDGE GRAPH: Benchmarking + Related Markets */}
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <div className="space-y-6">
-          <BenchmarkingModule
-            currentCityScore={idea.opportunity_score}
-            niche={idea.niche}
-            region={idea.region ?? ''}
+      {/* CITY KNOWLEDGE GRAPH: Benchmarking + Related Markets + City Hub */}
+      <section className="space-y-6">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          <div className="space-y-6">
+            <BenchmarkingModule
+              currentCityScore={idea.opportunity_score}
+              niche={idea.niche}
+              region={idea.region ?? ''}
+            />
+          </div>
+          <RelatedMarkets
+            currentNiche={idea.niche}
+            currentCity={idea.city}
+            currentRegion={idea.region ?? ''}
           />
         </div>
-        <RelatedMarkets
-          currentNiche={idea.niche}
-          currentCity={idea.city}
-          currentRegion={idea.region ?? ''}
-        />
+
+        <CityHubSidebar currentCity={idea.city} currentNiche={idea.niche} />
       </section>
     </div>
   )

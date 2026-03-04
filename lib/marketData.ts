@@ -37,6 +37,14 @@ export interface MarketDataRow {
   unit_economics?: Record<string, unknown> | null
 }
 
+export interface CountryMarketData {
+  country: string
+  total_niches: number
+  average_opportunity_score: number
+  top_industries: string[]
+  city_list: string[]
+}
+
 export interface NicheMetadataRow {
   id: number
   region: string
@@ -217,6 +225,67 @@ export async function getSameCityIdeas(
 
   if (error || !data) return []
   return (data as MarketDataRow[]).map(mapRowToIdea)
+}
+
+/**
+ * Aggregate published market_data rows for a given country/region into a national report.
+ */
+export async function getCountryMarketData(country: string): Promise<CountryMarketData | null> {
+  const region = country.trim()
+
+  const { data, error } = await supabase
+    .from('market_data')
+    .select('region, city, opportunity_score, archetype, niche')
+    .eq('status', 'published')
+    .eq('region', region)
+
+  if (error || !data || !data.length) {
+    return null
+  }
+
+  const rows = data as {
+    region: string
+    city: string
+    opportunity_score: number | null
+    archetype?: string | null
+    niche: string
+  }[]
+
+  const total_niches = rows.length
+
+  // Average opportunity score
+  const scores: number[] = []
+  for (const row of rows) {
+    const v = Number(row.opportunity_score ?? 0)
+    if (Number.isFinite(v) && v > 0) scores.push(v)
+  }
+  const average_opportunity_score =
+    scores.length > 0 ? scores.reduce((sum, v) => sum + v, 0) / scores.length : 0
+
+  // Top industries based on most frequent archetype (if stored)
+  const archetypeCounts = new Map<string, number>()
+  for (const row of rows) {
+    const key = (row.archetype || '').trim()
+    if (!key) continue
+    archetypeCounts.set(key, (archetypeCounts.get(key) ?? 0) + 1)
+  }
+  const sortedArchetypes = Array.from(archetypeCounts.entries()).sort((a, b) => b[1] - a[1])
+  const top_industries = sortedArchetypes.slice(0, 5).map(([name]) => name)
+
+  // Unique city list
+  const citySet = new Set<string>()
+  for (const row of rows) {
+    if (row.city) citySet.add(row.city)
+  }
+  const city_list = Array.from(citySet).sort((a, b) => a.localeCompare(b))
+
+  return {
+    country: region,
+    total_niches,
+    average_opportunity_score,
+    top_industries,
+    city_list
+  }
 }
 
 /**
