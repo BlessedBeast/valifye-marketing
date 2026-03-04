@@ -1,30 +1,30 @@
+'use client'
+
 interface ScoreRingProps {
   score: number
   size?: number
   strokeWidth?: number
-  color: string
-  textColor: string
-  label: string
-  sublabel: string
+  color?: string
+  label?: string
+  sublabel?: string
 }
+
+const DEFAULT_COLOR = 'hsl(var(--primary))'
 
 export function ScoreRing({
   score,
   size = 120,
   strokeWidth = 8,
-  color,
-  textColor,
+  color = DEFAULT_COLOR,
   label,
   sublabel
 }: ScoreRingProps) {
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
-  const filled = (score / 100) * circumference
-  const gap = circumference - filled
+  const offset = circumference - (score / 100) * circumference
 
   return (
     <div className="flex flex-col items-center gap-3">
-      {/* SVG ring */}
       <div
         className="relative"
         style={{ width: size, height: size }}
@@ -45,7 +45,7 @@ export function ScoreRing({
             strokeWidth={strokeWidth}
             strokeLinecap="round"
           />
-          {/* Progress arc */}
+          {/* Progress arc — stroke-dashoffset for animation */}
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -54,23 +54,26 @@ export function ScoreRing({
             stroke={color}
             strokeWidth={strokeWidth}
             strokeLinecap="round"
-            strokeDasharray={`${filled} ${gap}`}
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            className="transition-[stroke-dashoffset] duration-500 ease-out"
           />
         </svg>
-        {/* Center text — counter-rotated */}
+        {/* Center text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-2xl font-extrabold leading-none text-foreground">
             {score}
           </span>
-          <span className="text-xs text-muted-foreground">/100</span>
+          {sublabel && (
+            <span className="text-xs text-muted-foreground mt-0.5">{sublabel}</span>
+          )}
         </div>
       </div>
-      {/* Labels */}
-      <div className="text-center">
-        <p className="text-sm font-bold text-foreground">{label}</p>
-        <p className={`text-xs font-semibold ${textColor}`}>{sublabel}</p>
-      </div>
+      {label && (
+        <div className="text-center">
+          <p className="text-sm font-bold text-foreground">{label}</p>
+        </div>
+      )}
     </div>
   )
 }
-

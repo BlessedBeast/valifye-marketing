@@ -15,11 +15,11 @@ export function ValifyeNavbar({ onJoinWaitlist }: NavbarProps) {
   const { theme, setTheme } = useTheme()
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
+      <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/30">
-            <span className="text-sm font-black text-primary-foreground">V</span>
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-primary">
+            <span className="text-sm font-black text-white">V</span>
           </div>
           <span className="text-lg font-bold text-foreground">Valifye</span>
         </Link>
@@ -107,7 +107,7 @@ export function ValifyeNavbar({ onJoinWaitlist }: NavbarProps) {
       </div>
 
       {mobileOpen && (
-        <div className="space-y-1 border-t border-border/50 bg-background px-4 pb-4 pt-2 md:hidden">
+        <div className="space-y-1 border-t border-border bg-background px-4 pb-4 pt-2 md:hidden">
           <button
             type="button"
             onClick={() => {

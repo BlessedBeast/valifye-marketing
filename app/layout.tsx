@@ -17,7 +17,7 @@ export default function RootLayout({
         className={`${inter.variable} bg-background text-foreground antialiased`}
         suppressHydrationWarning
       >
-        <main className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="mx-auto max-w-[1280px] px-4 py-8 pt-24 sm:px-6 sm:pt-24 lg:px-8">
           {children}
         </main>
       </body>
