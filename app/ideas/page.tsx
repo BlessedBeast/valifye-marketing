@@ -1,48 +1,39 @@
-'use client'
+'use server'
 
 import Link from 'next/link'
 import { ArrowRight, FolderKanban, PlusCircle, Timer, Zap } from 'lucide-react'
 import { ValifyeButton } from '@/components/ui/valifye-button'
+import { createClient } from '@/utils/supabase/server'
 
-type IdeaStatus = 'VALIDATING' | 'BUILD' | 'KILL'
+export const revalidate = 3600
 
-const STATUS_STYLES: Record<IdeaStatus, string> = {
-  VALIDATING: 'bg-blue-500/10 text-blue-400 border-blue-500/40',
-  BUILD: 'bg-primary/10 text-primary border-primary/60',
-  KILL: 'bg-muted text-muted-foreground border-muted-foreground/40'
+type ArchiveIdea = {
+  slug: string
+  niche: string
+  city: string
+  opportunity_score: number | null
 }
 
-const MOCK_IDEAS: Array<{
-  slug: string
-  name: string
-  status: IdeaStatus
-  daysIn: number
-  signals: string
-}> = [
-  {
-    slug: 'founder-therapy-saas',
-    name: 'Founder Therapy SaaS',
-    status: 'VALIDATING',
-    daysIn: 3,
-    signals: '7 / 10 interviews complete • 2 pre‑payments'
-  },
-  {
-    slug: 'cold-outbound-ai',
-    name: 'Cold Outbound AI',
-    status: 'BUILD',
-    daysIn: 7,
-    signals: 'BUILD verdict • 5 paid pilots • Strong pain match'
-  },
-  {
-    slug: 'notion-for-families',
-    name: 'Notion for Families',
-    status: 'KILL',
-    daysIn: 5,
-    signals: 'KILL verdict • Price pushback • “Nice to have” energy'
-  }
-]
+export default async function IdeasArchivePage() {
+  const supabase = createClient()
 
-export default function IdeasArchivePage() {
+  const { data, error } = await supabase
+    .from('market_data')
+    .select('slug, niche, city, opportunity_score, created_at')
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
+    .limit(6)
+
+  if (error) {
+    console.error('Supabase Fetch Error (ideas archive):', error)
+  }
+  console.log('Fetched archive rows:', data?.length ?? 0)
+
+  const ideas: ArchiveIdea[] = !error && data ? (data as ArchiveIdea[]) : []
+
+  const formatScore = (score: number | null | undefined) =>
+    typeof score === 'number' && Number.isFinite(score) ? `${score}/100` : '—'
+
   return (
     <div className="space-y-8">
       <header className="flex flex-col gap-4 border border-border bg-card px-5 py-5 shadow-[3px_3px_0_0_hsl(var(--foreground))] md:flex-row md:items-center md:justify-between md:px-7">
@@ -82,7 +73,7 @@ export default function IdeasArchivePage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          {MOCK_IDEAS.map((idea) => (
+          {ideas.map((idea) => (
             <Link
               key={idea.slug}
               href={`/ideas/${idea.slug}`}
@@ -91,21 +82,19 @@ export default function IdeasArchivePage() {
               <div className="mb-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <h2 className="text-sm font-semibold uppercase tracking-[0.16em]">
-                    {idea.name}
+                    {idea.niche}
                   </h2>
-                  <span
-                    className={`inline-flex items-center gap-1 border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] ${STATUS_STYLES[idea.status]}`}
-                  >
-                    {idea.status}
+                  <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    {idea.city}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {idea.signals}
+                  Opportunity score {formatScore(idea.opportunity_score)}
                 </p>
               </div>
 
               <div className="mt-auto flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                <span>Day {idea.daysIn}</span>
+                <span>{idea.city}</span>
                 <span className="inline-flex items-center gap-1 text-primary">
                   View dossier
                   <ArrowRight className="h-3 w-3" />

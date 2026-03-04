@@ -135,4 +135,4 @@ export function getHeatStrokeColor(heat: HeatType): string {
   return '#3b82f6'
 }
 
-// (Intentionally no MOCK_IDEAS — all data now flows from Supabase `market_data`.)
+// All idea content now flows from Supabase `market_data`; no local mock datasets remain here.

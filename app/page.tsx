@@ -1,3 +1,228 @@
+'use server'
+
+import Link from 'next/link'
+import { ArrowRight, Check, Target, Timer, Users, Zap } from 'lucide-react'
+import { ValifyeNavbar } from '@/components/valifye-navbar'
+import { ValifyeFooter } from '@/components/valifye-footer'
+import { ValifyeButton } from '@/components/ui/valifye-button'
+import { createClient } from '@/utils/supabase/server'
+
+const FEATURES = [
+  {
+    icon: Zap,
+    label: 'Brutal Validation',
+    copy: 'No fluff, no vibes. Only hard signals that tell you if anyone actually cares.'
+  },
+  {
+    icon: Target,
+    label: 'Market Fit Radar',
+    copy: 'See exactly which segment is reacting — and which ones are ignoring you.'
+  },
+  {
+    icon: Users,
+    label: 'Customer Truth Engine',
+    copy: 'Structured conversations that force prospects to reveal what they would really pay for.'
+  },
+  {
+    icon: Timer,
+    label: '7‑Day Sprint',
+    copy: 'A brutally clear week-long playbook that forces a verdict instead of endless tinkering.'
+  },
+  {
+    icon: Check,
+    label: 'BUILD / PIVOT / KILL',
+    copy: 'Your idea leaves with a label. No maybes. No “we’ll see”.'
+  },
+  {
+    icon: ArrowRight,
+    label: 'Deployed Test Pages',
+    copy: 'Launch validation pages in minutes with copy tuned for brutal honesty, not vanity clicks.'
+  },
+  {
+    icon: Users,
+    label: 'Signal Board',
+    copy: 'Every “yes”, “no”, and “maybe” is logged, scored, and visualized in one brutal dashboard.'
+  },
+  {
+    icon: Target,
+    label: 'Offer Stress‑Test',
+    copy: 'Push pricing, positioning, and promise until they break — before your runway does.'
+  },
+  {
+    icon: Timer,
+    label: 'Runway Protector',
+    copy: 'Protect the next 6 months of your life by killing bad ideas in week one.'
+  }
+] as const
+
+export const revalidate = 1800
+
+export default async function HomePage() {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('market_data')
+    .select('slug, niche, city, opportunity_score')
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
+    .limit(3)
+
+  if (error) {
+    console.error('Supabase Fetch Error (home live interrogations):', error)
+  }
+  console.log('Fetched live interrogations rows:', data?.length ?? 0)
+
+  const liveIdeas =
+    !error && data
+      ? (data as { slug: string; niche: string; city: string; opportunity_score: number | null }[])
+      : []
+
+  const formatScore = (score: number | null | undefined) =>
+    typeof score === 'number' && Number.isFinite(score) ? `${score}/100` : '—'
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <ValifyeNavbar />
+
+      <main className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-[1280px] flex-col gap-16 px-4 py-10 md:px-10 md:py-16 lg:py-20">
+        {/* HERO */}
+        <section className="relative grid gap-10 border border-border bg-card p-6 text-left shadow-[0_0_0_3px_hsl(var(--foreground))] md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:p-10">
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_hsl(var(--primary))/8,_transparent_60%),_radial-gradient(circle_at_bottom_right,_hsl(var(--primary))/6,_transparent_55%)]" />
+
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-foreground bg-background px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em]">
+              <span className="h-2 w-2 rounded-full bg-primary" />
+              <span>Brutal startup validation, no fluff</span>
+            </div>
+
+            <h1 className="text-4xl font-black leading-tight tracking-tight md:text-5xl lg:text-6xl">
+              Brutal truth for your next startup idea.
+            </h1>
+
+            <p className="max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
+              Valifye is a brutal validation system for founders who are done building in the dark. In 7 days you&apos;ll
+              know whether <span className="font-semibold text-foreground">BUILD</span>,{' '}
+              <span className="font-semibold text-foreground">PIVOT</span>, or{' '}
+              <span className="font-semibold text-foreground">KILL</span> your idea is the right move — before you burn
+              another month of runway.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href="/ideas">
+                <ValifyeButton
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  size="lg"
+                >
+                  Get Brutal Validation
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </ValifyeButton>
+              </Link>
+              <Link href="/ideas">
+                <ValifyeButton
+                  variant="outline"
+                  className="border-foreground bg-background text-foreground hover:bg-foreground hover:text-background"
+                  size="lg"
+                >
+                  Start My 7‑Day Brutal Test
+                </ValifyeButton>
+              </Link>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              <span className="inline-flex items-center gap-2">
+                <span className="h-1 w-6 bg-primary" />
+                Built for solo founders &amp; indie hackers
+              </span>
+              <span>Dark mode first • Brutal dashboards • Zero subscriptions</span>
+            </div>
+          </div>
+
+          {/* Right-hand plan card (unchanged) */}
+          <div className="flex flex-col gap-4 border border-dashed border-border bg-background p-4 md:p-6">
+            <div className="flex items-center justify-between border-b border-border pb-3 text-xs font-semibold uppercase tracking-[0.16em]">
+              <span className="text-muted-foreground">Next 7 Days</span>
+              <span className="rounded-full border border-border px-2 py-0.5 text-[10px]">
+                Brutal Validation Plan
+              </span>
+            </div>
+            <div className="space-y-2 text-xs md:text-sm">
+              <div className="flex items-center justify-between border border-border bg-card px-3 py-2">
+                <span className="font-semibold">Day 1</span>
+                <span className="text-muted-foreground">Define brutal success / failure line</span>
+              </div>
+              <div className="flex items-center justify-between border border-border bg-card px-3 py-2">
+                <span className="font-semibold">Days 2–3</span>
+                <span className="text-muted-foreground">Run anti‑polite customer interviews</span>
+              </div>
+              <div className="flex items-center justify-between border border-border bg-card px-3 py-2">
+                <span className="font-semibold">Days 4–5</span>
+                <span className="text-muted-foreground">Ship a brutal landing test</span>
+              </div>
+              <div className="flex items-center justify-between border border-border bg-card px-3 py-2">
+                <span className="font-semibold">Days 6–7</span>
+                <span className="text-muted-foreground">Score signals &amp; choose your verdict</span>
+              </div>
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+              Every step is opinionated and unforgiving on purpose. Valifye exists to kill weak ideas quickly so the
+              strong ones survive.
+            </p>
+          </div>
+        </section>
+
+        {/* HOW IT WORKS / FEATURE GRID (existing) */}
+        {/* ... keep your existing FEATURES section here ... */}
+
+        {/* LIVE MARKET INTERROGATIONS */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            <span>Live Market Interrogations</span>
+            <Link
+              href="/ideas"
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
+              View archive
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {liveIdeas.map((idea) => (
+              <Link
+                key={idea.slug}
+                href={`/ideas/${idea.slug}`}
+                className="group flex flex-col justify-between border border-border bg-card p-4 text-left transition-colors hover:border-primary/60"
+              >
+                <div className="mb-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.16em]">
+                      {idea.niche}
+                    </h3>
+                    <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      {idea.city}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Opportunity score {formatScore(idea.opportunity_score)}
+                  </p>
+                </div>
+                <span className="mt-auto inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-[0.18em] text-primary">
+                  View Blueprint
+                  <ArrowRight className="h-3 w-3" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* keep Pricing, FAQ, CTA, etc. below as in your current file */}
+      </main>
+
+      <ValifyeFooter />
+    </div>
+  )
+}
+
 'use client'
 
 import { ArrowRight, Check, Target, Timer, Users, Zap } from 'lucide-react'
