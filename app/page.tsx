@@ -1,4 +1,4 @@
-'use server'
+
 
 import { ArrowRight, Check, Target, Timer, Users, Zap } from 'lucide-react'
 import Link from 'next/link'

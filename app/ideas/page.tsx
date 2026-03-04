@@ -1,4 +1,4 @@
-'use server'
+
 
 import Link from 'next/link'
 import { ArrowRight, FolderKanban, PlusCircle, Timer, Zap } from 'lucide-react'
