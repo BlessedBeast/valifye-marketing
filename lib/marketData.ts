@@ -29,6 +29,12 @@ export interface MarketDataRow {
   business_shape: BusinessShape | null
   status: string
   data_source: string
+  // Validation Blueprint fields
+  local_friction?: string[]
+  gtm_playbook?: string[]
+  failure_modes?: string
+  // Stored as JSON in Supabase
+  unit_economics?: Record<string, unknown> | null
 }
 
 export interface NicheMetadataRow {
@@ -44,10 +50,11 @@ const SELECT_COLS = `
   slug, region, niche, city, market_heat, estimated_tam, local_competitors,
   market_narrative, confidence, top_complaints, faq_outlook, opportunity_score, difficulty_score,
   trend, trend_pct, revenue_potential, avg_revenue_per_unit, startup_cost_range,
-  breakeven_months, business_shape, status, data_source
+  breakeven_months, business_shape, status, data_source,
+  local_friction, gtm_playbook, failure_modes, unit_economics
 `
 
-function mapRowToIdea(row: MarketDataRow): Idea {
+function mapRowToIdea(row: MarketDataRow) {
   return {
     slug: row.slug,
     niche: row.niche,
@@ -80,7 +87,15 @@ function mapRowToIdea(row: MarketDataRow): Idea {
           }
         : { low: 0, high: 0 },
     breakeven_months: Number(row.breakeven_months) ?? 0,
-    business_shape: row.business_shape ?? undefined
+    business_shape: row.business_shape ?? undefined,
+    // Validation Blueprint fields (with safe defaults)
+    local_friction: Array.isArray(row.local_friction) ? row.local_friction : [],
+    gtm_playbook: Array.isArray(row.gtm_playbook) ? row.gtm_playbook : [],
+    failure_modes: typeof row.failure_modes === 'string' ? row.failure_modes : '',
+    unit_economics:
+      row.unit_economics && typeof row.unit_economics === 'object'
+        ? row.unit_economics
+        : {}
   }
 }
 

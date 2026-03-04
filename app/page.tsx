@@ -139,8 +139,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 9 FEATURE GRID */}
-        <section className="space-y-6">
+        {/* How it Works / 9 FEATURE GRID */}
+        <section id="how-it-works" className="scroll-mt-20 space-y-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
@@ -173,6 +173,46 @@ export default function HomePage() {
                 <p className="text-xs leading-relaxed text-muted-foreground md:text-sm">{feature.copy}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* PRICING */}
+        <section id="pricing" className="scroll-mt-20 space-y-6">
+          <div className="border border-border bg-card p-6 md:p-8">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
+              Limited time — first 100 only
+            </p>
+            <h2 className="mt-2 text-2xl font-black tracking-tight text-foreground md:text-3xl">
+              Founding member: $27 per validation. One-time.
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              No subscription. Full system access. Price goes to $49 when founding spots fill.
+            </p>
+            <div className="mt-4">
+              <ValifyeButton className="bg-primary text-primary-foreground hover:bg-primary/90">
+                Claim founding spot
+              </ValifyeButton>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section id="faq" className="scroll-mt-20 space-y-6">
+          <div className="border border-border bg-card p-6 md:p-8">
+            <h2 className="text-2xl font-black tracking-tight text-foreground md:text-3xl">
+              Frequently asked questions
+            </h2>
+            <ul className="mt-6 space-y-4 text-sm text-muted-foreground">
+              <li>
+                <strong className="text-foreground">When do I get access?</strong> — Founding members get access first, within 4–6 weeks. You&apos;ll be notified by email.
+              </li>
+              <li>
+                <strong className="text-foreground">Is $27 monthly?</strong> — No. One-time per validation run. No subscription.
+              </li>
+              <li>
+                <strong className="text-foreground">Refunds?</strong> — Full refund within 14 days if the system didn&apos;t help. No questions.
+              </li>
+            </ul>
           </div>
         </section>
 

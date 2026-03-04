@@ -33,6 +33,11 @@ export interface Idea {
   breakeven_months: number
   // Optional
   business_shape?: BusinessShape
+  // Validation Blueprint fields
+  local_friction: string[]
+  gtm_playbook: string[]
+  failure_modes: string
+  unit_economics: Record<string, unknown>
 }
 
 // ─── Heat Config ──────────────────────────────────────────────────────────────
