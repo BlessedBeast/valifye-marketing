@@ -303,7 +303,7 @@ export function ValidationBlueprintDashboard({ idea, urlOverride }: ValidationBl
               </div>
             </div>
 
-            {econ.logic && (
+            {Boolean(econ.logic) && (
               <p className="text-[11px] leading-relaxed text-muted-foreground">
                 {String(econ.logic)}
               </p>
