@@ -8,14 +8,13 @@ type Idea = {
   slug: string;
   niche: string;
   city: string;
-  region: string | null;
-  local_friction: any; // Using 'any' to handle raw Supabase returns before parsing
+  region?: string | null | undefined; // 🛡️ Bulletproofed
+  local_friction: any;
   gtm_playbook: any;
-  failure_modes: string | null;
-  global_anchor_json?: any; // The new forensic economics field
-  unit_economics?: any; // Legacy fallback
+  failure_modes?: string | null | undefined; // Let's secure this one too just in case
+  global_anchor_json?: any; 
+  unit_economics?: any; 
 }
-
 // 🛡️ Validator's Bulletproof Parsers
 const safeArrayParse = (data: any): string[] => {
   if (Array.isArray(data)) return data;
