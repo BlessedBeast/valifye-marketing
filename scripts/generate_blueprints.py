@@ -133,4 +133,4 @@ def run_factory(limit=5):
             time.sleep(1) # Safety gap to prevent rate limits
 
 if __name__ == "__main__":
-    run_factory(limit=10) # Set to 250 for your daily run
+    run_factory(limit=100) # Set to 250 for your daily run
