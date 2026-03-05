@@ -30,7 +30,7 @@ def expand_to_blueprint(seed):
     niche = seed['niche']
     city = seed['city']
     
-    print(f"🏗️  Building Blueprint for: {niche} in {city}...")
+    print(f"🏗️  Building Blueprint & Calculating Scores for: {niche} in {city}...")
 
     prompt = f"""
     Role: {current_year} Brutal Business Validator.
@@ -40,7 +40,7 @@ def expand_to_blueprint(seed):
 
     TASK: Expand this data into a structured 'Validation Blueprint'.
     You are writing for the {current_year} to {current_year + 2} economic landscape.
-    Do NOT hardcode the year "2026" anywhere; always reason relative to the provided years.
+    Do NOT hardcode the year "{current_year}" anywhere; always reason relative to the provided years.
 
     AEO/GEO Information Gain Requirement:
     - You MUST provide "Information Gain": specific, citable facts about {city} that go beyond generic training data.
@@ -50,6 +50,13 @@ def expand_to_blueprint(seed):
     2. GTM PLAYBOOK: 3 hyper-local steps to find the first 10 customers. Name specific neighborhoods, local associations, founder communities, or city-specific clusters.
     3. THE PRE-MORTEM: A brutal 2-sentence warning on exactly HOW a founder will go bankrupt with this idea in {city}.
     4. LOCAL UNIT ECONOMICS: Breakdown of margins vs. local {city} operational costs (Rent/Labor) grounded in realistic price levels for {current_year} to {current_year + 2}.
+    
+    5. BRUTAL METRICS SCORING (CRITICAL):
+       - opportunity_score (0-100): Be ruthless. Most ideas are a 30-50. Only genuine market gaps with high margins get 70+.
+       - difficulty_score (0-100): Factor in capital requirements, regulatory walls, and local monopolies. Higher score = harder to execute.
+       - saturation_score (0-100): How crowded is {city} for this specific niche? 100 = Red Ocean.
+       - trend_impact: Strictly choose one string: "up", "down", or "flat".
+       - breakeven_months (Integer): Be realistic. Local operations take 12-24 months. Do not hallucinate a 3-month breakeven unless it's pure SaaS with zero CAC.
 
     The market_narrative MUST be a 250–300 word dense, critical essay that:
     - Acts as a "Forensic Executive Summary" for this niche in {city}.
@@ -57,7 +64,7 @@ def expand_to_blueprint(seed):
     - Uses sharp, hook-heavy opening sentences that are suitable for Google Search snippets.
     - Stays specific to {city}, citing concrete street-level and policy-level details, not generic startup advice.
 
-    Return ONLY raw JSON with these keys:
+    Return ONLY raw JSON with these exact keys:
     {{
       "local_friction": ["...", "...", "..."],
       "gtm_playbook": ["...", "...", "..."],
@@ -67,7 +74,12 @@ def expand_to_blueprint(seed):
          "rent_impact": "High/Low/Medium",
          "logic": "Detailed breakdown of local cost impact..."
       }},
-      "market_narrative": "A 250–300 word forensic, hook-heavy executive summary that ties {city}'s infrastructure and economics to this niche's odds of success."
+      "market_narrative": "A 250–300 word forensic, hook-heavy executive summary...",
+      "opportunity_score": 45,
+      "difficulty_score": 85,
+      "saturation_score": 75,
+      "trend_impact": "flat",
+      "breakeven_months": 18
     }}
     """
 
@@ -83,7 +95,6 @@ def expand_to_blueprint(seed):
         data = json.loads(clean_json)
 
         # UPSERT into market_data (Live Frontend Table)
-        # This includes the slug-logic we established
         supabase.table("market_data").upsert({
             "niche": niche,
             "city": city,
@@ -92,9 +103,19 @@ def expand_to_blueprint(seed):
             "local_friction": data['local_friction'],
             "gtm_playbook": data['gtm_playbook'],
             "failure_modes": data['failure_modes'],
-            "unit_economics": data['unit_economics'],
+            
+            # The new 'global_anchor_json' naming convention to match your frontend fix
+            "global_anchor_json": data['unit_economics'], 
+            
+            # Injecting the dynamic brutal metrics
+            "opportunity_score": data['opportunity_score'],
+            "difficulty_score": data['difficulty_score'],
+            "saturation_score": data['saturation_score'],
+            "trend": data['trend_impact'], # Mapping to your DB's 'trend' column
+            "breakeven_months": data['breakeven_months'],
+            
             "business_shape": seed['business_shape'],
-            "status": "published", # Push straight to live
+            "status": "draft", # Queue for Indexing API
             "data_source": "Valifye Blueprint 2.5"
         }, on_conflict="niche,city").execute()
 
@@ -103,7 +124,7 @@ def expand_to_blueprint(seed):
             "is_generated": True
         }).eq("id", seed['id']).execute()
 
-        print(f"✅ Blueprint Live: {niche} in {city}")
+        print(f"✅ Blueprint Live: {niche} in {city} | Opp: {data['opportunity_score']} | Diff: {data['difficulty_score']}")
         return True
 
     except Exception as e:
