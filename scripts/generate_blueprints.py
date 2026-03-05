@@ -95,7 +95,7 @@ def expand_to_blueprint(seed):
         data = json.loads(clean_json)
 
         # UPSERT into market_data (Live Frontend Table)
-        supabase.table("market_data").upsert({
+       supabase.table("market_data").upsert({
             "niche": niche,
             "city": city,
             "region": seed['region'],
@@ -104,14 +104,15 @@ def expand_to_blueprint(seed):
             "gtm_playbook": data['gtm_playbook'],
             "failure_modes": data['failure_modes'],
             
-            # The new 'global_anchor_json' naming convention to match your frontend fix
-            "global_anchor_json": data['unit_economics'], 
+            # 🎯 POINT TO THE REAL COLUMN
+            "unit_economics": data['unit_economics'], 
             
-            # Injecting the dynamic brutal metrics
             "opportunity_score": data['opportunity_score'],
             "difficulty_score": data['difficulty_score'],
-            "saturation_score": data['saturation_score'],
-            "trend": data['trend_impact'], # Mapping to your DB's 'trend' column
+            
+            # 🚨 SATURATION_SCORE REMOVED: Postgres generates this automatically. Do not touch it.
+            
+            "trend": data['trend_impact'],
             "breakeven_months": data['breakeven_months'],
             
             "business_shape": seed['business_shape'],

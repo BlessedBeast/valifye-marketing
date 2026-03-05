@@ -29,7 +29,7 @@ export interface MarketDataRow {
   local_competitors: number
   market_narrative: string
   confidence: ConfidenceType
-  top_complaints: any // Using any for safe parsing
+  top_complaints: any
   faq_outlook?: string | null
   opportunity_score: number
   difficulty_score: number
@@ -46,7 +46,6 @@ export interface MarketDataRow {
   gtm_playbook?: any
   failure_modes?: string
   unit_economics?: any
-  global_anchor_json?: any // 2026 Forensic Field
 }
 
 export interface CountryMarketData {
@@ -57,27 +56,26 @@ export interface CountryMarketData {
   city_list: string[]
 }
 
+// 🚨 CLEAN QUERY: Phantom columns removed.
 const SELECT_COLS = `
   slug, region, niche, city, market_heat, estimated_tam, local_competitors,
   market_narrative, confidence, top_complaints, faq_outlook, opportunity_score, difficulty_score,
   trend, trend_pct, revenue_potential, avg_revenue_per_unit, startup_cost_range,
   breakeven_months, business_shape, status, data_source,
-  local_friction, gtm_playbook, failure_modes, unit_economics, global_anchor_json
+  local_friction, gtm_playbook, failure_modes, unit_economics
 `
 
 function mapRowToIdea(row: MarketDataRow): Idea {
-  // Parse all potential JSON/Array fields
   const parsedFriction = safeParseJSON(row.local_friction);
   const parsedGtm = safeParseJSON(row.gtm_playbook);
   const parsedComplaints = safeParseJSON(row.top_complaints);
   const parsedUnitEcon = safeParseJSON(row.unit_economics);
-  const parsedAnchorEcon = safeParseJSON(row.global_anchor_json);
 
   return {
     slug: row.slug,
     niche: row.niche,
     city: row.city,
-    region: row.region, // Mapping region field
+    region: row.region,
     market_heat: row.market_heat,
     estimated_tam: row.estimated_tam,
     local_competitors: row.local_competitors,
@@ -100,21 +98,20 @@ function mapRowToIdea(row: MarketDataRow): Idea {
     gtm_playbook: Array.isArray(parsedGtm) ? parsedGtm : [],
     failure_modes: row.failure_modes || "Forensic failure audit pending.",
     
-    // Prioritize the new Global Anchor JSON
-    unit_economics: parsedAnchorEcon || parsedUnitEcon || {},
-    global_anchor_json: parsedAnchorEcon || null
-  } as any // Casting to any to bypass strict Idea type if it's lagging behind
+    // 🎯 Direct Map to Unified Column
+    unit_economics: parsedUnitEcon || {},
+  } as any 
 }
 
 /**
- * Fetch a single published idea by slug.
+ * Fetch a single idea by slug. 
+ * 🚨 STATUS FILTER REMOVED so you can preview drafts.
  */
 export async function getIdeaBySlug(slug: string): Promise<Idea | null> {
   const { data, error } = await supabase
     .from('market_data')
     .select(SELECT_COLS)
     .eq('slug', slug)
-    .eq('status', 'published')
     .maybeSingle()
 
   if (error || !data) {
@@ -188,12 +185,13 @@ export async function getCountryMarketData(country: string): Promise<CountryMark
     country: region,
     total_niches,
     average_opportunity_score,
-    top_industries: [], // Can be expanded with archetype logic
+    top_industries: [], 
     city_list: Array.from(citySet).sort()
   }
 }
+
 /**
- * Slugify niche for URL segment (e.g. "EV Charging Station" → "ev-charging-station").
+ * Slugify niche for URL segment.
  */
 export function slugifyNiche(niche: string): string {
   if (!niche) return '';
@@ -205,7 +203,7 @@ export function slugifyNiche(niche: string): string {
 }
 
 /**
- * Fetch all unique niche categories from published market_data (for directory index).
+ * Fetch all unique niche categories from published market_data.
  */
 export async function getUniqueNiches(): Promise<{ niche: string; nicheSlug: string }[]> {
   const { data, error } = await supabase
@@ -231,7 +229,7 @@ export async function getUniqueNiches(): Promise<{ niche: string; nicheSlug: str
 }
 
 /**
- * Fetch all published rows for a niche (by slugified niche), for directory [niche] page.
+ * Fetch all published rows for a niche.
  */
 export async function getPublishedByNicheSlug(
   nicheSlug: string
