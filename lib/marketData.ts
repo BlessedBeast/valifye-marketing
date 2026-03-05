@@ -192,3 +192,57 @@ export async function getCountryMarketData(country: string): Promise<CountryMark
     city_list: Array.from(citySet).sort()
   }
 }
+/**
+ * Slugify niche for URL segment (e.g. "EV Charging Station" → "ev-charging-station").
+ */
+export function slugifyNiche(niche: string): string {
+  if (!niche) return '';
+  return niche
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+}
+
+/**
+ * Fetch all unique niche categories from published market_data (for directory index).
+ */
+export async function getUniqueNiches(): Promise<{ niche: string; nicheSlug: string }[]> {
+  const { data, error } = await supabase
+    .from('market_data')
+    .select('niche')
+    .eq('status', 'published')
+
+  if (error || !data) return []
+
+  const seen = new Set<string>()
+  const result: { niche: string; nicheSlug: string }[] = []
+  
+  for (const row of data as { niche: string }[]) {
+    const niche = row.niche?.trim()
+    if (niche && !seen.has(niche)) {
+      seen.add(niche)
+      result.push({ niche, nicheSlug: slugifyNiche(niche) })
+    }
+  }
+  
+  result.sort((a, b) => a.niche.localeCompare(b.niche))
+  return result
+}
+
+/**
+ * Fetch all published rows for a niche (by slugified niche), for directory [niche] page.
+ */
+export async function getPublishedByNicheSlug(
+  nicheSlug: string
+): Promise<{ slug: string; city: string; niche: string }[]> {
+  const { data, error } = await supabase
+    .from('market_data')
+    .select('slug, city, niche')
+    .eq('status', 'published')
+
+  if (error || !data) return []
+
+  const rows = data as { slug: string; city: string; niche: string }[]
+  return rows.filter((row) => slugifyNiche(row.niche) === nicheSlug)
+}
