@@ -1,15 +1,18 @@
-import { supabaseAdmin } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import { google } from 'googleapis'
 import { NextResponse } from 'next/server'
 
 export async function GET(req: Request) {
   // 🔐 Verify CRON secret
-if (
+  if (
     req.headers.get('authorization') !==
     `Bearer ${process.env.CRON_SECRET}`
   ) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
+
+  // 🛡️ Securely instantiate the admin client on the server
+  const supabaseAdmin = getSupabaseAdmin()
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL
   const isProductionUrl =
@@ -35,11 +38,12 @@ if (
     })
   }
 
-  // 2️⃣ Publish rows
+  // 2️⃣ Publish rows (🚨 Now aligned with your Forensic Database Schema)
   await supabaseAdmin
     .from('market_data')
     .update({
       status: 'published',
+      google_index_status: 'submitted', // Keeps your Slack Audit accurate
       published_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
@@ -58,7 +62,7 @@ if (
     }
   }
 
-  // 4️⃣ Google Indexing API — only when GOOGLE_SERVICE_ACCOUNT_JSON and a production NEXT_PUBLIC_APP_URL are set (never send localhost to Google)
+  // 4️⃣ Google Indexing API — only when GOOGLE_SERVICE_ACCOUNT_JSON and a production NEXT_PUBLIC_APP_URL are set
   if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON && isProductionUrl && baseUrl) {
     try {
       const auth = new google.auth.GoogleAuth({
@@ -78,6 +82,12 @@ if (
               type: 'URL_UPDATED'
             }
           })
+
+          // Stamp the exact time Google was pinged
+          await supabaseAdmin
+            .from('market_data')
+            .update({ indexed_at: new Date().toISOString() })
+            .eq('id', row.id)
 
           await new Promise((r) => setTimeout(r, 150))
         } catch (e) {
