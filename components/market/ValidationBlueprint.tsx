@@ -1,336 +1,159 @@
 'use client'
 
-import { useState } from 'react'
-import { AlertTriangle, ClipboardList, Copy, Check, LineChart, MapPin } from 'lucide-react'
-import type { Idea } from '@/lib/ideaData'
-import { cn } from '@/lib/utils'
+import { AlertCircle, Target, TrendingDown, TrendingUp, Zap, FileWarning, DollarSign, Activity } from 'lucide-react'
 
-interface ValidationBlueprintDashboardProps {
-  idea: Idea
-  urlOverride?: string
+// Define the Idea type locally if you don't have a shared types file
+// Adjust this to match whatever your getIdeaBySlug returns
+type Idea = {
+  slug: string;
+  niche: string;
+  city: string;
+  region: string | null;
+  local_friction: any; // Using 'any' to handle raw Supabase returns before parsing
+  gtm_playbook: any;
+  failure_modes: string | null;
+  global_anchor_json?: any; // The new forensic economics field
+  unit_economics?: any; // Legacy fallback
 }
 
-export function ValidationBlueprintDashboard({ idea, urlOverride }: ValidationBlueprintDashboardProps) {
-  const {
-    slug,
-    niche,
-    city,
-    region,
-    local_friction,
-    gtm_playbook,
-    failure_modes,
-    unit_economics
-  } = idea
-
-  const econ = (unit_economics || {}) as Record<string, unknown>
-  const marginRaw = typeof econ.margin_pct === 'number' ? econ.margin_pct : Number(econ.margin_pct ?? 0)
-  const margin = Number.isFinite(marginRaw) ? marginRaw : 0
-  const marginClamped = Math.max(0, Math.min(100, margin))
-
-  const currencyCode =
-    (econ.currency_code as string) ||
-    (econ.currency as string) ||
-    (econ.ccy as string) ||
-    'LOCAL'
-
-  const canonicalUrl =
-    urlOverride ?? (typeof window !== 'undefined' ? window.location.href : slug ? `/ideas/${slug}` : '')
-
-  const [copied, setCopied] = useState(false)
-
-  const handleCopyGtm = async () => {
-    if (!gtm_playbook?.length || typeof navigator === 'undefined' || !navigator.clipboard) return
-    try {
-      await navigator.clipboard.writeText(gtm_playbook.join('\n'))
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      // swallow
+// 🛡️ Validator's Bulletproof Parsers
+const safeArrayParse = (data: any): string[] => {
+  if (Array.isArray(data)) return data;
+  if (typeof data === 'string') {
+    try { 
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) { 
+      return []; 
     }
   }
+  return [];
+}
 
-  // ─── Schema.org JSON-LD (AEO/GEO) ────────────────────────────────────────────
-
-  const frictionDatasetLd = {
-    '@type': 'Dataset',
-    name: `Local friction map for ${niche} in ${city}`,
-    description: 'Set of city-specific operational and regulatory hurdles founders face in this niche.',
-    variableMeasured: local_friction,
-    spatialCoverage: {
-      '@type': 'City',
-      name: city
+const safeJsonParse = (data: any): Record<string, any> => {
+    if (data && typeof data === 'object' && !Array.isArray(data)) return data;
+    if (typeof data === 'string') {
+        try {
+            const parsed = JSON.parse(data);
+            return (parsed && typeof parsed === 'object') ? parsed : {};
+        } catch(e) {
+            return {};
+        }
     }
-  }
+    return {};
+}
 
-  const howToLd = {
-    '@type': 'HowTo',
-    name: `0-to-1 GTM playbook for ${niche} in ${city}`,
-    description: 'Hyper-local step-by-step GTM sequence to acquire the first customers in this city.',
-    step: gtm_playbook.map((step, index) => ({
-      '@type': 'HowToStep',
-      position: index + 1,
-      name: `Step ${index + 1}`,
-      text: step
-    })),
-    areaServed: {
-      '@type': 'City',
-      name: city
-    }
-  }
-
-  const econPriceLd = {
-    '@type': 'PriceSpecification',
-    priceCurrency: currencyCode,
-    price: typeof econ.unit_price === 'number' ? econ.unit_price : undefined,
-    eligibleQuantity: typeof econ.monthly_volume === 'number' ? econ.monthly_volume : undefined,
-    description:
-      (econ.logic as string) ||
-      'Local margin, rent, and labor impact estimates for this niche in the specified city and currency.'
-  }
-
-  const econDatasetLd = {
-    '@type': 'Dataset',
-    name: `Unit economics for ${niche} in ${city}`,
-    description: 'Dataset describing margin percentage, rent impact, labor impact, and local cost logic.',
-    variableMeasured: ['margin_pct', 'rent_impact', 'labor_impact'],
-    additionalProperty: [
-      {
-        '@type': 'PropertyValue',
-        name: 'margin_pct',
-        value: econ.margin_pct
-      },
-      {
-        '@type': 'PropertyValue',
-        name: 'rent_impact',
-        value: econ.rent_impact
-      },
-      {
-        '@type': 'PropertyValue',
-        name: 'labor_impact',
-        value: econ.labor_impact
-      },
-      {
-        '@type': 'PropertyValue',
-        name: 'currency',
-        value: currencyCode
-      }
-    ],
-    distribution: [
-      {
-        '@type': 'DataDownload',
-        encodingFormat: 'application/json',
-        contentUrl: canonicalUrl || undefined
-      }
-    ]
-  }
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@graph': [frictionDatasetLd, howToLd, econPriceLd, econDatasetLd]
-  }
-
-  // ─── Dashboard Layout ────────────────────────────────────────────────────────
+export function ValidationBlueprintDashboard({ idea }: { idea: Idea }) {
+  // 1. Safely parse all incoming JSON to prevent React crashes
+  const frictionList = safeArrayParse(idea.local_friction);
+  const gtmSteps = safeArrayParse(idea.gtm_playbook);
+  
+  // 2. Prioritize the new 'global_anchor_json' over the legacy 'unit_economics'
+  const economics = safeJsonParse(idea.global_anchor_json || idea.unit_economics);
+  const hasEconomics = Object.keys(economics).length > 0;
 
   return (
-    <>
-      <script
-        type="application/ld+json"
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Quadrant 1: Local Friction Map */}
-        <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
-          <header className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-red-400" />
-              <h2 className="text-sm font-semibold uppercase tracking-[0.16em]">
-                Local Friction Map
-              </h2>
-            </div>
-            <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-red-300">
-              Risk Radar
-            </span>
-          </header>
-          <div className="grid gap-3 text-sm sm:grid-cols-2">
-            {local_friction.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col gap-2 rounded-lg border border-border bg-background/80 p-3"
-              >
-                <div className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-red-300">
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500/15">
-                    <AlertTriangle className="h-3 w-3" />
+    <div className="space-y-8 font-mono">
+      {/* SECTION 1: Local Friction Map (Regulatory & Infra) */}
+      {frictionList.length > 0 && (
+        <section className="border border-border bg-card shadow-[4px_4px_0_0_hsl(var(--primary))]">
+          <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-5 py-3">
+            <AlertCircle className="h-4 w-4 text-amber-500" />
+            <h2 className="text-xs font-bold uppercase tracking-widest text-foreground">Local Friction Map</h2>
+          </div>
+          <div className="p-5">
+            <ul className="space-y-4">
+              {frictionList.map((item, idx) => (
+                <li key={idx} className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
+                  <span className="font-bold text-amber-500 mt-0.5">[{idx + 1}]</span>
+                  <span>
+                     {/* Clean up markdown bolding from the Python script if necessary */}
+                     {item.replace(/\*\*/g, '')}
                   </span>
-                  Hurdle {idx + 1}
-                </div>
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  {item}
-                </p>
-              </div>
-            ))}
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
+      )}
 
-        {/* Quadrant 2: 0-to-1 GTM Stepper */}
-        <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
-          <header className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold uppercase tracking-[0.16em]">
-                0‑to‑1 GTM Stepper
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={handleCopyGtm}
-              className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-            >
-              {copied ? (
-                <>
-                  <Check className="h-3 w-3" />
-                  Copied
-                </>
-              ) : (
-                <>
-                  <Copy className="h-3 w-3" />
-                  Copy GTM
-                </>
-              )}
-            </button>
-          </header>
-
-          <ol className="space-y-3 border-l border-border pl-4">
-            {gtm_playbook.map((step, idx) => (
-              <li key={idx} className="relative space-y-1 text-sm">
-                <span className="absolute -left-[9px] top-1 h-2 w-2 rounded-full bg-primary" />
-                <p className="font-semibold text-foreground">
-                  Step {idx + 1}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {step}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        {/* Quadrant 3: Economic Reality Gauge */}
-        <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
-          <header className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <LineChart className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold uppercase tracking-[0.16em]">
-                Economic Reality
-              </h2>
-            </div>
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {currencyCode} Margin
-            </span>
-          </header>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Thin</span>
-              <span className="text-base font-semibold text-foreground">
-                {marginClamped.toFixed(0)}% margin
+      {/* SECTION 2: Forensic Unit Economics (Global Anchor JSON) */}
+      {hasEconomics && (
+          <section className="border border-border bg-card shadow-[4px_4px_0_0_hsl(var(--primary))]">
+            <div className="flex items-center justify-between border-b border-border bg-muted/50 px-5 py-3">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-green-500" />
+                <h2 className="text-xs font-bold uppercase tracking-widest text-foreground">Local Unit Economics</h2>
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border border-border px-2 py-0.5">
+                  Est. 2026 Model
               </span>
-              <span>Healthy</span>
             </div>
-            <div className="h-3 overflow-hidden rounded-full bg-muted">
-              <div
-                className={cn(
-                  'h-full rounded-full transition-all duration-500',
-                  marginClamped < 25
-                    ? 'bg-red-500'
-                    : marginClamped < 50
-                      ? 'bg-orange-500'
-                      : marginClamped < 75
-                        ? 'bg-yellow-500'
-                        : 'bg-emerald-500'
-                )}
-                style={{ width: `${marginClamped}%` }}
-              />
-            </div>
-
-            <div className="overflow-hidden rounded-lg border border-border bg-background/80 text-xs">
-              <div className="grid grid-cols-2 border-b border-border bg-muted/40 px-3 py-2 font-semibold text-foreground">
-                <span>Metric</span>
-                <span className="text-right">Value</span>
+            
+            <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
+              <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
+                <span className="text-[10px] uppercase text-muted-foreground mb-1">Unit Price</span>
+                <span className="text-lg font-black">{economics.unit_price ? economics.unit_price.toLocaleString() : 'N/A'}</span>
               </div>
-              <div className="divide-y divide-border">
-                {'unit_price' in econ && (
-                  <div className="grid grid-cols-2 px-3 py-2 text-muted-foreground">
-                    <span>Unit price</span>
-                    <span className="text-right text-foreground">
-                      {String(econ.unit_price)} {currencyCode}
-                    </span>
-                  </div>
-                )}
-                {'fixed_costs_monthly' in econ && (
-                  <div className="grid grid-cols-2 px-3 py-2 text-muted-foreground">
-                    <span>Fixed costs / month</span>
-                    <span className="text-right text-foreground">
-                      {String(econ.fixed_costs_monthly)} {currencyCode}
-                    </span>
-                  </div>
-                )}
-                {'monthly_volume' in econ && (
-                  <div className="grid grid-cols-2 px-3 py-2 text-muted-foreground">
-                    <span>Monthly volume</span>
-                    <span className="text-right text-foreground">
-                      {String(econ.monthly_volume)}
-                    </span>
-                  </div>
-                )}
-                {'rent_impact' in econ && (
-                  <div className="grid grid-cols-2 px-3 py-2 text-muted-foreground">
-                    <span>Rent impact</span>
-                    <span className="text-right text-foreground capitalize">
-                      {String(econ.rent_impact).toLowerCase()}
-                    </span>
-                  </div>
-                )}
-                {'labor_impact' in econ && (
-                  <div className="grid grid-cols-2 px-3 py-2 text-muted-foreground">
-                    <span>Labor impact</span>
-                    <span className="text-right text-foreground capitalize">
-                      {String(econ.labor_impact).toLowerCase()}
-                    </span>
-                  </div>
-                )}
+              <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
+                <span className="text-[10px] uppercase text-muted-foreground mb-1">Mo. Volume</span>
+                <span className="text-lg font-black">{economics.monthly_volume ? economics.monthly_volume.toLocaleString() : 'N/A'}</span>
+              </div>
+              <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
+                <span className="text-[10px] uppercase text-muted-foreground mb-1">Gross Margin</span>
+                <span className="text-lg font-black text-green-500">{economics.gross_margin_pct ? `${economics.gross_margin_pct}%` : 'N/A'}</span>
+              </div>
+              <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
+                <span className="text-[10px] uppercase text-muted-foreground mb-1">Fixed Mo. Costs</span>
+                <span className="text-lg font-black text-red-500">{economics.fixed_costs_monthly ? economics.fixed_costs_monthly.toLocaleString() : 'N/A'}</span>
               </div>
             </div>
-
-            {Boolean(econ.logic) && (
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
-                {String(econ.logic)}
-              </p>
+            
+            {economics.notes && (
+                <div className="p-4 bg-muted/20 border-t border-border text-xs text-muted-foreground leading-relaxed border-l-2 border-l-primary">
+                    <span className="font-bold text-foreground mr-2">LOGIC:</span>
+                    {economics.notes}
+                </div>
             )}
-          </div>
-        </section>
+          </section>
+      )}
 
-        {/* Quadrant 4: Brutal Pre‑Mortem */}
-        <section className="rounded-xl border border-red-500/50 bg-gradient-to-br from-red-950 via-zinc-950 to-amber-900/30 px-5 py-5 text-sm text-red-100">
-          <header className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-300" />
-              <h2 className="text-sm font-semibold uppercase tracking-[0.16em]">
-                Brutal Pre‑Mortem
-              </h2>
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* SECTION 3: 0-to-1 GTM Playbook */}
+        {gtmSteps.length > 0 && (
+          <section className="border border-border bg-card shadow-[4px_4px_0_0_hsl(var(--primary))]">
+            <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-5 py-3">
+              <Target className="h-4 w-4 text-primary" />
+              <h2 className="text-xs font-bold uppercase tracking-widest text-foreground">0-to-1 GTM Playbook</h2>
             </div>
-            <span className="inline-flex items-center gap-1 rounded-full border border-red-500/70 bg-red-500/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-red-100">
-              Bankruptcy Lens
-            </span>
-          </header>
-          <p className="text-xs leading-relaxed text-red-100/90">
-            {failure_modes}
-          </p>
-        </section>
+            <div className="p-5">
+              <ul className="space-y-5 border-l border-border ml-2 pl-4">
+                {gtmSteps.map((step, idx) => (
+                  <li key={idx} className="relative text-sm text-muted-foreground leading-relaxed">
+                    <span className="absolute -left-[21px] top-1 h-2 w-2 rounded-full bg-primary" />
+                    {step.replace(/\*\*/g, '')}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+
+        {/* SECTION 4: Brutal Pre-Mortem (Failure Modes) */}
+        {idea.failure_modes && (
+          <section className="border border-red-900/30 bg-red-950/5 shadow-[4px_4px_0_0_#7f1d1d] flex flex-col">
+            <div className="flex items-center gap-2 border-b border-red-900/30 bg-red-900/10 px-5 py-3">
+              <FileWarning className="h-4 w-4 text-red-500" />
+              <h2 className="text-xs font-bold uppercase tracking-widest text-red-500">Brutal Pre-Mortem</h2>
+            </div>
+            <div className="p-5 flex-1">
+              <p className="text-sm leading-relaxed text-red-200/80">
+                {idea.failure_modes}
+              </p>
+            </div>
+          </section>
+        )}
       </div>
-    </>
+    </div>
   )
 }
-
-
