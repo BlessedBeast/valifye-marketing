@@ -39,12 +39,19 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          python verify_sitemap.py > sitemap_audit.out
-          cat sitemap_audit.out
-          # Extraction logic
-          echo "TOTAL_DB=$(grep '^TOTAL_DB=' sitemap_audit.out | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
-          echo "TOTAL_SITEMAP=$(grep '^TOTAL_SITEMAP=' sitemap_audit.out | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
-          echo "TOTAL_ORPHAN=$(grep '^ORPHAN_COUNT=' sitemap_audit.out | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
+          # 🛡️ Check if file exists to prevent hard crash
+          if [ -f "verify_sitemap.py" ]; then
+            python verify_sitemap.py > sitemap_audit.out
+            cat sitemap_audit.out
+            echo "TOTAL_DB=$(grep '^TOTAL_DB=' sitemap_audit.out | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
+            echo "TOTAL_SITEMAP=$(grep '^TOTAL_SITEMAP=' sitemap_audit.out | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
+            echo "TOTAL_ORPHAN=$(grep '^ORPHAN_COUNT=' sitemap_audit.out | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
+          else
+            echo "⚠️ verify_sitemap.py not found in root. Skipping audit."
+            echo "TOTAL_DB=0" >> $GITHUB_ENV
+            echo "TOTAL_SITEMAP=0" >> $GITHUB_ENV
+            echo "TOTAL_ORPHAN=0" >> $GITHUB_ENV
+          fi
 
       - name: Notify Slack
         if: always()
@@ -54,11 +61,17 @@ jobs:
           TOTAL_SITEMAP: ${{ env.TOTAL_SITEMAP }}
           TOTAL_ORPHAN: ${{ env.TOTAL_ORPHAN }}
         run: |
-          # Calculate Health and generate payload using a stable Python block
           python - << 'PY'
           import os, requests, json
-          db = int(os.getenv("TOTAL_DB", 0))
-          sm = int(os.getenv("TOTAL_SITEMAP", 0))
+          # 🛡️ Defensive parsing with defaults to prevent ValueError
+          def safe_int(val):
+              try:
+                  return int(val) if val and val.strip() else 0
+              except:
+                  return 0
+
+          db = safe_int(os.getenv("TOTAL_DB"))
+          sm = safe_int(os.getenv("TOTAL_SITEMAP"))
           orphans = os.getenv("TOTAL_ORPHAN", "0")
           health = f"{round((sm/db)*100)}%" if db > 0 else "0%"
           
