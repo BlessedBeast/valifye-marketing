@@ -1,20 +1,19 @@
 'use client'
 
-import { AlertCircle, Target, TrendingDown, TrendingUp, Zap, FileWarning, DollarSign, Activity } from 'lucide-react'
+import { AlertCircle, Target, FileWarning, DollarSign } from 'lucide-react'
 
-// Define the Idea type locally if you don't have a shared types file
-// Adjust this to match whatever your getIdeaBySlug returns
+// Define the Idea type locally
 type Idea = {
   slug: string;
   niche: string;
   city: string;
-  region?: string | null | undefined; // 🛡️ Bulletproofed
+  region?: string | null | undefined;
   local_friction: any;
   gtm_playbook: any;
-  failure_modes?: string | null | undefined; // Let's secure this one too just in case
-  global_anchor_json?: any; 
-  unit_economics?: any; 
+  failure_modes?: string | null | undefined;
+  unit_economics?: any; // 🎯 Strictly using the unified column
 }
+
 // 🛡️ Validator's Bulletproof Parsers
 const safeArrayParse = (data: any): string[] => {
   if (Array.isArray(data)) return data;
@@ -43,12 +42,12 @@ const safeJsonParse = (data: any): Record<string, any> => {
 }
 
 export function ValidationBlueprintDashboard({ idea }: { idea: Idea }) {
-  // 1. Safely parse all incoming JSON to prevent React crashes
+  // 1. Safely parse all incoming JSON
   const frictionList = safeArrayParse(idea.local_friction);
   const gtmSteps = safeArrayParse(idea.gtm_playbook);
   
-  // 2. Prioritize the new 'global_anchor_json' over the legacy 'unit_economics'
-  const economics = safeJsonParse(idea.global_anchor_json || idea.unit_economics);
+  // 2. Parse strictly from unit_economics
+  const economics = safeJsonParse(idea.unit_economics);
   const hasEconomics = Object.keys(economics).length > 0;
 
   return (
@@ -66,7 +65,6 @@ export function ValidationBlueprintDashboard({ idea }: { idea: Idea }) {
                 <li key={idx} className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
                   <span className="font-bold text-amber-500 mt-0.5">[{idx + 1}]</span>
                   <span>
-                     {/* Clean up markdown bolding from the Python script if necessary */}
                      {item.replace(/\*\*/g, '')}
                   </span>
                 </li>
@@ -76,7 +74,7 @@ export function ValidationBlueprintDashboard({ idea }: { idea: Idea }) {
         </section>
       )}
 
-      {/* SECTION 2: Forensic Unit Economics (Global Anchor JSON) */}
+      {/* SECTION 2: Forensic Unit Economics */}
       {hasEconomics && (
           <section className="border border-border bg-card shadow-[4px_4px_0_0_hsl(var(--primary))]">
             <div className="flex items-center justify-between border-b border-border bg-muted/50 px-5 py-3">
@@ -89,29 +87,43 @@ export function ValidationBlueprintDashboard({ idea }: { idea: Idea }) {
               </span>
             </div>
             
+            {/* 🎯 Updated Data Mapping to match your Python output exactly */}
             <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
-              <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
-                <span className="text-[10px] uppercase text-muted-foreground mb-1">Unit Price</span>
-                <span className="text-lg font-black">{economics.unit_price ? economics.unit_price.toLocaleString() : 'N/A'}</span>
-              </div>
-              <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
-                <span className="text-[10px] uppercase text-muted-foreground mb-1">Mo. Volume</span>
-                <span className="text-lg font-black">{economics.monthly_volume ? economics.monthly_volume.toLocaleString() : 'N/A'}</span>
-              </div>
+              
               <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
                 <span className="text-[10px] uppercase text-muted-foreground mb-1">Gross Margin</span>
-                <span className="text-lg font-black text-green-500">{economics.gross_margin_pct ? `${economics.gross_margin_pct}%` : 'N/A'}</span>
+                <span className={`text-lg font-black ${economics.margin_pct ? 'text-green-500' : 'text-red-500'}`}>
+                  {economics.margin_pct ? `${economics.margin_pct}%` : 'N/A'}
+                </span>
               </div>
+
+              <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
+                <span className="text-[10px] uppercase text-muted-foreground mb-1">Rent Impact</span>
+                <span className={`text-lg font-black ${
+                  economics.rent_impact === 'High' ? 'text-red-500' : 
+                  economics.rent_impact === 'Medium' ? 'text-amber-500' : 'text-foreground'
+                }`}>
+                  {economics.rent_impact || 'N/A'}
+                </span>
+              </div>
+
+              {/* These are set to "Var." since the AI does not generate them right now */}
+              <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
+                <span className="text-[10px] uppercase text-muted-foreground mb-1">Unit Price</span>
+                <span className="text-lg font-black text-muted-foreground">Var.</span>
+              </div>
+              
               <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
                 <span className="text-[10px] uppercase text-muted-foreground mb-1">Fixed Mo. Costs</span>
-                <span className="text-lg font-black text-red-500">{economics.fixed_costs_monthly ? economics.fixed_costs_monthly.toLocaleString() : 'N/A'}</span>
+                <span className="text-lg font-black text-muted-foreground">Var.</span>
               </div>
             </div>
             
-            {economics.notes && (
+            {/* 🎯 Render the 'logic' key instead of the missing 'notes' key */}
+            {economics.logic && (
                 <div className="p-4 bg-muted/20 border-t border-border text-xs text-muted-foreground leading-relaxed border-l-2 border-l-primary">
                     <span className="font-bold text-foreground mr-2">LOGIC:</span>
-                    {economics.notes}
+                    {economics.logic}
                 </div>
             )}
           </section>

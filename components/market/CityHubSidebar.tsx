@@ -1,40 +1,28 @@
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
-import { supabase } from '@/lib/supabase' // 🎯 Use Singleton
+import { supabase } from '@/lib/supabase'
 
 interface CityHubSidebarProps {
   currentCity: string
   currentNiche: string
 }
 
-type HubNiche = {
-  slug: string
-  niche: string
-  opportunity_score: number | null
-}
-
 export async function CityHubSidebar({ currentCity, currentNiche }: CityHubSidebarProps) {
-  // 🚨 createClient() REMOVED.
-  
+  // 🎯 DIRECT QUERY: We bypass the broken city_hubs JSON and fetch real, published ideas.
   const { data, error } = await supabase
-    .from('city_hubs')
-    .select('top_niches')
-    .eq('city_name', currentCity)
-    .maybeSingle()
+    .from('market_data')
+    .select('slug, niche, opportunity_score')
+    .eq('city', currentCity)
+    .eq('status', 'published') // Only show ideas that are actually live
+    .neq('niche', currentNiche) // Don't show the one we are currently looking at
+    .order('opportunity_score', { ascending: false }) // Show the best ones first
+    .limit(4)
 
-  if (error || !data || !Array.isArray(data.top_niches)) {
+  if (error || !data || data.length === 0) {
     return null
   }
 
-  const niches: HubNiche[] = (data.top_niches as HubNiche[]).filter(
-    (n) => n.niche && n.niche !== currentNiche
-  )
-
-  if (!niches.length) {
-    return null
-  }
-
-  const recommended = niches.slice(0, 4)
+  const recommended = data
 
   const relatedTopicsLd = {
     '@context': 'https://schema.org',
