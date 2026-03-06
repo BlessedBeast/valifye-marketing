@@ -49,20 +49,23 @@ def expand_to_blueprint(seed):
     1. LOCAL FRICTION: 3 specific local hurdles (e.g. {city} traffic choke points, upcoming tax changes, land zoning rules, or labor union dynamics).
     2. GTM PLAYBOOK: 3 hyper-local steps to find the first 10 customers. Name specific neighborhoods, local associations, founder communities, or city-specific clusters.
     3. THE PRE-MORTEM: A brutal 2-sentence warning on exactly HOW a founder will go bankrupt with this idea in {city}.
-    4. LOCAL UNIT ECONOMICS: Breakdown of margins vs. local {city} operational costs (Rent/Labor) grounded in realistic price levels for {current_year} to {current_year + 2}.
     
-    5. BRUTAL METRICS SCORING (CRITICAL):
-       - opportunity_score (0-100): Be ruthless. Most ideas are a 30-50. Only genuine market gaps with high margins get 70+.
-       - difficulty_score (0-100): Factor in capital requirements, regulatory walls, and local monopolies. Higher score = harder to execute.
-       - saturation_score (0-100): How crowded is {city} for this specific niche? 100 = Red Ocean.
-       - trend_impact: Strictly choose one string: "up", "down", or "flat".
-       - breakeven_months (Integer): Be realistic. Local operations take 12-24 months. Do not hallucinate a 3-month breakeven unless it's pure SaaS with zero CAC.
+    4. LOCAL UNIT ECONOMICS (MANDATORY HARD METRICS): 
+       Provide specific 2026 estimates for this niche in {city}. Do not use "Variable" or "N/A".
+       - unit_price: A realistic starting monthly price point in USD (Integer).
+       - margin_pct: A realistic gross margin percentage (Integer).
+       - fixed_costs_monthly: Estimated monthly burn (rent + 2-3 local staff) in USD (Integer).
+       - rent_impact: "High", "Medium", or "Low" based on {city} commercial real estate.
+       - logic: A dense 3-sentence breakdown of these numbers, citing specific local neighborhoods or labor costs.
 
-    The market_narrative MUST be a 250–300 word dense, critical essay that:
-    - Acts as a "Forensic Executive Summary" for this niche in {city}.
-    - Explicitly connects infrastructure realities (transport, power, zoning, digital infra) to the niche's viability.
-    - Uses sharp, hook-heavy opening sentences that are suitable for Google Search snippets.
-    - Stays specific to {city}, citing concrete street-level and policy-level details, not generic startup advice.
+    5. BRUTAL METRICS SCORING (CRITICAL):
+       - opportunity_score (0-100): Be ruthless. Only genuine market gaps with high margins get 70+.
+       - difficulty_score (0-100): Factor in capital requirements and local monopolies.
+       - saturation_score (0-100): 100 = Red Ocean.
+       - trend_impact: Strictly choose one: "up", "down", or "flat".
+       - breakeven_months (Integer): Be realistic.
+
+    The market_narrative MUST be a 250–300 word dense, critical essay.
 
     Return ONLY raw JSON with these exact keys:
     {{
@@ -70,11 +73,13 @@ def expand_to_blueprint(seed):
       "gtm_playbook": ["...", "...", "..."],
       "failure_modes": "...",
       "unit_economics": {{
-         "margin_pct": 0,
-         "rent_impact": "High/Low/Medium",
-         "logic": "Detailed breakdown of local cost impact..."
+         "unit_price": 499,
+         "margin_pct": 75,
+         "fixed_costs_monthly": 8500,
+         "rent_impact": "Medium",
+         "logic": "Detailed breakdown citing specific {city} neighborhoods..."
       }},
-      "market_narrative": "A 250–300 word forensic, hook-heavy executive summary...",
+      "market_narrative": "...",
       "opportunity_score": 45,
       "difficulty_score": 85,
       "saturation_score": 75,

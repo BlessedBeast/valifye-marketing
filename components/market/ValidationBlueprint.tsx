@@ -2,7 +2,7 @@
 
 import { AlertCircle, Target, FileWarning, DollarSign } from 'lucide-react'
 
-// Define the Idea type locally
+// 🏗️ Unified Idea Type
 type Idea = {
   slug: string;
   niche: string;
@@ -11,7 +11,7 @@ type Idea = {
   local_friction: any;
   gtm_playbook: any;
   failure_modes?: string | null | undefined;
-  unit_economics?: any; // 🎯 Strictly using the unified column
+  unit_economics?: any; 
 }
 
 // 🛡️ Validator's Bulletproof Parsers
@@ -42,17 +42,17 @@ const safeJsonParse = (data: any): Record<string, any> => {
 }
 
 export function ValidationBlueprintDashboard({ idea }: { idea: Idea }) {
-  // 1. Safely parse all incoming JSON
+  // 1. Parse incoming data streams
   const frictionList = safeArrayParse(idea.local_friction);
   const gtmSteps = safeArrayParse(idea.gtm_playbook);
-  
-  // 2. Parse strictly from unit_economics
   const economics = safeJsonParse(idea.unit_economics);
+  
   const hasEconomics = Object.keys(economics).length > 0;
 
   return (
     <div className="space-y-8 font-mono">
-      {/* SECTION 1: Local Friction Map (Regulatory & Infra) */}
+      
+      {/* SECTION 1: Local Friction Map */}
       {frictionList.length > 0 && (
         <section className="border border-border bg-card shadow-[4px_4px_0_0_hsl(var(--primary))]">
           <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-5 py-3">
@@ -64,9 +64,7 @@ export function ValidationBlueprintDashboard({ idea }: { idea: Idea }) {
               {frictionList.map((item, idx) => (
                 <li key={idx} className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
                   <span className="font-bold text-amber-500 mt-0.5">[{idx + 1}]</span>
-                  <span>
-                     {item.replace(/\*\*/g, '')}
-                  </span>
+                  <span>{item.replace(/\*\*/g, '')}</span>
                 </li>
               ))}
             </ul>
@@ -87,9 +85,15 @@ export function ValidationBlueprintDashboard({ idea }: { idea: Idea }) {
               </span>
             </div>
             
-            {/* 🎯 Updated Data Mapping to match your Python output exactly */}
             <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
               
+              <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
+                <span className="text-[10px] uppercase text-muted-foreground mb-1">Unit Price</span>
+                <span className="text-lg font-black text-foreground">
+                  {economics.unit_price ? `$${economics.unit_price.toLocaleString()}` : 'Var.'}
+                </span>
+              </div>
+
               <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
                 <span className="text-[10px] uppercase text-muted-foreground mb-1">Gross Margin</span>
                 <span className={`text-lg font-black ${economics.margin_pct ? 'text-green-500' : 'text-red-500'}`}>
@@ -107,19 +111,14 @@ export function ValidationBlueprintDashboard({ idea }: { idea: Idea }) {
                 </span>
               </div>
 
-              {/* These are set to "Var." since the AI does not generate them right now */}
-              <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
-                <span className="text-[10px] uppercase text-muted-foreground mb-1">Unit Price</span>
-                <span className="text-lg font-black text-muted-foreground">Var.</span>
-              </div>
-              
               <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
                 <span className="text-[10px] uppercase text-muted-foreground mb-1">Fixed Mo. Costs</span>
-                <span className="text-lg font-black text-muted-foreground">Var.</span>
+                <span className="text-lg font-black text-red-500">
+                  {economics.fixed_costs_monthly ? `$${economics.fixed_costs_monthly.toLocaleString()}` : 'Var.'}
+                </span>
               </div>
             </div>
             
-            {/* 🎯 Render the 'logic' key instead of the missing 'notes' key */}
             {economics.logic && (
                 <div className="p-4 bg-muted/20 border-t border-border text-xs text-muted-foreground leading-relaxed border-l-2 border-l-primary">
                     <span className="font-bold text-foreground mr-2">LOGIC:</span>
@@ -150,7 +149,7 @@ export function ValidationBlueprintDashboard({ idea }: { idea: Idea }) {
           </section>
         )}
 
-        {/* SECTION 4: Brutal Pre-Mortem (Failure Modes) */}
+        {/* SECTION 4: Brutal Pre-Mortem */}
         {idea.failure_modes && (
           <section className="border border-red-900/30 bg-red-950/5 shadow-[4px_4px_0_0_#7f1d1d] flex flex-col">
             <div className="flex items-center gap-2 border-b border-red-900/30 bg-red-900/10 px-5 py-3">
