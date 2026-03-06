@@ -13,22 +13,24 @@ export function ValifyeFooter() {
     setMounted(true)
   }, [])
 
-  const logoSrc =
-    !mounted || resolvedTheme !== 'light'
-      ? '/logo-dark.png'
-      : '/logo-light.png'
+  const isDark = !mounted || resolvedTheme !== 'light'
+  const logoSrc = isDark ? '/logo-dark.png' : '/logo-light.png'
 
   return (
     <footer className="border-t border-border bg-card py-12 font-mono">
       <div className="mx-auto flex max-w-[1280px] flex-col items-center gap-6 px-6 py-8">
-        <div className="flex items-center gap-1 font-black uppercase tracking-widest text-muted-foreground">
-          <Image
-            src={logoSrc}
-            alt="Valifye logo"
-            width={48}
-            height={48}
-            className="h-10 w-10 object-contain scale-[1.8] origin-center mix-blend-screen"
-          />
+        <div className="flex items-center gap-3 font-black uppercase tracking-widest text-muted-foreground">
+          <span className="flex h-10 w-10 items-center justify-center overflow-hidden">
+            <Image
+              src={logoSrc}
+              alt="Valifye logo"
+              width={48}
+              height={48}
+              className={`h-10 w-10 object-cover object-center translate-y-[-1px] ${
+                isDark ? 'mix-blend-screen' : 'mix-blend-multiply'
+              }`}
+            />
+          </span>
           Valifye Intelligence
         </div>
 

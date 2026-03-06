@@ -14,26 +14,28 @@ export function ValifyeNavbar() {
     setMounted(true)
   }, [])
 
-  const logoSrc =
-    !mounted || resolvedTheme !== 'light'
-      ? '/logo-dark.png'
-      : '/logo-light.png'
+  const isDark = !mounted || resolvedTheme !== 'light'
+  const logoSrc = isDark ? '/logo-dark.png' : '/logo-light.png'
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-background px-6 font-mono">
       <Link
         href="/"
-        className="flex items-center gap-1 font-black uppercase text-foreground"
+        className="flex items-center gap-3 font-black uppercase text-foreground"
       >
-        <Image
-          src={logoSrc}
-          alt="Valifye logo"
-          width={48}
-          height={48}
-          className="h-10 w-10 object-contain scale-[1.8] origin-center mix-blend-screen"
-          priority
-        />
-        <span className="text-xl font-black uppercase tracking-[0.2em] text-foreground">
+        <span className="flex h-10 w-10 items-center justify-center overflow-hidden">
+          <Image
+            src={logoSrc}
+            alt="Valifye logo"
+            width={48}
+            height={48}
+            className={`h-10 w-10 object-cover object-center translate-y-[-1px] ${
+              isDark ? 'mix-blend-screen' : 'mix-blend-multiply'
+            }`}
+            priority
+          />
+        </span>
+        <span className="text-xl font-black uppercase tracking-widest text-foreground">
           Valifye
         </span>
       </Link>
