@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight, Database, Globe, Search, ShieldAlert, Zap, Activity } from 'lucide-react'
 import { ValifyeButton } from '@/components/ui/valifye-button'
-import { createClient } from '@/utils/supabase/server'
+import { supabase } from '@/lib/supabase'
 
 export const revalidate = 1800 // Revalidate every 30 mins
 
@@ -14,7 +14,7 @@ type ArchiveIdea = {
 }
 
 export default async function IdeasArchivePage() {
-  const supabase = createClient()
+  // supabase is now imported globally
 
   // Fetch the latest published blueprints
   const { data, error } = await supabase

@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { supabase } from '@/lib/supabase' // 🎯 Use Singleton
 import { getMarketVerdict } from '@/lib/utils'
 
 interface BenchmarkingModuleProps {
@@ -12,8 +12,8 @@ export async function BenchmarkingModule({
   niche,
   region
 }: BenchmarkingModuleProps) {
-  const supabase = createClient()
-
+  // 🚨 createClient() REMOVED.
+  
   const { data, error } = await supabase
     .from('market_data')
     .select('opportunity_score, data_source')
@@ -111,4 +111,3 @@ export async function BenchmarkingModule({
     </aside>
   )
 }
-

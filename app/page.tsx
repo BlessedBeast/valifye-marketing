@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
 import { ValifyeButton } from '@/components/ui/valifye-button'
-import { createClient } from '@/utils/supabase/server'
+import { supabase } from '@/lib/supabase'
 
 export const revalidate = 1800
 
@@ -14,8 +14,7 @@ const FEATURES = [
 ] as const
 
 export default async function HomePage() {
-  const supabase = createClient()
-
+  // supabase is now imported globally
   // Fetching the latest 3 forensic blueprints
   const { data, error } = await supabase
     .from('market_data')

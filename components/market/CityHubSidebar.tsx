@@ -1,8 +1,6 @@
-'use client'
-
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
-import { createClient } from '@/utils/supabase/server'
+import { supabase } from '@/lib/supabase' // 🎯 Use Singleton
 
 interface CityHubSidebarProps {
   currentCity: string
@@ -16,8 +14,8 @@ type HubNiche = {
 }
 
 export async function CityHubSidebar({ currentCity, currentNiche }: CityHubSidebarProps) {
-  const supabase = createClient()
-
+  // 🚨 createClient() REMOVED.
+  
   const { data, error } = await supabase
     .from('city_hubs')
     .select('top_niches')
@@ -96,4 +94,3 @@ export async function CityHubSidebar({ currentCity, currentNiche }: CityHubSideb
     </aside>
   )
 }
-

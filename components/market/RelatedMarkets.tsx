@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
-import { createClient } from '@/utils/supabase/server'
+import { supabase } from '@/lib/supabase' // 🎯 Use Singleton
 
 interface RelatedMarketsProps {
   currentNiche: string
@@ -13,8 +13,8 @@ export async function RelatedMarkets({
   currentCity,
   currentRegion,
 }: RelatedMarketsProps) {
-  const supabase = createClient()
-
+  // 🚨 createClient() REMOVED.
+  
   const { data, error } = await supabase
     .from('market_data')
     .select('slug, city, opportunity_score, market_heat')
@@ -94,4 +94,3 @@ export async function RelatedMarkets({
     </section>
   )
 }
-
