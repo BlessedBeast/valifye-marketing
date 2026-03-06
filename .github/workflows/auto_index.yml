@@ -19,18 +19,18 @@ jobs:
           python-version: '3.12'
 
       - name: Install Dependencies
-        run: |
-          pip install google-auth supabase python-dotenv requests pandas
+        run: pip install google-auth supabase python-dotenv requests pandas
 
       - name: Create Service Account File
-        # Fix: Place it where the new script expects it
-        run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > scripts/service-account.json
+        # Ensure the scripts directory exists before echo
+        run: |
+          mkdir -p scripts
+          echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > scripts/service-account.json
 
       - name: Run Forensic Indexing Queue
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        # Fix: Call the new, schema-compliant script
         run: python scripts/index_queue.py
 
       - name: Run Sitemap Audit
@@ -39,10 +39,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          # Ensure verify_sitemap.py is updated to check the 'google_index_status' column
           python verify_sitemap.py > sitemap_audit.out
           cat sitemap_audit.out
-          
           # Extraction logic
           echo "TOTAL_DB=$(grep '^TOTAL_DB=' sitemap_audit.out | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
           echo "TOTAL_SITEMAP=$(grep '^TOTAL_SITEMAP=' sitemap_audit.out | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
@@ -52,17 +50,27 @@ jobs:
         if: always()
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          TOTAL_DB: ${{ env.TOTAL_DB }}
+          TOTAL_SITEMAP: ${{ env.TOTAL_SITEMAP }}
+          TOTAL_ORPHAN: ${{ env.TOTAL_ORPHAN }}
         run: |
-          # Calculate Health: $\text{Health} = \frac{\text{Sitemap URLs}}{\text{DB Published}} \times 100$
-          HEALTH=$(python - << 'PY'
-import os
-db = int(os.getenv("TOTAL_DB", 0))
-sm = int(os.getenv("TOTAL_SITEMAP", 0))
-print(f"{round((sm/db)*100)}%" if db > 0 else "0%")
-PY
-)
-          payload=$(cat <<EOF
-{"text":"🚀 *Valifye Forensic Audit Complete*\n📈 DB Records: ${{ env.TOTAL_DB }}\n🗺️ Sitemap Health: $HEALTH\n🛑 Orphans: ${{ env.TOTAL_ORPHAN }}\n🔗 https://valifye.com/sitemap.xml"}
-EOF
-)
-          curl -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"
+          # Calculate Health and generate payload using a stable Python block
+          python - << 'PY'
+          import os, requests, json
+          db = int(os.getenv("TOTAL_DB", 0))
+          sm = int(os.getenv("TOTAL_SITEMAP", 0))
+          orphans = os.getenv("TOTAL_ORPHAN", "0")
+          health = f"{round((sm/db)*100)}%" if db > 0 else "0%"
+          
+          text = (
+              f"🚀 *Valifye Forensic Audit Complete*\n"
+              f"📈 DB Records: {db}\n"
+              f"🗺️ Sitemap Health: {health}\n"
+              f"🛑 Orphans: {orphans}\n"
+              f"🔗 https://valifye.com/sitemap.xml"
+          )
+          
+          webhook_url = os.getenv("SLACK_WEBHOOK_URL")
+          if webhook_url:
+              requests.post(webhook_url, json={"text": text})
+          PY
