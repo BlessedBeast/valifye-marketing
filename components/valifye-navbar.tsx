@@ -1,12 +1,35 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Zap } from 'lucide-react'
+import Image from 'next/image'
+import { useTheme } from 'next-themes'
 import { ThemeToggle } from '@/components/theme-toggle'
 
 export function ValifyeNavbar() {
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const logoSrc =
+    !mounted || resolvedTheme !== 'light'
+      ? '/logo-dark.png'
+      : '/logo-light.png'
+
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-background px-6 font-mono">
       <Link href="/" className="flex items-center gap-2 font-black uppercase tracking-widest text-foreground">
-        <Zap className="h-5 w-5 fill-primary text-primary" />
+        <Image
+          src={logoSrc}
+          alt="Valifye logo"
+          width={32}
+          height={32}
+          className="h-8 w-8"
+          priority
+        />
         Valifye
       </Link>
 

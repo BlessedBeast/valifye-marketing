@@ -1,12 +1,34 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Zap } from 'lucide-react'
+import Image from 'next/image'
+import { useTheme } from 'next-themes'
 
 export function ValifyeFooter() {
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const logoSrc =
+    !mounted || resolvedTheme !== 'light'
+      ? '/logo-dark.png'
+      : '/logo-light.png'
+
   return (
     <footer className="border-t border-border bg-card py-12 font-mono">
       <div className="mx-auto flex max-w-[1280px] flex-col items-center gap-6 px-6 py-8">
         <div className="flex items-center gap-2 font-black uppercase tracking-widest text-muted-foreground">
-          <Zap className="h-4 w-4" />
+          <Image
+            src={logoSrc}
+            alt="Valifye logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 opacity-60 grayscale"
+          />
           Valifye Intelligence
         </div>
 
