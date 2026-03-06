@@ -23,17 +23,17 @@ export function ValifyeNavbar() {
     <header className="flex h-16 items-center justify-between border-b border-border bg-background px-6 font-mono">
       <Link
         href="/"
-        className="flex items-center font-black uppercase text-foreground"
+        className="flex items-center gap-2 font-black uppercase text-foreground"
       >
         <Image
           src={logoSrc}
           alt="Valifye logo"
-          width={40}
-          height={40}
-          className="mr-4 h-10 w-10 drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]"
+          width={64}
+          height={64}
+          className="-my-1 h-10 w-10 object-contain"
           priority
         />
-        <span className="text-xl tracking-[0.2em] shadow-[1px_1px_0px_#00ffff,-1px_-1px_0px_#ff00ff]">
+        <span className="text-xl font-black uppercase tracking-[0.2em] text-foreground">
           Valifye
         </span>
       </Link>
