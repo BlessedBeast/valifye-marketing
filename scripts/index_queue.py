@@ -22,16 +22,22 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 SCOPES = ["https://www.googleapis.com/auth/indexing"]
 ENDPOINT = "https://indexing.googleapis.com/v3/urlNotifications:publish"
 
-# Ensure your JSON key is in the correct path
-SERVICE_ACCOUNT_FILE = os.path.join(os.path.dirname(__file__), "service-account.json")
+# 🎯 PATH FIX: Explicitly look in the same directory as this script
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SERVICE_ACCOUNT_FILE = os.path.join(BASE_DIR, "service-account.json")
 
 # Your daily limit to stay under the 200 quota radar
 DAILY_QUOTA = 190 
+# 🎯 URL FIX: Removed the trailing slash from the domain
 DOMAIN = "https://valifye.com/ideas"
 
 def get_google_access_token():
     """Generates a fresh OAuth2 token for the Indexing API."""
     try:
+        # Check if file exists before trying to load it
+        if not os.path.exists(SERVICE_ACCOUNT_FILE):
+            raise FileNotFoundError(f"Missing {SERVICE_ACCOUNT_FILE}")
+            
         creds = service_account.Credentials.from_service_account_file(
             SERVICE_ACCOUNT_FILE, scopes=SCOPES
         )
@@ -45,13 +51,18 @@ def get_google_access_token():
 def process_queue():
     print(f"🚨 Booting Indexing Queue Processor (Limit: {DAILY_QUOTA})...")
     
-    # 1. Fetch pending URLs (Grabs BOTH the 60 leftovers AND new drafts)
-    queue = supabase.table("market_data") \
-        .select("id, slug, niche, city, status") \
-        .eq("google_index_status", "pending") \
-        .order("created_at", desc=False) \
-        .limit(DAILY_QUOTA) \
-        .execute().data
+    # 1. Fetch pending URLs
+    # 🎯 SCHEMA FIX: Ensure we are filtering by 'google_index_status'
+    try:
+        queue = supabase.table("market_data") \
+            .select("id, slug, niche, city") \
+            .eq("google_index_status", "pending") \
+            .order("created_at", desc=False) \
+            .limit(DAILY_QUOTA) \
+            .execute().data
+    except Exception as e:
+        print(f"❌ Supabase Fetch Error: {e}")
+        return
 
     if not queue:
         print("ℹ️ Queue is empty. Nothing to index today.")
@@ -69,9 +80,9 @@ def process_queue():
     
     for row in queue:
         slug = row['slug']
-        niche = row['niche']
-        city = row['city']
-        target_url = f"{DOMAIN}/{slug}"
+        # 🎯 URL FIX: Strip any leading slashes from slug to prevent double-slashes
+        clean_slug = slug.lstrip('/')
+        target_url = f"{DOMAIN}/{clean_slug}"
         
         payload = {
             "url": target_url,
@@ -83,23 +94,23 @@ def process_queue():
             response = requests.post(ENDPOINT, headers=headers, json=payload)
             
             if response.status_code == 200:
-                print(f"✅ Indexed: {niche} in {city}")
+                print(f"✅ Indexed: {row['niche']} in {row['city']}")
                 
-                # 3. Update Supabase (Flip to published, mark as submitted, stamp time)
+                # 3. Update Supabase
                 supabase.table("market_data").update({
                     "status": "published",
                     "google_index_status": "submitted",
-                    "indexed_at": datetime.datetime.utcnow().isoformat()
+                    "indexed_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
                 }).eq("id", row['id']).execute()
                 
                 success_count += 1
             else:
-                print(f"⚠️ Google API Error for {slug}: {response.status_code} - {response.text}")
+                print(f"⚠️ Google API Error for {clean_slug}: {response.status_code} - {response.text}")
 
         except Exception as e:
-            print(f"❌ Crash on {slug}: {e}")
+            print(f"❌ Crash on {clean_slug}: {e}")
 
-        # Pause to prevent API rate limiting (Google prefers steady streams)
+        # Pause to prevent API rate limiting
         time.sleep(1.5)
 
     print(f"🏁 Queue Processing Complete. Successfully indexed: {success_count}/{len(queue)}")
