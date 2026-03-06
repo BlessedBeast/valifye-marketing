@@ -21,16 +21,21 @@ export function ValifyeNavbar() {
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-background px-6 font-mono">
-      <Link href="/" className="flex items-center gap-2 font-black uppercase tracking-widest text-foreground">
+      <Link
+        href="/"
+        className="flex items-center font-black uppercase text-foreground"
+      >
         <Image
           src={logoSrc}
           alt="Valifye logo"
-          width={32}
-          height={32}
-          className="h-8 w-8"
+          width={40}
+          height={40}
+          className="mr-4 h-10 w-10 drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]"
           priority
         />
-        Valifye
+        <span className="text-xl tracking-[0.2em] shadow-[1px_1px_0px_#00ffff,-1px_-1px_0px_#ff00ff]">
+          Valifye
+        </span>
       </Link>
 
       {/* Desktop Nav */}
