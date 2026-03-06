@@ -1,26 +1,41 @@
-import { Inter } from "next/font/google";
-import "./globals.css";
+import { Inter } from 'next/font/google'
+import { ThemeProvider } from '@/components/theme-provider'
+import type { Metadata } from 'next'
+import './globals.css'
+
+export const metadata: Metadata = {
+  title: 'Valifye | Forensic Market Intelligence Engine',
+  description:
+    'Stop building in the dark. Discover validated micro-SaaS opportunities and run them through our live intelligence engine.'
+}
 
 const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
+  subsets: ['latin'],
+  variable: '--font-inter'
+})
 
 export default function RootLayout({
-  children,
+  children
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.variable} bg-background text-foreground antialiased`}
         suppressHydrationWarning
       >
-        <main className="mx-auto max-w-[1280px] px-4 py-8 pt-24 sm:px-6 sm:pt-24 lg:px-8">
-          {children}
-        </main>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <main className="mx-auto max-w-[1280px] px-4 py-8 pt-24 sm:px-6 sm:pt-24 lg:px-8">
+            {children}
+          </main>
+        </ThemeProvider>
       </body>
     </html>
-  );
+  )
 }

@@ -4,10 +4,13 @@ export const revalidate = 0
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
+import { ValifyeNavbar } from '@/components/valifye-navbar'
+import { ValifyeFooter } from '@/components/valifye-footer'
 import { ValidationBlueprintDashboard } from '@/components/market/ValidationBlueprint'
 import { BenchmarkingModule } from '@/components/market/BenchmarkingModule'
 import { RelatedMarkets } from '@/components/market/RelatedMarkets'
 import { CityHubSidebar } from '@/components/market/CityHubSidebar'
+import { AppConversionBridge } from '@/components/market/AppConversionBridge'
 import { getIdeaBySlug } from '@/lib/marketData'
 
 type Props = { params: Promise<{ slug: string }> }
@@ -23,7 +26,9 @@ export default async function IdeaDossierPage({ params }: Props) {
   const hasBlueprint = Array.isArray(idea.local_friction) && idea.local_friction.length > 0
 
   return (
-    <div className="space-y-10">
+    <div className="flex min-h-screen flex-col bg-background font-mono text-foreground">
+      <ValifyeNavbar />
+      <main className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col gap-10 px-4 py-8 sm:px-6 lg:px-8">
       {/* TOP BAR */}
       <header className="flex items-center justify-between text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
         <Link
@@ -87,6 +92,10 @@ export default async function IdeaDossierPage({ params }: Props) {
 
         <CityHubSidebar currentCity={idea.city} currentNiche={idea.niche} />
       </section>
+
+        <AppConversionBridge niche={idea.niche} city={idea.city} />
+      </main>
+      <ValifyeFooter />
     </div>
   )
 }

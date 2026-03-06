@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Zap } from 'lucide-react'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export function ValifyeNavbar() {
   return (
@@ -8,9 +9,9 @@ export function ValifyeNavbar() {
         <Zap className="h-5 w-5 fill-primary text-primary" />
         Valifye
       </Link>
-      
+
       {/* Desktop Nav */}
-      <nav className="hidden md:flex items-center gap-8">
+      <nav className="hidden md:flex items-center gap-6">
         <Link href="/#how-it-works" className="text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary">
           How it Works
         </Link>
@@ -23,6 +24,7 @@ export function ValifyeNavbar() {
         <Link href="/ideas" className="border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary transition-colors hover:text-primary/80">
           Database
         </Link>
+        <ThemeToggle />
       </nav>
     </header>
   )
