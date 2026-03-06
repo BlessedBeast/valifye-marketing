@@ -21,13 +21,13 @@ export function ValifyeFooter() {
   return (
     <footer className="border-t border-border bg-card py-12 font-mono">
       <div className="mx-auto flex max-w-[1280px] flex-col items-center gap-6 px-6 py-8">
-        <div className="flex items-center gap-2 font-black uppercase tracking-widest text-muted-foreground">
+        <div className="flex items-center gap-1 font-black uppercase tracking-widest text-muted-foreground">
           <Image
             src={logoSrc}
             alt="Valifye logo"
-            width={32}
-            height={32}
-            className="h-8 w-8 opacity-60 grayscale"
+            width={48}
+            height={48}
+            className="h-10 w-10 object-contain scale-[1.8] origin-center mix-blend-screen"
           />
           Valifye Intelligence
         </div>
