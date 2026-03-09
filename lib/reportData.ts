@@ -48,7 +48,19 @@ function safeParseJSON<T>(data: unknown): T | null {
   return null
 }
 
-// 🔥 SET THIS TO YOUR ACTUAL TABLE NAME
+// 🔥 THE AI TAMER: Forces hallucinated verdicts into your 3 strict UI categories
+function normalizeVerdict(rawVerdict: string | null | undefined): VerdictType {
+  if (!rawVerdict) return 'PIVOT';
+  const upper = rawVerdict.toUpperCase();
+  
+  if (upper.includes('BUILD')) return 'BUILD';
+  if (upper.includes('KILL') || upper.includes('FAILURE') || upper.includes('CATASTROPHIC') || upper.includes('ADVISED AGAINST')) {
+    return 'KILL';
+  }
+  return 'PIVOT'; 
+}
+
+// 🔥 SECURED TABLE NAME
 const TABLE_NAME = 'verdict_reports'; 
 
 export async function getReportBySlug(slug: string): Promise<ValidationReport | null> {
@@ -69,7 +81,7 @@ export async function getReportBySlug(slug: string): Promise<ValidationReport | 
     id: data.id,
     slug: data.slug,
     idea_title: data.idea_title ?? '',
-    final_verdict: (data.final_verdict?.toUpperCase() as VerdictType) ?? 'PIVOT',
+    final_verdict: normalizeVerdict(data.final_verdict),
     overall_integrity_score: Number(data.overall_integrity_score) ?? 0,
     forensic_narrative: data.forensic_narrative ?? null,
     experiment_data: safeParseJSON<ExperimentData>(data.experiment_data),
@@ -92,11 +104,10 @@ export async function getReportsList(limit = 50): Promise<ValidationReport[]> {
 
   if (!data || !Array.isArray(data)) return []
 
-  // Ensure ALL properties of ValidationReport are satisfied
   return data.map((row) => ({
     slug: row.slug,
     idea_title: row.idea_title ?? 'Untitled Idea',
-    final_verdict: (row.final_verdict?.toUpperCase() as VerdictType) ?? 'PIVOT',
+    final_verdict: normalizeVerdict(row.final_verdict),
     overall_integrity_score: Number(row.overall_integrity_score) ?? 0,
     forensic_narrative: row.forensic_narrative ?? null,
     experiment_data: safeParseJSON<ExperimentData>(row.experiment_data),
