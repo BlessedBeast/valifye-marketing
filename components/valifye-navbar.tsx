@@ -54,6 +54,9 @@ export function ValifyeNavbar() {
         <Link href="/ideas" className="border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary transition-colors hover:text-primary/80">
           Database
         </Link>
+        <Link href="/reports" className="border border-border bg-card px-3 py-1 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+          Validation Reports
+        </Link>
         <ThemeToggle />
       </nav>
     </header>

@@ -15,7 +15,7 @@ supabase = create_client(
     os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 )
 
-# Initialize Gemini 2.5 Pro
+# Initialize Gemini 2.5 Flash (The fast, stable model)
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Dynamic data currency for prompts
@@ -73,7 +73,7 @@ def expand_to_blueprint(seed):
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
-                model="gemini-2.5-pro", 
+                model="gemini-2.5-flash", 
                 contents=prompt
             )
             break # Exit loop if successful
@@ -85,43 +85,47 @@ def expand_to_blueprint(seed):
         print(f"❌ Skipping {niche} in {city} due to persistent Gemini API failures.")
         return False
     # --------------------------------------------
-
+ 
     try:
         # Clean and parse JSON
         clean_json = response.text.strip().replace("```json", "").replace("```", "")
         data = json.loads(clean_json)
 
-        # --- RESILIENCY BLOCK 2: Supabase Upsert ---
+        # SAFE-FETCH: Using .get() ensures we never crash on missing keys
+        opp_score = data.get('opportunity_score', 50)
+        diff_score = data.get('difficulty_score', 50)
+        trend = data.get('trend_impact', 'flat')
+        breakeven = data.get('breakeven_months', 12)
+
+        # UPSERT: saturation_score OMITTED as it is a DB-generated column
         supabase.table("market_data").upsert({
             "niche": niche,
             "city": city,
             "region": seed['region'],
-            "market_narrative": data['market_narrative'],
-            "local_friction": data['local_friction'],
-            "gtm_playbook": data['gtm_playbook'],
-            "failure_modes": data['failure_modes'],
-            "unit_economics": data['unit_economics'], 
-            "opportunity_score": data['opportunity_score'],
-            "difficulty_score": data['difficulty_score'],
-            "trend": data['trend_impact'],
-            "breakeven_months": data['breakeven_months'],
+            "market_narrative": data.get('market_narrative', "Analysis pending..."),
+            "local_friction": data.get('local_friction', []),
+            "gtm_playbook": data.get('gtm_playbook', []),
+            "failure_modes": data.get('failure_modes', "Generic risk: High competition."),
+            "unit_economics": data.get('unit_economics', {}), 
+            "opportunity_score": opp_score,
+            "difficulty_score": diff_score,
+            "trend": trend,
+            "breakeven_months": breakeven,
             "business_shape": seed['business_shape'],
             "status": "draft",
             "data_source": "Valifye Blueprint 2.5"
         }, on_conflict="niche,city").execute()
 
-        # Update the seed status
-        supabase.table("content_plan").update({
-            "is_generated": True
-        }).eq("id", seed['id']).execute()
-
-        print(f"✅ Blueprint Live: {niche} in {city} | Opp: {data['opportunity_score']}")
+        # Update status in content_plan
+        supabase.table("content_plan").update({"is_generated": True}).eq("id", seed['id']).execute()
+        
+        print(f"✅ Blueprint Live: {niche} in {city} | Opp: {opp_score}")
         return True
 
     except Exception as e:
-        print(f"❌ JSON or Database Error for {niche} in {city}: {e}")
+        print(f"❌ JSON/Database Error for {niche}: {e}")
         return False
-
+        
 def run_factory(limit=5):
     print(f"🚀 Starting Validation Factory (Batch Limit: {limit})...")
     
@@ -153,7 +157,7 @@ def run_factory(limit=5):
     for seed in seeds:
         success = expand_to_blueprint(seed)
         if success:
-            time.sleep(3) # Safe buffer for Pro API limits
+            time.sleep(3) # Safe buffer to respect 1000/day limits
 
 if __name__ == "__main__":
-    run_factory(limit=100)
+    run_factory(limit=50) # Reduced from 100 to 50 to prevent instant quota burn
