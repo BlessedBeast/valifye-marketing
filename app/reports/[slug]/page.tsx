@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, Scale, TrendingUp, AlertTriangle, Database, BookOpen } from 'lucide-react'
 import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
-import { getReportBySlug } from '@/lib/reportData'
+import { getReportBySlug, ReportPattern } from '@/lib/reportData'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,7 +23,7 @@ export default async function ReportDetailPage({ params }: Props) {
   const rawNotes = report.experiment_data?.raw_notes || {}
 
   // 🛡️ Filter out lazy AI templates so the Truth vs Hype table doesn't break
-  const validPatterns = (audit.patterns || []).filter(p => 
+  const validPatterns = (audit.patterns || []).filter((p: ReportPattern) => 
     p.pattern && p.pattern.trim() !== '' && p.pattern.toLowerCase() !== 'string'
   )
 
@@ -108,13 +108,12 @@ export default async function ReportDetailPage({ params }: Props) {
         {/* 4. Market Reality (Split View: Entities vs Rejections) */}
         {((audit.market_entities && audit.market_entities.length > 0) || (audit.brutal_rejections && audit.brutal_rejections.length > 0)) && (
           <div className="grid md:grid-cols-2 gap-6">
-            
             {/* Market Entities */}
             {audit.market_entities && audit.market_entities.length > 0 && (
               <section className="border border-border bg-card p-6">
                 <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-foreground">Market Entities</h2>
                 <div className="flex flex-wrap gap-2">
-                  {audit.market_entities.map((entity, i) => (
+                  {audit.market_entities.map((entity: string, i: number) => (
                     <span key={i} className="bg-muted px-2 py-1 text-[10px] border border-border text-muted-foreground uppercase">
                       {entity}
                     </span>
@@ -130,7 +129,7 @@ export default async function ReportDetailPage({ params }: Props) {
                   <AlertTriangle className="h-4 w-4" /> Brutal Rejections
                 </h2>
                 <ul className="space-y-3">
-                  {audit.brutal_rejections.map((rejection, i) => (
+                  {audit.brutal_rejections.map((rejection: string, i: number) => (
                     <li key={i} className="text-xs text-red-200/80 border-l-2 border-red-500/50 pl-3 italic">
                       "{rejection}"
                     </li>
@@ -138,42 +137,6 @@ export default async function ReportDetailPage({ params }: Props) {
                 </ul>
               </section>
             )}
-            
-          </div>
-        )}{/* 4. Market Reality (Split View: Entities vs Rejections) */}
-        {((audit.market_entities && audit.market_entities.length > 0) || (audit.brutal_rejections && audit.brutal_rejections.length > 0)) && (
-          <div className="grid md:grid-cols-2 gap-6">
-            
-            {/* Market Entities */}
-            {audit.market_entities && audit.market_entities.length > 0 && (
-              <section className="border border-border bg-card p-6">
-                <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-foreground">Market Entities</h2>
-                <div className="flex flex-wrap gap-2">
-                  {audit.market_entities.map((entity, i) => (
-                    <span key={i} className="bg-muted px-2 py-1 text-[10px] border border-border text-muted-foreground uppercase">
-                      {entity}
-                    </span>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Brutal Rejections */}
-            {audit.brutal_rejections && audit.brutal_rejections.length > 0 && (
-              <section className="border border-red-900/50 bg-red-950/10 p-6">
-                <h2 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-red-500">
-                  <AlertTriangle className="h-4 w-4" /> Brutal Rejections
-                </h2>
-                <ul className="space-y-3">
-                  {audit.brutal_rejections.map((rejection, i) => (
-                    <li key={i} className="text-xs text-red-200/80 border-l-2 border-red-500/50 pl-3 italic">
-                      "{rejection}"
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-            
           </div>
         )}
 
@@ -183,7 +146,7 @@ export default async function ReportDetailPage({ params }: Props) {
             <h2 className="mb-6 text-sm font-black uppercase tracking-widest text-foreground border-b border-border pb-4">
               Simulated Field Report
             </h2>
-            <div className="prose prose-sm prose-invert max-w-none text-muted-foreground whitespace-pre-wrap">
+            <div className="prose prose-sm prose-invert max-w-none text-muted-foreground whitespace-pre-wrap leading-relaxed">
               {audit.thick_case_study}
             </div>
           </section>
@@ -205,11 +168,11 @@ export default async function ReportDetailPage({ params }: Props) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {validPatterns.map((row, idx) => (
+                  {validPatterns.map((row: ReportPattern, idx: number) => (
                     <tr key={idx} className="bg-card">
                       <td className="max-w-[200px] px-4 py-3 text-xs font-bold text-foreground">{row.pattern}</td>
                       <td className="px-4 py-3 text-xs text-muted-foreground leading-relaxed">{row.implication}</td>
-                      <td className="w-24 px-4 py-3 text-right font-mono text-sm font-bold tabular-nums text-primary">{row.evidence_count}</td>
+                      <td className="w-24 px-4 py-3 text-right font-mono text-sm font-bold tabular-nums text-primary">+{row.evidence_count}</td>
                     </tr>
                   ))}
                 </tbody>
