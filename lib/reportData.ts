@@ -47,6 +47,20 @@ export interface ValidationReport {
   is_published?: boolean
 }
 
+export interface VerdictIndustryHub {
+  industry_name: string
+  report_count: number
+  top_verdicts: { slug: string; title: string; score?: number }[]
+  all_slugs?: string[]
+}
+
+export interface VerdictIndustryHubDetail {
+  industry_name: string
+  report_count: number
+  top_verdicts: { slug: string; title: string; score?: number }[]
+  all_slugs: string[]
+}
+
 function safeParseJSON<T>(data: unknown): T | null {
   if (data == null) return null
   if (typeof data === 'object') return data as T
@@ -86,6 +100,83 @@ export async function getReportBySlug(slug: string): Promise<ValidationReport | 
 
 export async function getReportsList(limit = 50): Promise<ValidationReport[]> {
   const { data, error } = await supabase.from(TABLE_NAME).select('*').eq('is_published', true).order('created_at', { ascending: false }).limit(limit)
+  if (error || !Array.isArray(data)) return []
+
+  return data.map((row) => ({
+    ...row,
+    final_verdict: normalizeVerdict(row.final_verdict),
+    overall_integrity_score: Number(row.overall_integrity_score) ?? 0,
+    experiment_data: safeParseJSON<ExperimentData>(row.experiment_data),
+  }))
+}
+
+export async function getIndustryHubs(): Promise<VerdictIndustryHub[]> {
+  const { data, error } = await supabase
+    .from('verdict_industry_hubs')
+    .select('industry_name, report_count, top_verdicts')
+    .order('report_count', { ascending: false })
+
+  if (error || !Array.isArray(data)) {
+    console.error('Industry hubs fetch error:', error)
+    return []
+  }
+
+  return data.map((row) => {
+    const rawTop = safeParseJSON<{ slug: string; title: string; score?: number }[]>(row.top_verdicts)
+    const top = Array.isArray(rawTop) ? rawTop : []
+
+    return {
+      industry_name: row.industry_name ?? 'Unlabeled',
+      report_count: Number(row.report_count) ?? 0,
+      top_verdicts: top.filter(
+        (v) => v && typeof v.slug === 'string' && typeof v.title === 'string'
+      ),
+    }
+  })
+}
+
+export async function getIndustryHubBySectorSlug(sectorSlug: string): Promise<VerdictIndustryHubDetail | null> {
+  const readableName = sectorSlug
+    .toLowerCase()
+    .trim()
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+
+  const { data, error } = await supabase
+    .from('verdict_industry_hubs')
+    .select('industry_name, report_count, top_verdicts, all_slugs')
+    .eq('industry_name', readableName)
+    .maybeSingle()
+
+  if (error || !data) {
+    if (error) {
+      console.error('Industry hub fetch error:', error)
+    }
+    return null
+  }
+
+  const rawTop = safeParseJSON<{ slug: string; title: string; score?: number }[]>(data.top_verdicts)
+  const top = Array.isArray(rawTop) ? rawTop : []
+  const rawSlugs = safeParseJSON<string[]>(data.all_slugs)
+  const allSlugs = Array.isArray(rawSlugs) ? rawSlugs.filter((s) => typeof s === 'string') : []
+
+  return {
+    industry_name: data.industry_name ?? readableName,
+    report_count: Number(data.report_count) ?? 0,
+    top_verdicts: top.filter((v) => v && typeof v.slug === 'string' && typeof v.title === 'string'),
+    all_slugs: allSlugs,
+  }
+}
+
+export async function getReportsBySlugs(slugs: string[]): Promise<ValidationReport[]> {
+  if (!slugs || slugs.length === 0) return []
+
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select('slug, idea_title, final_verdict, overall_integrity_score, forensic_narrative, experiment_data, is_published, created_at')
+    .in('slug', slugs)
+    .eq('is_published', true)
+
   if (error || !Array.isArray(data)) return []
 
   return data.map((row) => ({

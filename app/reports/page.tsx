@@ -2,12 +2,15 @@ import Link from 'next/link'
 import { ArrowRight, FileText, Scale, Zap } from 'lucide-react'
 import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
-import { getReportsList } from '@/lib/reportData'
+import { getReportsList, getIndustryHubs } from '@/lib/reportData'
 
 export const revalidate = 600
 
 export default async function ReportsDirectoryPage() {
-  const reports = await getReportsList(50)
+  const [industryHubs, reports] = await Promise.all([
+    getIndustryHubs(),
+    getReportsList(50),
+  ])
 
   const formatScore = (score: number) =>
     Number.isFinite(score) ? `${score}/100` : '—'
@@ -17,6 +20,13 @@ export default async function ReportsDirectoryPage() {
     if (v === 'BUILD') return 'border-emerald-500/50 bg-emerald-950/30 text-emerald-200'
     return 'border-amber-500/50 bg-amber-950/30 text-amber-200'
   }
+
+  const slugifyIndustry = (name: string) =>
+    name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
 
   return (
     <div className="flex min-h-screen flex-col bg-background font-mono text-foreground">
@@ -37,6 +47,56 @@ export default async function ReportsDirectoryPage() {
             </div>
           </div>
         </header>
+
+        {industryHubs.length > 0 && (
+          <section className="space-y-4">
+            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              <span>Sector Map</span>
+              <span className="inline-flex items-center gap-2 text-emerald-400">
+                <Zap className="h-3 w-3" />
+                Browse by Industry
+              </span>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {industryHubs.map((hub) => {
+                const industry = hub.industry_name || 'Unlabeled'
+                const top = Array.isArray(hub.top_verdicts) ? hub.top_verdicts.slice(0, 2) : []
+                const slug = slugifyIndustry(industry)
+                return (
+                  <Link
+                    key={industry}
+                    href={`/reports/industry/${slug}`}
+                    className="flex flex-col justify-between border border-zinc-800 bg-zinc-900 px-5 py-4 text-left text-xs transition-colors hover:border-emerald-500 hover:bg-zinc-900/90"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-zinc-300">
+                          {industry}
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
+                          {hub.report_count} files
+                        </span>
+                      </div>
+                      {top.length > 0 && (
+                        <ul className="space-y-1 text-[11px] text-zinc-300">
+                          {top.map((v) => (
+                            <li key={v.slug} className="line-clamp-1">
+                              {v.title}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div className="mt-4 flex items-center justify-between border-t border-zinc-800 pt-3 text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
+                      <span>Open Sector Hub</span>
+                      <ArrowRight className="h-3 w-3 text-emerald-400" />
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
+        )}
 
         <section className="space-y-4">
           <div className="flex items-center justify-between border-b border-border pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">

@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
-import { getReportBySlug } from '@/lib/reportData'
+import { getReportBySlug, getIndustryHubBySectorSlug, getReportsBySlugs } from '@/lib/reportData'
 import type { ExperimentData, LogicAudit, UnitEconomics } from '@/lib/reportData'
 
 export const dynamic = 'force-dynamic'
@@ -100,6 +100,34 @@ function buildTerminalText(experiment: ExperimentData | null): string {
   return buf.trim()
 }
 
+function inferSectorFromTitle(title: string | null | undefined): string | null {
+  if (!title) return null
+  const t = title.toLowerCase()
+  if (t.includes('ai') || t.includes('artificial intelligence') || t.includes('llm')) {
+    return 'Artificial Intelligence'
+  }
+  if (t.includes('iot') || t.includes('internet of things')) {
+    return 'Internet of Things'
+  }
+  if (
+    t.includes('fintech') ||
+    t.includes('payments') ||
+    t.includes('lending') ||
+    t.includes('banking')
+  ) {
+    return 'FinTech'
+  }
+  return null
+}
+
+function slugifyIndustry(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 export default async function ReportDetailPage({ params }: Props) {
   const { slug } = await params
   const report = await getReportBySlug(slug)
@@ -168,6 +196,27 @@ export default async function ReportDetailPage({ params }: Props) {
       : []
 
   const terminalText = buildTerminalText(experiment)
+
+  // --- Sector context bridge ---
+  const sectorName = inferSectorFromTitle(report.idea_title)
+  let sectorSlug: string | null = null
+  let sectorHub: Awaited<ReturnType<typeof getIndustryHubBySectorSlug>> | null = null
+  let relatedReports: Awaited<ReturnType<typeof getReportsBySlugs>> = []
+
+  if (sectorName) {
+    sectorSlug = slugifyIndustry(sectorName)
+    sectorHub = await getIndustryHubBySectorSlug(sectorSlug)
+    if (sectorHub) {
+      const topSlugs = new Set(sectorHub.top_verdicts.map((v) => v.slug))
+      const candidateSlugs = sectorHub.all_slugs.filter(
+        (s) => s && s !== report.slug && !topSlugs.has(s),
+      )
+      const limited = candidateSlugs.slice(0, 3)
+      if (limited.length > 0) {
+        relatedReports = await getReportsBySlugs(limited)
+      }
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-[#050505] font-mono text-zinc-200">
@@ -425,6 +474,66 @@ export default async function ReportDetailPage({ params }: Props) {
                     )}
                   </div>
                 </details>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Sector Intelligence bridge */}
+        {sectorName && sectorSlug && sectorHub && relatedReports.length > 0 && (
+          <section className="mb-8 border border-zinc-800 bg-[#080808] px-6 py-5 text-xs">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500">
+                  Sector Intelligence
+                </span>
+                <Link
+                  href={`/reports/industry/${sectorSlug}`}
+                  className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-400 hover:text-emerald-300"
+                >
+                  {sectorHub.industry_name}
+                </Link>
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                {sectorHub.report_count} files in sector
+              </span>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {relatedReports.map((r) => (
+                <Link
+                  key={r.slug}
+                  href={`/reports/${r.slug}`}
+                  className="flex flex-col justify-between border border-zinc-800 bg-black/60 px-4 py-3 text-left transition-colors hover:border-emerald-500 hover:bg-black/80"
+                >
+                  <div className="mb-2 space-y-1">
+                    <span
+                      className={`inline-flex items-center gap-1 border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] ${(() => {
+                        const upper = r.final_verdict.toString().toUpperCase()
+                        if (upper.includes('KILL')) {
+                          return 'border-red-500/60 bg-red-950/40 text-red-200'
+                        }
+                        if (upper.includes('BUILD')) {
+                          return 'border-emerald-500/60 bg-emerald-950/40 text-emerald-200'
+                        }
+                        return 'border-amber-500/60 bg-amber-950/40 text-amber-200'
+                      })()}`}
+                    >
+                      <Scale className="h-3 w-3" />
+                      {r.final_verdict}
+                    </span>
+                    <p className="text-[11px] font-semibold leading-snug text-zinc-100 line-clamp-2">
+                      {r.idea_title}
+                    </p>
+                  </div>
+                  <div className="mt-auto flex items-center justify-between text-[10px] text-zinc-400">
+                    <span>Score</span>
+                    <span className="font-bold text-zinc-100">
+                      {Number.isFinite(r.overall_integrity_score)
+                        ? `${r.overall_integrity_score}/100`
+                        : '—'}
+                    </span>
+                  </div>
+                </Link>
               ))}
             </div>
           </section>
