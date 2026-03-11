@@ -17,6 +17,7 @@ export default async function LocalReportsDirectoryPage() {
   }
 
   const hubs: LocalCityHubRow[] = Array.isArray(data) ? (data as LocalCityHubRow[]) : []
+  console.log('Hubs fetched:', hubs?.length)
 
   return <CityDirectoryClient initialHubs={hubs} />
 }

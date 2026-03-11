@@ -23,16 +23,10 @@ type Props = {
   initialHubs: LocalCityHubRow[]
 }
 
-function citySlug(city: string) {
-  return city
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
 export function CityDirectoryClient({ initialHubs }: Props) {
   const [query, setQuery] = useState('')
+
+  console.log('Client Hubs:', initialHubs.length)
 
   const filteredHubs = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -98,75 +92,95 @@ export function CityDirectoryClient({ initialHubs }: Props) {
 
         {/* Grid of city hubs */}
         <section className="space-y-4">
-          <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
-            <span>{filteredHubs.length} City Hubs</span>
-            <span className="inline-flex items-center gap-1 text-primary">
-              <Activity className="h-3 w-3" />
-              System Live
-            </span>
-          </div>
+          {initialHubs.length === 0 ? (
+            <div className="border border-emerald-500 bg-zinc-950 px-5 py-6 text-xs uppercase tracking-[0.18em] text-white">
+              <div className="flex items-center justify-between gap-3">
+                <span>Intelligence gathering in progress.</span>
+                <span className="inline-flex items-center gap-1 text-emerald-400">
+                  <Activity className="h-3 w-3" />
+                  System Warming Up
+                </span>
+              </div>
+              <p className="mt-3 text-[11px] normal-case leading-relaxed text-zinc-100">
+                The local_city_hubs index is still being built. Once the pSEO factory finishes its current batch,
+                this directory will automatically populate with live city hubs.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
+                <span>{filteredHubs.length} City Hubs</span>
+                <span className="inline-flex items-center gap-1 text-primary">
+                  <Activity className="h-3 w-3" />
+                  System Live
+                </span>
+              </div>
 
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {filteredHubs.map((hub) => {
-              const reports = Array.isArray(hub.top_reports) ? hub.top_reports : []
-              const reportCount =
-                typeof hub.report_count === 'number' && Number.isFinite(hub.report_count)
-                  ? hub.report_count
-                  : reports.length
+              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                {filteredHubs.map((hub) => {
+                  const reports = Array.isArray(hub.top_reports) ? hub.top_reports : []
+                  const reportCount =
+                    typeof hub.report_count === 'number' && Number.isFinite(hub.report_count)
+                      ? hub.report_count
+                      : reports.length
 
-              return (
-                <article
-                  key={hub.city_name}
-                  className="flex flex-col justify-between border border-border bg-card p-5 text-xs shadow-[0_0_0_1px_hsl(var(--border))] transition-all hover:-translate-y-1 hover:border-primary hover:shadow-[4px_4px_0_0_hsl(var(--primary))]"
-                >
-                  <div className="mb-4 space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        <span>
-                          {hub.city_name}
-                          {hub.region ? `, ${hub.region}` : null}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
-                        Audits{' '}
-                        <span className="font-black text-foreground">
-                          {reportCount}
-                        </span>
-                      </span>
-                    </div>
+                  const cityPath = hub.city_name.toLowerCase().replace(/\s+/g, '-')
 
-                    <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-foreground">
-                      Local pSEO hub for {hub.city_name}
-                    </h2>
-
-                    {reports.length > 0 && (
-                      <ul className="space-y-1 text-[11px] text-muted-foreground">
-                        {reports.slice(0, 2).map((r) => (
-                          <li key={r.slug} className="line-clamp-1">
-                            {r.title}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-
-                  <div className="mt-auto flex items-center justify-between border-t border-border pt-4">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
-                      Open City Hub
-                    </span>
-                    <Link
-                      href={`/local-reports/city/${citySlug(hub.city_name)}`}
-                      className="inline-flex items-center gap-1 border border-border bg-background px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-foreground transition-colors hover:border-primary hover:text-primary"
+                  return (
+                    <article
+                      key={hub.city_name}
+                      className="flex flex-col justify-between border border-border bg-card p-5 text-xs shadow-[0_0_0_1px_hsl(var(--border))] transition-all hover:-translate-y-1 hover:border-primary hover:shadow-[4px_4px_0_0_hsl(var(--primary))]"
                     >
-                      View Hub
-                      <ArrowRight className="h-3 w-3" />
-                    </Link>
-                  </div>
-                </article>
-              )
-            })}
-          </div>
+                      <div className="mb-4 space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            <span>
+                              {hub.city_name}
+                              {hub.region ? `, ${hub.region}` : null}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
+                            Audits{' '}
+                            <span className="font-black text-foreground">
+                              {reportCount}
+                            </span>
+                          </span>
+                        </div>
+
+                        <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-foreground">
+                          Local pSEO hub for {hub.city_name}
+                        </h2>
+
+                        {reports.length > 0 && (
+                          <ul className="space-y-1 text-[11px] text-muted-foreground">
+                            {reports.slice(0, 2).map((r) => (
+                              <li key={r.slug} className="line-clamp-1">
+                                {r.title}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+
+                      <div className="mt-auto flex items-center justify-between border-t border-border pt-4">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
+                          Open City Hub
+                        </span>
+                        <Link
+                          href={`/local-reports/city/${cityPath}`}
+                          className="inline-flex items-center gap-1 border border-border bg-background px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-foreground transition-colors hover:border-primary hover:text-primary"
+                        >
+                          View Hub
+                          <ArrowRight className="h-3 w-3" />
+                        </Link>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            </>
+          )}
         </section>
 
         {/* Bottom SEO CTA banner */}

@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 from supabase import create_client
 from google import genai
 
-# Load environment variables
 load_dotenv()
 
 # DIAGNOSTIC: Ensure we are talking to the right server
@@ -24,9 +23,38 @@ gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 gmaps = googlemaps.Client(key=os.getenv("GOOGLE_PLACES_API_KEY"))
 
 # PRODUCTION CONSTANTS
-MODEL_NAME = "gemini-2.5-flash" # Use stable production string
+MODEL_NAME = "gemini-2.5-flash"  # Use stable production string
 BATCH_LIMIT = 50                 # Increased as requested
 THROTTLE_TIME = 10               # Seconds to wait between reports
+
+
+def forensic_slugify(text: str) -> str:
+    """
+    Normalizes arbitrary niche/city strings into URL-safe slugs.
+
+    - Lowercases the text.
+    - Replaces spaces, slashes, backslashes, ampersands, and underscores with hyphens.
+    - Strips any character that isn't a letter, number, or hyphen.
+    - Collapses multiple hyphens into a single hyphen.
+    - Trims hyphens from the start and end of the string.
+    """
+    if not isinstance(text, str):
+        text = str(text or "")
+
+    # Lowercase and strip extra whitespace
+    value = text.strip().lower()
+
+    # Replace separators & unsafe punctuation with hyphens
+    value = re.sub(r"[\\\/&_\s]+", "-", value)
+
+    # Remove anything that's not a-z, 0-9, or hyphen
+    value = re.sub(r"[^a-z0-9\-]", "", value)
+
+    # Collapse multiple hyphens
+    value = re.sub(r"-{2,}", "-", value)
+
+    # Trim leading/trailing hyphens
+    return value.strip("-")
 
 # --- 1. BUSINESS TYPE MAPPING ---
 def map_business_type(niche, business_type_input):
@@ -147,7 +175,9 @@ def process_seo_factory():
             report_json = generate_thick_report(seed, evidence)
 
             if report_json:
-                slug = f"{seed['niche'].lower().replace(' ', '-')}-{seed['city'].lower().replace(' ', '-')}-market-audit"
+                niche_slug = forensic_slugify(seed.get("niche", ""))
+                city_slug = forensic_slugify(seed.get("city", ""))
+                slug = f"{niche_slug}-{city_slug}-market-audit"
                 
                 # Step 3: Save to DB
                 supabase.table("public_seo_reports").upsert({
