@@ -35,7 +35,7 @@ export async function getCityHubBySlug(slug: string): Promise<LocalCityHub | nul
   const { data, error } = await supabase
     .from(TABLE_NAME)
     .select('city_name, region, report_count, top_reports, all_slugs')
-    .eq('city_name', cityName)
+    .ilike('city_name', cityName)
     .maybeSingle()
 
   if (error) {
@@ -45,7 +45,18 @@ export async function getCityHubBySlug(slug: string): Promise<LocalCityHub | nul
 
   if (!data) return null
 
-  const topReports = Array.isArray(data.top_reports) ? data.top_reports : []
+  let topReportsRaw: unknown = data.top_reports
+
+  if (typeof topReportsRaw === 'string') {
+    try {
+      topReportsRaw = JSON.parse(topReportsRaw)
+    } catch (e) {
+      console.error('Failed to parse top_reports JSON for city hub:', data.city_name, e)
+      topReportsRaw = []
+    }
+  }
+
+  const topReports = Array.isArray(topReportsRaw) ? topReportsRaw : []
   const allSlugs = Array.isArray(data.all_slugs) ? data.all_slugs : []
 
   return {
