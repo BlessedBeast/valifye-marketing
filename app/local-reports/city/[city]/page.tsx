@@ -10,8 +10,8 @@ type Props = { params: Promise<{ city: string }> }
 type LocalCityHubRow = {
   city_name: string
   region: string | null
-  report_count: number
-  top_reports: { slug: string; title: string; score: number | null }[] | null
+  report_count: number | null
+  top_reports: any
   all_slugs: string[] | null
 }
 
@@ -29,7 +29,7 @@ export const revalidate = 0
 
 export default async function LocalCityHubPage({ params }: Props) {
   const { city } = await params
-  const decoded = decodeURIComponent(city)
+  const decoded = decodeURIComponent(city || '')
   const formattedCityName = slugToCityName(decoded)
 
   if (!formattedCityName) {
@@ -52,7 +52,30 @@ export default async function LocalCityHubPage({ params }: Props) {
     notFound()
   }
 
-  const hub = data
+  // Normalize top_reports if it comes back as a stringified JSON blob
+  let topReports = data.top_reports
+  if (typeof topReports === 'string') {
+    try {
+      topReports = JSON.parse(topReports)
+    } catch (e) {
+      console.error('Failed to parse top_reports JSON for city hub:', data.city_name, e)
+      topReports = []
+    }
+  }
+
+  const normalizedCount =
+    typeof data.report_count === 'number' && Number.isFinite(data.report_count)
+      ? data.report_count
+      : (Array.isArray(data.all_slugs) ? data.all_slugs.length : 0)
+
+  const hub: LocalCityHubRow = {
+    city_name: data.city_name,
+    region: data.region,
+    report_count: normalizedCount,
+    top_reports: topReports,
+    all_slugs: data.all_slugs,
+  }
+
   const cityLabel = hub.city_name || formattedCityName
   const reports = Array.isArray(hub.top_reports) ? hub.top_reports : []
 
@@ -106,7 +129,7 @@ export default async function LocalCityHubPage({ params }: Props) {
                 <span>Audits Indexed</span>
                 <Activity className="h-3 w-3" />
               </span>
-              <span className="mt-3 text-2xl font-bold">{hub.report_count ?? (hub.all_slugs?.length ?? 0)}</span>
+              <span className="mt-3 text-2xl font-bold">{hub.report_count}</span>
             </div>
           </div>
         </section>
@@ -115,9 +138,7 @@ export default async function LocalCityHubPage({ params }: Props) {
         <section className="space-y-3">
           <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.18em]">
             <span>Cached audits in {cityLabel}</span>
-            <span className="text-muted-foreground">
-              {hub.report_count ?? (hub.all_slugs?.length ?? 0)} files
-            </span>
+            <span className="text-muted-foreground">{hub.report_count} files</span>
           </div>
 
           {reports.length === 0 ? (

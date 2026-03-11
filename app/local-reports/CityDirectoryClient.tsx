@@ -13,11 +13,11 @@ type TopReport = {
 }
 
 export type LocalCityHubRow = {
-  id: string // Added ID for stable React keys
+  id: string
   city_name: string
   region: string | null
   report_count: number | null
-  top_reports: any // Kept as any to handle string/object flexibility
+  top_reports: any
 }
 
 type Props = {
