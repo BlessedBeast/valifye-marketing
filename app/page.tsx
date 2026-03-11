@@ -1,7 +1,8 @@
 import Link from 'next/link'
-import { ArrowRight, Database, Zap, Scale } from 'lucide-react'
+import { ArrowRight, Database, Zap, Scale, Activity } from 'lucide-react'
 import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
+import { createClient } from '@/utils/supabase/server'
 
 export const metadata = {
   title: 'Valifye | Forensic Market Intelligence Engine',
@@ -9,7 +10,27 @@ export const metadata = {
     'Stop building in the dark. Discover validated micro-SaaS opportunities and run them through our live intelligence engine.'
 }
 
-export default function HomePage() {
+type LatestAudit = {
+  slug: string
+  idea_title: string
+  final_verdict: string
+  overall_integrity_score: number | null
+}
+
+export default async function HomePage() {
+  const supabase = createClient()
+
+  const { data: latestAudits } = await supabase
+    .from('verdict_reports')
+    .select('slug, idea_title, final_verdict, overall_integrity_score')
+    .eq('is_published', true)
+    .order('published_at', { ascending: false })
+    .limit(3)
+
+  const audits: LatestAudit[] = Array.isArray(latestAudits)
+    ? (latestAudits as LatestAudit[])
+    : []
+
   return (
     <div className="min-h-screen bg-background font-mono text-foreground">
       <ValifyeNavbar />
@@ -44,6 +65,155 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
+        </section>
+
+        {/* INTELLIGENCE HUB – TRIPLE ENGINE */}
+        <section className="space-y-6">
+          <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground">
+            Intelligence Hub
+          </h2>
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* 01. MARKET BLUEPRINTS */}
+            <article className="flex flex-col justify-between border border-emerald-500/60 bg-zinc-950 px-5 py-5 text-xs shadow-[0_0_0_1px_rgba(16,185,129,0.6)]">
+              <header className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-400">
+                    01. MARKET BLUEPRINTS
+                  </span>
+                  <span className="rounded-sm border border-emerald-500/50 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.25em] text-emerald-300">
+                    STATIC
+                  </span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-zinc-300">
+                  Static 2026 dossiers for baseline metrics. City and niche blueprints rendered as machine-readable JSON.
+                </p>
+              </header>
+              <div className="mt-4 flex items-center justify-between border-t border-emerald-500/40 pt-3">
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300/80">
+                  /ideas
+                </span>
+                <Link
+                  href="/ideas"
+                  className="inline-flex items-center gap-1 border border-emerald-500/60 bg-black px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300 transition-colors hover:bg-emerald-500 hover:text-black"
+                >
+                  Open Blueprints
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            </article>
+
+            {/* 02. FORENSIC VERDICTS */}
+            <article className="flex flex-col justify-between border border-emerald-500/60 bg-zinc-950 px-5 py-5 text-xs shadow-[0_0_0_1px_rgba(16,185,129,0.6)]">
+              <header className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-400">
+                    02. FORENSIC VERDICTS
+                  </span>
+                  <span className="rounded-sm border border-emerald-500/50 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.25em] text-emerald-300">
+                    DEEP AUDITS
+                  </span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-zinc-300">
+                  Brutal deep-dive audits and integrity scores. Each file is a full-stack logic trace of why an idea
+                  deserves code or a kill-shot.
+                </p>
+              </header>
+              <div className="mt-4 flex items-center justify-between border-t border-emerald-500/40 pt-3">
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300/80">
+                  /reports
+                </span>
+                <Link
+                  href="/reports"
+                  className="inline-flex items-center gap-1 border border-emerald-500/60 bg-black px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300 transition-colors hover:bg-emerald-500 hover:text-black"
+                >
+                  Open Verdicts
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            </article>
+
+            {/* 03. LOCAL pSEO */}
+            <article className="flex flex-col justify-between border border-emerald-500/60 bg-zinc-950 px-5 py-5 text-xs shadow-[0_0_0_1px_rgba(16,185,129,0.6)]">
+              <header className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-400">
+                    03. LOCAL pSEO
+                  </span>
+                  <span className="rounded-sm border border-emerald-500/50 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.25em] text-emerald-300">
+                    LIVE MAPS
+                  </span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-zinc-300">
+                  Hyper-local competitor analysis and micro-TAM maps. Cached city hubs built from Places data and
+                  forensic unit economics.
+                </p>
+              </header>
+              <div className="mt-4 flex items-center justify-between border-t border-emerald-500/40 pt-3">
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300/80">
+                  /local-reports
+                </span>
+                <Link
+                  href="/local-reports"
+                  className="inline-flex items-center gap-1 border border-emerald-500/60 bg-black px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300 transition-colors hover:bg-emerald-500 hover:text-black"
+                >
+                  Open Local pSEO
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        {/* LATEST AUDITS – VERDICT TICKER */}
+        <section className="space-y-4 border border-border bg-zinc-950 px-5 py-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-zinc-400">
+              <Activity className="h-4 w-4 text-emerald-400" />
+              <span>Latest Audits</span>
+            </div>
+            <Link
+              href="/reports"
+              className="inline-flex items-center gap-1 border border-emerald-500/60 bg-black px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300 transition-colors hover:bg-emerald-500 hover:text-black"
+            >
+              View All Verdicts
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+
+          {audits.length === 0 ? (
+            <div className="border border-border bg-black/60 px-4 py-3 text-[11px] text-zinc-400">
+              No published audits yet. Run the verdict pipeline to populate this ticker.
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-3">
+              {audits.map((audit) => (
+                <Link
+                  key={audit.slug}
+                  href={`/reports/${audit.slug}`}
+                  className="group flex flex-col justify-between border border-zinc-800 bg-black/80 px-4 py-3 text-left text-[11px] transition-colors hover:border-emerald-500"
+                >
+                  <div className="mb-2 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-sm border border-emerald-500/60 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.25em] text-emerald-300">
+                        {audit.final_verdict}
+                      </span>
+                      <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-zinc-500">
+                        {Number.isFinite(audit.overall_integrity_score)
+                          ? `${audit.overall_integrity_score}/100`
+                          : '—'}
+                      </span>
+                    </div>
+                    <p className="line-clamp-2 font-semibold text-zinc-100 group-hover:text-emerald-300">
+                      {audit.idea_title}
+                    </p>
+                  </div>
+                  <span className="mt-auto text-[9px] font-bold uppercase tracking-[0.25em] text-zinc-500">
+                    Open Forensic Report →
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* HOW IT WORKS */}
