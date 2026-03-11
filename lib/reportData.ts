@@ -22,7 +22,6 @@ export interface LogicAudit {
   adjusted_score?: number
   calculated_verdict?: VerdictType
   verdict_reasoning?: string
-  // 🔥 New Thick Data Pillars
   aeo_summary?: string
   unit_economics?: UnitEconomics
   market_entities?: string[]
@@ -61,9 +60,13 @@ export interface VerdictIndustryHubDetail {
   all_slugs: string[]
 }
 
+/**
+ * Robust JSON Unpacking
+ * Handles cases where Supabase returns JSONB as a string or a native object.
+ */
 function safeParseJSON<T>(data: unknown): T | null {
   if (data == null) return null
-  if (typeof data === 'object') return data as T
+  if (typeof data === 'object' && !Array.isArray(data)) return data as T
   if (typeof data === 'string') {
     try {
       return JSON.parse(data) as T
@@ -71,9 +74,12 @@ function safeParseJSON<T>(data: unknown): T | null {
       return null
     }
   }
-  return null
+  return data as T // Return as is if it's already an array or other object
 }
 
+/**
+ * Sanitizes and normalizes verdicts for UI consistency.
+ */
 function normalizeVerdict(rawVerdict: string | null | undefined): VerdictType {
   if (!rawVerdict) return 'PIVOT'
   const upper = rawVerdict.toUpperCase()
@@ -86,6 +92,9 @@ function normalizeVerdict(rawVerdict: string | null | undefined): VerdictType {
 
 const TABLE_NAME = 'verdict_reports'
 
+/**
+ * Fetch a single report by its slug.
+ */
 export async function getReportBySlug(slug: string): Promise<ValidationReport | null> {
   const { data, error } = await supabase.from(TABLE_NAME).select('*').eq('slug', slug).maybeSingle()
   if (error || !data) return null
@@ -93,23 +102,35 @@ export async function getReportBySlug(slug: string): Promise<ValidationReport | 
   return {
     ...data,
     final_verdict: normalizeVerdict(data.final_verdict),
-    overall_integrity_score: Number(data.overall_integrity_score) ?? 0,
+    overall_integrity_score: Number(data.overall_integrity_score) || 0,
     experiment_data: safeParseJSON<ExperimentData>(data.experiment_data),
   }
 }
 
+/**
+ * Fetch a list of all published forensic reports.
+ */
 export async function getReportsList(limit = 50): Promise<ValidationReport[]> {
-  const { data, error } = await supabase.from(TABLE_NAME).select('*').eq('is_published', true).order('created_at', { ascending: false }).limit(limit)
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select('*')
+    .eq('is_published', true)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
   if (error || !Array.isArray(data)) return []
 
   return data.map((row) => ({
     ...row,
     final_verdict: normalizeVerdict(row.final_verdict),
-    overall_integrity_score: Number(row.overall_integrity_score) ?? 0,
+    overall_integrity_score: Number(row.overall_integrity_score) || 0,
     experiment_data: safeParseJSON<ExperimentData>(row.experiment_data),
   }))
 }
 
+/**
+ * Fetch all high-level Industry Hubs for the directory view.
+ */
 export async function getIndustryHubs(): Promise<VerdictIndustryHub[]> {
   const { data, error } = await supabase
     .from('verdict_industry_hubs')
@@ -127,7 +148,7 @@ export async function getIndustryHubs(): Promise<VerdictIndustryHub[]> {
 
     return {
       industry_name: row.industry_name ?? 'Unlabeled',
-      report_count: Number(row.report_count) ?? 0,
+      report_count: Number(row.report_count) || 0,
       top_verdicts: top.filter(
         (v) => v && typeof v.slug === 'string' && typeof v.title === 'string'
       ),
@@ -135,39 +156,49 @@ export async function getIndustryHubs(): Promise<VerdictIndustryHub[]> {
   })
 }
 
+/**
+ * Fetch a specific Industry Hub detail by its URL slug.
+ * Uses .ilike for case-insensitive matching against industry_name.
+ */
 export async function getIndustryHubBySectorSlug(sectorSlug: string): Promise<VerdictIndustryHubDetail | null> {
-  const readableName = sectorSlug
-    .toLowerCase()
-    .trim()
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
+  // Convert 'real-estate' to 'real estate' for a broader search match
+  const searchPattern = sectorSlug.replace(/-/g, ' ');
 
   const { data, error } = await supabase
     .from('verdict_industry_hubs')
     .select('industry_name, report_count, top_verdicts, all_slugs')
-    .eq('industry_name', readableName)
+    .ilike('industry_name', searchPattern) 
     .maybeSingle()
 
   if (error || !data) {
-    if (error) {
-      console.error('Industry hub fetch error:', error)
-    }
+    if (error) console.error('Industry hub fetch error:', error)
     return null
   }
 
+  // Handle top_verdicts (JSONB)
   const rawTop = safeParseJSON<{ slug: string; title: string; score?: number }[]>(data.top_verdicts)
   const top = Array.isArray(rawTop) ? rawTop : []
-  const rawSlugs = safeParseJSON<string[]>(data.all_slugs)
-  const allSlugs = Array.isArray(rawSlugs) ? rawSlugs.filter((s) => typeof s === 'string') : []
+
+  // Handle all_slugs (text[] Postgres Array)
+  let allSlugs: string[] = []
+  if (Array.isArray(data.all_slugs)) {
+    allSlugs = data.all_slugs
+  } else {
+    // Fallback if returned as stringified array
+    allSlugs = safeParseJSON<string[]>(data.all_slugs) || []
+  }
 
   return {
-    industry_name: data.industry_name ?? readableName,
-    report_count: Number(data.report_count) ?? 0,
-    top_verdicts: top.filter((v) => v && typeof v.slug === 'string' && typeof v.title === 'string'),
-    all_slugs: allSlugs,
+    industry_name: data.industry_name ?? searchPattern,
+    report_count: Number(data.report_count) || allSlugs.length,
+    top_verdicts: top.filter((v) => v && typeof v.slug === 'string'),
+    all_slugs: allSlugs.filter((s) => typeof s === 'string'),
   }
 }
 
+/**
+ * Fetch multiple reports by an array of slugs.
+ */
 export async function getReportsBySlugs(slugs: string[]): Promise<ValidationReport[]> {
   if (!slugs || slugs.length === 0) return []
 
@@ -182,7 +213,7 @@ export async function getReportsBySlugs(slugs: string[]): Promise<ValidationRepo
   return data.map((row) => ({
     ...row,
     final_verdict: normalizeVerdict(row.final_verdict),
-    overall_integrity_score: Number(row.overall_integrity_score) ?? 0,
+    overall_integrity_score: Number(row.overall_integrity_score) || 0,
     experiment_data: safeParseJSON<ExperimentData>(row.experiment_data),
   }))
 }
