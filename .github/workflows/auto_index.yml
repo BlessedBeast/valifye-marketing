@@ -1,13 +1,13 @@
-name: Nightly Forensic Indexer
+name: Nightly Forensic Indexer & Auditor
 
 on:
   schedule:
-    # Runs at 01:00 AM UTC (approx 6:30 AM IST)
+    # Runs at 01:00 AM UTC (6:30 AM IST)
     - cron: '0 1 * * *'
   workflow_dispatch: 
 
 jobs:
-  index_new_pages:
+  index_and_audit:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -19,71 +19,96 @@ jobs:
           python-version: '3.12'
 
       - name: Install Dependencies
-        run: pip install google-auth supabase python-dotenv requests pandas
+        run: pip install google-auth google-api-python-client supabase python-dotenv requests
 
       - name: Create Service Account File
-        # Ensure the scripts directory exists before echo
         run: |
           mkdir -p scripts
           echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > scripts/service-account.json
 
-      - name: Run Forensic Indexing Queue
+      # --- RUN ALL THREE INDEXING ENGINES ---
+      
+      
+      - name: Run Global Indexing Queue
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python scripts/index_queue.py
+        run: |
+          # 1. Legacy Blueprints Engine (Drafts -> Live)
+          if [ -f "scripts/publish_and_index.py" ]; then 
+            echo "🚀 Running Legacy Blueprint Indexer..."
+            python scripts/publish_and_index.py
+          fi
+          
+          # 2. Validation Reports Engine
+          if [ -f "scripts/index_validation_reports.py" ]; then 
+            echo "🚀 Running Validation Report Indexer..."
+            python scripts/index_validation_reports.py
+          fi
+          
+          # 3. pSEO Local Market Engine
+          if [ -f "scripts/index_seo_reports.py" ]; then 
+            echo "🚀 Running pSEO Local Indexer..."
+            python scripts/index_seo_reports.py
+          fi
 
-      - name: Run Sitemap Audit
+      # --- PERFORM FINAL INTEGRITY AUDIT ---
+      - name: Run Triple-Engine Sitemap Audit
         id: sitemap_audit
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          # 🛡️ Check if file exists to prevent hard crash
+          # Looking for verify_sitemap.py in the ROOT as per your requirement
           if [ -f "verify_sitemap.py" ]; then
-            python verify_sitemap.py > sitemap_audit.out
-            cat sitemap_audit.out
-            echo "TOTAL_DB=$(grep '^TOTAL_DB=' sitemap_audit.out | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
-            echo "TOTAL_SITEMAP=$(grep '^TOTAL_SITEMAP=' sitemap_audit.out | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
-            echo "TOTAL_ORPHAN=$(grep '^ORPHAN_COUNT=' sitemap_audit.out | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
+            python verify_sitemap.py > audit_output.txt
+            cat audit_output.txt
+            
+            # Extract Global Metrics for Slack
+            echo "TOTAL_ORPHAN=$(grep 'TOTAL_ORPHANS=' audit_output.txt | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
+            echo "TOTAL_PENDING=$(grep 'TOTAL_PENDING_INDEX=' audit_output.txt | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
           else
-            echo "⚠️ verify_sitemap.py not found in root. Skipping audit."
-            echo "TOTAL_DB=0" >> $GITHUB_ENV
-            echo "TOTAL_SITEMAP=0" >> $GITHUB_ENV
-            echo "TOTAL_ORPHAN=0" >> $GITHUB_ENV
+            echo "❌ verify_sitemap.py NOT FOUND IN ROOT!"
+            exit 1
           fi
 
+      # --- NOTIFY SLACK ---
       - name: Notify Slack
         if: always()
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          TOTAL_DB: ${{ env.TOTAL_DB }}
-          TOTAL_SITEMAP: ${{ env.TOTAL_SITEMAP }}
           TOTAL_ORPHAN: ${{ env.TOTAL_ORPHAN }}
+          TOTAL_PENDING: ${{ env.TOTAL_PENDING }}
         run: |
           python - << 'PY'
-          import os, requests, json
-          # 🛡️ Defensive parsing with defaults to prevent ValueError
-          def safe_int(val):
-              try:
-                  return int(val) if val and val.strip() else 0
-              except:
-                  return 0
-
-          db = safe_int(os.getenv("TOTAL_DB"))
-          sm = safe_int(os.getenv("TOTAL_SITEMAP"))
-          orphans = os.getenv("TOTAL_ORPHAN", "0")
-          health = f"{round((sm/db)*100)}%" if db > 0 else "0%"
+          import os, requests
           
-          text = (
-              f"🚀 *Valifye Forensic Audit Complete*\n"
-              f"📈 DB Records: {db}\n"
-              f"🗺️ Sitemap Health: {health}\n"
-              f"🛑 Orphans: {orphans}\n"
-              f"🔗 https://valifye.com/sitemap.xml"
-          )
+          def safe_int(val):
+              try: return int(val) if val and val.strip() else 0
+              except: return 0
+
+          orphans = safe_int(os.getenv("TOTAL_ORPHAN"))
+          pending = safe_int(os.getenv("TOTAL_PENDING"))
+          
+          color = "#36a64f" if orphans == 0 else "#FF0000"
+          status = "✅ SEO HEALTHY" if orphans == 0 else "🚨 ACTION REQUIRED"
+          
+          payload = {
+              "attachments": [{
+                  "color": color,
+                  "title": f"🛡️ Valifye Global SEO Audit: {status}",
+                  "text": (
+                      f"*Master Audit Summary (All Engines)*\n"
+                      f"🛑 *Total Orphans:* `{orphans}`\n"
+                      f"📡 *Remaining in Index Queue:* `{pending}`\n\n"
+                      f"_Engines: Blueprints, Validation Audits, pSEO Local Reports._"
+                  ),
+                  "footer": "Valifye Automation Engine 2026",
+                  "footer_icon": "https://valifye.com/favicon.ico"
+              }]
+          }
           
           webhook_url = os.getenv("SLACK_WEBHOOK_URL")
           if webhook_url:
-              requests.post(webhook_url, json={"text": text})
+              requests.post(webhook_url, json=payload)
           PY

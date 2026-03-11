@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Tuple
 from dotenv import load_dotenv
@@ -13,42 +14,39 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 # --- PRODUCTION CONFIGURATION ---
-INDEXING_LIMIT = 100  # Conservative batch for validation reports
+INDEXING_LIMIT = 100 
 THROTTLE_DELAY = 1.5 
-MIN_CONTENT_LENGTH = 2000
+MIN_TOTAL_CHARS = 2500
 
 def get_supabase_client() -> Client:
-    url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-    return create_client(url, key)
+    return create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_SERVICE_ROLE_KEY"))
 
 def get_indexing_client():
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    key_path = os.path.join(current_dir, "service-account.json")
+    key_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "service-account.json")
     scopes = ["https://www.googleapis.com/auth/indexing"]
     creds = service_account.Credentials.from_service_account_file(key_path, scopes=scopes)
     return build("indexing", "v3", credentials=creds, cache_discovery=False)
 
-def is_thick_enough(row: Dict[str, Any]) -> Tuple[bool, str]:
-    narrative = row.get('forensic_narrative') or ''
-    import json
-    experiments = json.dumps(row.get('experiment_data') or {})
-    total_length = len(narrative) + len(experiments)
-    if total_length < MIN_CONTENT_LENGTH:
-        return False, f"Too thin ({total_length} chars)"
+def check_depth(row: Dict[str, Any]) -> Tuple[bool, str]:
+    data = row.get('report_data') or {}
+    full_payload = json.dumps(data)
+    
+    if len(full_payload) < MIN_TOTAL_CHARS:
+        return False, f"Thin content ({len(full_payload)} chars)"
+    if 'entry_playbook' not in data or 'micro_tam' not in data:
+        return False, "Missing core modules (Playbook/TAM)"
     return True, ""
 
 def main():
-    print("🚀 Starting Validation Report Indexer...")
+    print("🚀 Starting pSEO Local Market Indexer...")
     supabase = get_supabase_client()
     indexing = get_indexing_client()
 
-    # Fetch unpublished audits
-    resp = supabase.table("verdict_reports").select("*").eq("is_published", False).limit(INDEXING_LIMIT).execute()
+    resp = supabase.table("public_seo_reports").select("*").eq("is_published", False).limit(INDEXING_LIMIT).execute()
     rows = resp.data or []
 
     if not rows:
-        print("📭 No new validation reports. Factory idle.")
+        print("📭 No new pSEO reports found.")
         return
 
     success_count = 0
@@ -58,20 +56,20 @@ def main():
         slug = row.get("slug")
         
         # 1. Quality Gate
-        ok, reason = is_thick_enough(row)
+        ok, reason = check_depth(row)
         if not ok:
             print(f"⏩ Skipping {slug}: {reason}")
             skip_count += 1
             continue
 
         # 2. Ping Google
-        url = f"https://valifye.com/reports/{slug}"
+        url = f"https://valifye.com/local-reports/{slug}"
         try:
             indexing.urlNotifications().publish(body={"url": url, "type": "URL_UPDATED"}).execute()
             
-            # 3. Update DB with 'is_published' AND 'published_at' for SEO Freshness
+            # 3. Mark as Published
             now = datetime.now(timezone.utc).isoformat()
-            supabase.table("verdict_reports").update({
+            supabase.table("public_seo_reports").update({
                 "is_published": True,
                 "published_at": now
             }).eq("id", row.get("id")).execute()
