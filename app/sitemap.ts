@@ -1,13 +1,19 @@
 import type { MetadataRoute } from 'next'
-import { supabase } from '@/lib/supabase' // 🎯 Use Singleton
+import { supabase } from '@/lib/supabase'
 
 export const revalidate = 43200
 
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // 🚨 createClient() REMOVED.
-  
   const BASE_URL = 'https://valifye.com'
-  
+
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: BASE_URL,
@@ -24,24 +30,96 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   try {
-    const { data, error } = await supabase
-      .from('market_data')
-      .select('slug, updated_at')
-      .eq('status', 'published')
-      .order('created_at', { ascending: false })
-      .limit(45000) 
+    const [
+      ideasRes,
+      verdictRes,
+      industryHubRes,
+      localSeoRes,
+      localCityHubRes,
+    ] = await Promise.all([
+      supabase
+        .from('market_data')
+        .select('slug, updated_at')
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(45000),
+      supabase
+        .from('verdict_reports')
+        .select('slug, published_at')
+        .eq('is_published', true),
+      supabase
+        .from('verdict_industry_hubs')
+        .select('industry_name'),
+      supabase
+        .from('public_seo_reports')
+        .select('slug, published_at')
+        .eq('is_published', true),
+      supabase
+        .from('local_city_hubs')
+        .select('city_name'),
+    ])
 
-    if (error) throw error
+    if (ideasRes.error) throw ideasRes.error
+    if (verdictRes.error) throw verdictRes.error
+    if (industryHubRes.error) throw industryHubRes.error
+    if (localSeoRes.error) throw localSeoRes.error
+    if (localCityHubRes.error) throw localCityHubRes.error
 
-    const ideaPages: MetadataRoute.Sitemap = (data || []).map((page) => ({
+    const now = new Date()
+
+    const ideaPages: MetadataRoute.Sitemap = (ideasRes.data || []).map((page) => ({
       url: `${BASE_URL}/ideas/${page.slug}`,
-      lastModified: page.updated_at ? new Date(page.updated_at) : new Date(),
+      lastModified: page.updated_at ? new Date(page.updated_at) : now,
       changeFrequency: 'weekly',
-      priority: 0.7,
+      priority: 0.6,
     }))
 
-    return [...staticRoutes, ...ideaPages]
-    
+    const verdictPages: MetadataRoute.Sitemap = (verdictRes.data || []).map((page) => ({
+      url: `${BASE_URL}/reports/${page.slug}`,
+      lastModified: page.published_at ? new Date(page.published_at) : now,
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    }))
+
+    const verdictIndustryHubs: MetadataRoute.Sitemap = (industryHubRes.data || [])
+      .filter((hub) => !!hub.industry_name)
+      .map((hub) => {
+        const sectorSlug = slugify(hub.industry_name as string)
+        return {
+          url: `${BASE_URL}/reports/industry/${sectorSlug}`,
+          lastModified: now,
+          changeFrequency: 'weekly',
+          priority: 0.8,
+        }
+      })
+
+    const localSeoPages: MetadataRoute.Sitemap = (localSeoRes.data || []).map((page) => ({
+      url: `${BASE_URL}/local-reports/report/${page.slug}`,
+      lastModified: page.published_at ? new Date(page.published_at) : now,
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    }))
+
+    const localCityHubs: MetadataRoute.Sitemap = (localCityHubRes.data || [])
+      .filter((hub) => !!hub.city_name)
+      .map((hub) => {
+        const citySlug = slugify(hub.city_name as string)
+        return {
+          url: `${BASE_URL}/local-reports/city/${citySlug}`,
+          lastModified: now,
+          changeFrequency: 'weekly',
+          priority: 0.8,
+        }
+      })
+
+    return [
+      ...staticRoutes,
+      ...ideaPages,
+      ...verdictPages,
+      ...verdictIndustryHubs,
+      ...localSeoPages,
+      ...localCityHubs,
+    ]
   } catch (err) {
     console.error('Sitemap generation failed:', err)
     return staticRoutes

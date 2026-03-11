@@ -184,7 +184,7 @@ export default function LocalReportsPage() {
                       Forensic Market Audit
                     </span>
                     <Link
-                      href={`/reports/${report.slug}`}
+                      href={`/local-reports/report/${report.city.toLowerCase()}`}
                       className="inline-flex items-center gap-1 border border-border bg-background px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-foreground transition-colors hover:border-primary hover:text-primary"
                     >
                       View Full Market Audit
