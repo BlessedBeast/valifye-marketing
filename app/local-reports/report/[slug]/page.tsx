@@ -50,7 +50,12 @@ export default async function LocalSeoReportPage({ params }: Props) {
       ? Math.round(report.logic_score)
       : null
 
-  const [cityPart, regionPart] = (report.location_label || '').split(',').map((s) => s.trim())
+  const [rawCity, rawRegion] = (report.location_label || '')
+    .split(',')
+    .map((s) => s.trim())
+
+  const cityPart = rawCity || null
+  const regionPart = rawRegion || null
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950 font-mono text-zinc-100">
@@ -136,14 +141,56 @@ export default async function LocalSeoReportPage({ params }: Props) {
 
         {/* High-level metrics shell, if present in report_data */}
         {report.report_data && typeof report.report_data === 'object' && (
-          <section className="mb-8 border border-zinc-800 bg-zinc-950 px-6 py-5">
+          <section className="mb-8 border border-zinc-800 bg-zinc-950 px-6 py-5 shadow-[4px_4px_0_0_rgba(var(--primary-rgb),1)]">
             <h2 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-zinc-400">
               <BarChart3 className="h-4 w-4" />
               Market Snapshot
             </h2>
-            <pre className="max-h-[420px] overflow-auto bg-black/60 p-4 text-[11px] leading-relaxed text-zinc-200">
-              {JSON.stringify(report.report_data, null, 2)}
-            </pre>
+            <div className="grid gap-3 md:grid-cols-2">
+              {Object.entries(report.report_data).map(([rawKey, value]) => {
+                const label = rawKey.replace(/_/g, ' ')
+                const isArray = Array.isArray(value)
+                const isPrimitive =
+                  typeof value === 'string' ||
+                  typeof value === 'number' ||
+                  typeof value === 'boolean'
+
+                return (
+                  <div
+                    key={rawKey}
+                    className="border border-zinc-800 bg-black/40 p-4"
+                  >
+                    <div className="mb-2 text-[9px] font-bold uppercase tracking-[0.3em] text-zinc-500">
+                      {label}
+                    </div>
+                    {isArray ? (
+                      <ul className="space-y-1 text-[11px] leading-relaxed text-zinc-200">
+                        {(value as any[]).map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="mt-[2px] text-emerald-400">›</span>
+                            <span>
+                              {typeof item === 'string' || typeof item === 'number'
+                                ? String(item)
+                                : JSON.stringify(item)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : isPrimitive ? (
+                      <p className="text-[11px] leading-relaxed text-zinc-200">
+                        {String(value)}
+                      </p>
+                    ) : (
+                      <p className="text-[11px] leading-relaxed text-zinc-300">
+                        {value === null
+                          ? 'No data'
+                          : JSON.stringify(value, null, 2)}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </section>
         )}
 

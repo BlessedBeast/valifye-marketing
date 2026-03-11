@@ -18,7 +18,7 @@ export function ValifyeNavbar() {
   const logoSrc = isDark ? '/logo-dark.png' : '/logo-light.png'
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-background px-6 font-mono">
+    <header className="relative z-40 flex h-16 items-center justify-between border-b border-border bg-background px-6 font-mono">
       <Link
         href="/"
         className="flex items-center gap-3 font-black uppercase text-foreground"
