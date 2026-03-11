@@ -7,13 +7,6 @@ import { getIndustryHubs } from '@/lib/reportData'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-function sectorSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, '-')
-}
-
 export default async function IndustryDirectoryPage() {
   const hubs = await getIndustryHubs()
 
@@ -73,7 +66,7 @@ export default async function IndustryDirectoryPage() {
                 {hubs.map((hub) => {
                   const industry = hub.industry_name || 'Unlabeled'
                   const count = Number(hub.report_count) || 0
-                  const slug = sectorSlug(industry)
+                  const slug = hub.sector_slug || industry.toLowerCase().trim().replace(/\s+/g, '-')
 
                   return (
                     <article

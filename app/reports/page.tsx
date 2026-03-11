@@ -21,13 +21,6 @@ export default async function ReportsDirectoryPage() {
     return 'border-amber-500/50 bg-amber-950/30 text-amber-200'
   }
 
-  const slugifyIndustry = (name: string) =>
-    name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-
   return (
     <div className="flex min-h-screen flex-col bg-background font-mono text-foreground">
       <ValifyeNavbar />
@@ -61,7 +54,7 @@ export default async function ReportsDirectoryPage() {
               {industryHubs.map((hub) => {
                 const industry = hub.industry_name || 'Unlabeled'
                 const top = Array.isArray(hub.top_verdicts) ? hub.top_verdicts.slice(0, 2) : []
-                const slug = slugifyIndustry(industry)
+                const slug = hub.sector_slug || industry.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
                 return (
                   <Link
                     key={industry}

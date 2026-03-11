@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from supabase import create_client
 from dotenv import load_dotenv
 
@@ -7,22 +8,44 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize Supabase Client
-supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-# Mapping logic to categorize global reports into Industries
+if not SUPABASE_URL or not SUPABASE_KEY:
+    print("❌ Error: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not found in .env")
+    exit(1)
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 def get_industry_category(title):
+    """Forensic classification logic for grouping reports into sectors."""
     title = title.lower()
-    if any(k in title for k in ['iot', 'sensor', 'tracking', 'hardware']): return 'IoT & Hardware'
-    if any(k in title for k in ['ai', 'bot', 'gpt', 'llm', 'prompt']): return 'Artificial Intelligence'
-    if any(k in title for k in ['health', 'med', 'bio', 'clinic']): return 'HealthTech & Bio'
-    if any(k in title for k in ['tax', 'fin', 'saas', 'crm', 'pay']): return 'FinTech & B2B SaaS'
-    if any(k in title for k in ['solar', 'green', 'eco', 'esg']): return 'Sustainability & Energy'
+    if any(k in title for k in ['iot', 'sensor', 'tracking', 'hardware']): 
+        return 'IoT & Hardware'
+    if any(k in title for k in ['ai', 'bot', 'gpt', 'llm', 'prompt', 'agent']): 
+        return 'Artificial Intelligence'
+    if any(k in title for k in ['health', 'med', 'bio', 'clinic', 'wellness']): 
+        return 'HealthTech & Bio'
+    if any(k in title for k in ['tax', 'fin', 'saas', 'crm', 'pay', 'billing']): 
+        return 'FinTech & B2B SaaS'
+    if any(k in title for k in ['solar', 'green', 'eco', 'esg', 'energy']): 
+        return 'Sustainability & Energy'
     return 'Emerging Tech'
 
+def generate_sector_slug(name):
+    """Generates a URL-safe slug that matches the DB constraint."""
+    slug = name.lower()
+    slug = slug.replace('&', 'and')
+    # Replace anything not alphanumeric or space with empty
+    slug = re.sub(r'[^a-z0-9\s-]', '', slug)
+    # Replace spaces with hyphens
+    slug = re.sub(r'\s+', '-', slug).strip('-')
+    return slug
+
 def build_verdict_knowledge_bridges():
-    print("🏗️  Building Industry Knowledge Bridges (V4.0)...")
+    print("🏗️  Building Industry Knowledge Bridges (V5.0 - Slug Sync)...")
     
-    # 1. Get all generated validation reports
+    # 1. Fetch all generated validation reports
     try:
         response = supabase.table("verdict_reports")\
             .select("slug, idea_title, overall_integrity_score")\
@@ -33,7 +56,7 @@ def build_verdict_knowledge_bridges():
         return
 
     if not data:
-        print("📭 No verdict reports found to cluster.")
+        print("📭 No verdict reports found in 'verdict_reports' to cluster.")
         return
 
     # 2. Group reports by Industry
@@ -46,12 +69,11 @@ def build_verdict_knowledge_bridges():
 
     success_count = 0
 
-    # 3. Process each Industry Cluster
+    # 3. Process and Upsert each Industry Cluster
     for industry, reports in industry_clusters.items():
         print(f"🔗 Linking {len(reports)} forensic audits in {industry}...")
         
         # Sort by integrity score to find the 'Highest Conviction' audits
-        # Ensure score is treated as a float for sorting
         sorted_reports = sorted(reports, key=lambda x: float(x.get('overall_integrity_score') or 0), reverse=True)
         
         top_5_summary = []
@@ -62,26 +84,29 @@ def build_verdict_knowledge_bridges():
                 "score": r['overall_integrity_score']
             })
 
-        # Prepare the payload
+        # THE FIX: Generate the sector_slug to satisfy the unique constraint
+        sector_slug = generate_sector_slug(industry)
+
         hub_data = {
             "industry_name": industry,
+            "sector_slug": sector_slug,
             "report_count": len(reports),
-            # THE FIX: Explicitly stringify JSON for JSONB safety
-            "top_verdicts": json.dumps(top_5_summary),
-            # THE FIX: Ensure all_slugs matches the text[] array type
-            "all_slugs": [r['slug'] for r in reports]
+            "top_verdicts": json.dumps(top_5_summary), # JSONB Safety
+            "all_slugs": [r['slug'] for r in reports]   # text[] Safety
         }
         
         # 4. Upsert into verdict_industry_hubs
         try:
+            # We use on_conflict='industry_name' as the primary key of our logical sync
             supabase.table("verdict_industry_hubs")\
                 .upsert(hub_data, on_conflict="industry_name")\
                 .execute()
             success_count += 1
+            print(f"✅ Synced: {industry} -> /reports/industry/{sector_slug}")
         except Exception as e:
             print(f"⚠️ Failed to upsert {industry}: {e}")
 
-    print(f"✅ Industry Bridges built for {success_count} sectors.")
+    print(f"\n🏁 Finished. Industry Bridges operational for {success_count} sectors.")
 
 if __name__ == "__main__":
     build_verdict_knowledge_bridges()

@@ -51,6 +51,7 @@ export interface VerdictIndustryHub {
   report_count: number
   top_verdicts: { slug: string; title: string; score?: number }[]
   all_slugs?: string[]
+  sector_slug?: string
 }
 
 export interface VerdictIndustryHubDetail {
@@ -134,7 +135,7 @@ export async function getReportsList(limit = 50): Promise<ValidationReport[]> {
 export async function getIndustryHubs(): Promise<VerdictIndustryHub[]> {
   const { data, error } = await supabase
     .from('verdict_industry_hubs')
-    .select('industry_name, report_count, top_verdicts')
+    .select('industry_name, report_count, top_verdicts, sector_slug')
     .order('report_count', { ascending: false })
 
   if (error || !Array.isArray(data)) {
@@ -152,6 +153,7 @@ export async function getIndustryHubs(): Promise<VerdictIndustryHub[]> {
       top_verdicts: top.filter(
         (v) => v && typeof v.slug === 'string' && typeof v.title === 'string'
       ),
+      sector_slug: row.sector_slug ?? undefined,
     }
   })
 }
