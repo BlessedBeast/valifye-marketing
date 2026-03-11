@@ -35,6 +35,12 @@ export function ValifyeFooter() {
         </div>
 
         <nav className="flex flex-wrap justify-center gap-6 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+          <Link href="/local-reports" className="transition-colors hover:text-primary">
+            Local Reports
+          </Link>
+          <Link href="/ideas" className="transition-colors hover:text-primary">
+            Market Database
+          </Link>
           <Link href="/privacy" className="transition-colors hover:text-primary">
             Privacy Policy
           </Link>
