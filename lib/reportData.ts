@@ -160,16 +160,13 @@ export async function getIndustryHubs(): Promise<VerdictIndustryHub[]> {
 
 /**
  * Fetch a specific Industry Hub detail by its URL slug.
- * Uses .ilike for case-insensitive matching against industry_name.
+ * Uses strict match on sector_slug (indexed).
  */
 export async function getIndustryHubBySectorSlug(sectorSlug: string): Promise<VerdictIndustryHubDetail | null> {
-  // Convert 'real-estate' to 'real estate' for a broader search match
-  const searchPattern = sectorSlug.replace(/-/g, ' ');
-
   const { data, error } = await supabase
     .from('verdict_industry_hubs')
     .select('industry_name, report_count, top_verdicts, all_slugs')
-    .ilike('industry_name', searchPattern) 
+    .eq('sector_slug', sectorSlug)
     .maybeSingle()
 
   if (error || !data) {
@@ -191,7 +188,7 @@ export async function getIndustryHubBySectorSlug(sectorSlug: string): Promise<Ve
   }
 
   return {
-    industry_name: data.industry_name ?? searchPattern,
+    industry_name: data.industry_name ?? sectorSlug,
     report_count: Number(data.report_count) || allSlugs.length,
     top_verdicts: top.filter((v) => v && typeof v.slug === 'string'),
     all_slugs: allSlugs.filter((s) => typeof s === 'string'),
