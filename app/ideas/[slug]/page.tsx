@@ -1,5 +1,4 @@
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 86400
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -15,14 +14,30 @@ import { getIdeaBySlug } from '@/lib/marketData'
 
 type Props = { params: Promise<{ slug: string }> }
 
+/** Deep-clone and filter array fields to only string elements to avoid dirty data crashes */
+function sanitizeIdeaData(rawIdea: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(rawIdea)) {
+    if (Array.isArray(value)) {
+      out[key] = value.filter((item): item is string => typeof item === 'string')
+    } else if (value !== null && typeof value === 'object') {
+      out[key] = sanitizeIdeaData(value as Record<string, unknown>)
+    } else {
+      out[key] = value
+    }
+  }
+  return out
+}
+
 export default async function IdeaDossierPage({ params }: Props) {
   const { slug } = await params
-  const idea = await getIdeaBySlug(slug)
+  const raw = await getIdeaBySlug(slug)
 
-  if (!idea) {
+  if (!raw) {
     notFound()
   }
 
+  const idea = sanitizeIdeaData(raw as unknown as Record<string, unknown>) as unknown as typeof raw
   const hasBlueprint = Array.isArray(idea.local_friction) && idea.local_friction.length > 0
 
   return (

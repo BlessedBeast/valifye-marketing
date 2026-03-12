@@ -26,11 +26,13 @@ export async function CityHubSidebar({ currentCity, currentNiche }: CityHubSideb
 
   const relatedTopicsLd = {
     '@context': 'https://schema.org',
-    '@graph': recommended.map((n) => ({
-      '@type': 'RelatedTopic',
-      name: n.niche,
-      url: `https://valifye.com/ideas/${n.slug}`
-    }))
+    '@graph': recommended
+      .filter((n) => n && typeof n.slug === 'string')
+      .map((n) => ({
+        '@type': 'RelatedTopic',
+        name: typeof n.niche === 'string' ? n.niche : String(n.niche ?? ''),
+        url: `https://valifye.com/ideas/${n.slug}`
+      }))
   }
 
   const formatScore = (score: number | null | undefined) =>
@@ -56,28 +58,32 @@ export async function CityHubSidebar({ currentCity, currentNiche }: CityHubSideb
       </div>
 
       <div className="mt-2 flex gap-3 overflow-x-auto pb-1">
-        {recommended.map((n) => (
-          <Link
-            key={n.slug}
-            href={`/ideas/${n.slug}`}
-            className="group flex min-w-[200px] flex-col justify-between rounded-xl border border-border bg-background/80 px-3 py-3 text-xs transition-colors hover:border-primary/60 hover:bg-card"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="space-y-1">
-                <p className="line-clamp-2 text-[13px] font-semibold text-foreground">
-                  {n.niche}
-                </p>
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                  Opportunity score
-                </p>
+        {recommended.map((n, idx) => {
+          if (!n || typeof n.slug !== 'string') return null;
+          const niche = typeof n.niche === 'string' ? n.niche : String(n.niche ?? '');
+          return (
+            <Link
+              key={n.slug}
+              href={`/ideas/${n.slug}`}
+              className="group flex min-w-[200px] flex-col justify-between rounded-xl border border-border bg-background/80 px-3 py-3 text-xs transition-colors hover:border-primary/60 hover:bg-card"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="space-y-1">
+                  <p className="line-clamp-2 text-[13px] font-semibold text-foreground">
+                    {niche}
+                  </p>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Opportunity score
+                  </p>
+                </div>
+                <ArrowUpRight className="h-4 w-4 flex-shrink-0 text-muted-foreground group-hover:text-primary" />
               </div>
-              <ArrowUpRight className="h-4 w-4 flex-shrink-0 text-muted-foreground group-hover:text-primary" />
-            </div>
-            <div className="mt-2 text-right text-[11px] font-semibold text-foreground">
-              {formatScore(n.opportunity_score)}
-            </div>
-          </Link>
-        ))}
+              <div className="mt-2 text-right text-[11px] font-semibold text-foreground">
+                {formatScore(n.opportunity_score)}
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </aside>
   )

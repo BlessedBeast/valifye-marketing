@@ -7,7 +7,8 @@ interface AppConversionBridgeProps {
 }
 
 export function AppConversionBridge({ niche, city }: AppConversionBridgeProps) {
-  const refSlug = `pseo_${city.toLowerCase().replace(/\s+/g, '_')}`
+  const cityStr = typeof city === 'string' ? city : String(city ?? '');
+  const refSlug = `pseo_${cityStr.toLowerCase().replace(/\s+/g, '_')}`
   const appUrl = `https://app.valifye.com/?ref=${refSlug}`
 
   return (
@@ -17,7 +18,7 @@ export function AppConversionBridge({ niche, city }: AppConversionBridgeProps) {
           Don&apos;t Build in the Dark.
         </h2>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          This blueprint is a static sample—a snapshot of {niche} in {city}. It does not account for
+          This blueprint is a static sample—a snapshot of {typeof niche === 'string' ? niche : String(niche ?? '')} in {cityStr}. It does not account for
           your runway, team size, or capital constraints. To run your specific scenario through our
           live engine and get a verdict tuned to your reality, you need to use the app. No fluff.
           No generic advice. Input your numbers; get a cold, database-backed recommendation.

@@ -73,12 +73,79 @@ function safeUnitEconomics(logicAudit: LogicAudit | null): UnitEconomics | null 
   return null
 }
 
+/** Renders text with **bold** converted to <strong> (no dangerouslySetInnerHTML) */
+function renderWithBold(text: string) {
+  const parts = text.split('**')
+  return (
+    <>
+      {parts.map((part, i) =>
+        i % 2 === 1 ? (
+          <strong key={i} className="text-zinc-100 font-bold">
+            {part}
+          </strong>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  )
+}
+
+/** Lightweight markdown-style renderer for string evidence (line-by-line + bold) */
+function renderMarkdownString(str: string) {
+  const lines = str.split('\n')
+  return (
+    <div className="space-y-0">
+      {lines.map((rawLine, lineIdx) => {
+        const line = rawLine.trimEnd()
+        const trimmed = line.trim()
+
+        if (trimmed === '') {
+          return <div key={lineIdx} className="h-2" />
+        }
+        if (trimmed === '---') {
+          return <hr key={lineIdx} className="my-4 border-zinc-800" />
+        }
+        if (line.startsWith('###') || line.startsWith('##')) {
+          const heading = line.replace(/^#+\s*/, '').trim()
+          return (
+            <h4
+              key={lineIdx}
+              className="mt-4 mb-2 text-[11px] font-bold uppercase tracking-widest text-primary"
+            >
+              {renderWithBold(heading)}
+            </h4>
+          )
+        }
+        const bulletMatch = trimmed.match(/^[\*\-]\s+(.*)$/)
+        if (bulletMatch) {
+          const content = bulletMatch[1] ?? trimmed
+          return (
+            <div key={lineIdx} className="flex gap-2 ml-4 mb-1">
+              <span className="text-primary shrink-0">›</span>
+              <span className="leading-relaxed text-zinc-300">{renderWithBold(content)}</span>
+            </div>
+          )
+        }
+        return (
+          <p key={lineIdx} className="mb-2 leading-relaxed text-zinc-300">
+            {renderWithBold(line)}
+          </p>
+        )
+      })}
+    </div>
+  )
+}
+
 /** Recursive renderer for structured evidence data */
 function EvidenceNode({ data }: { data: unknown }) {
   if (data === null || data === undefined) {
     return <span className="text-zinc-500">—</span>
   }
-  if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
+  if (typeof data === 'string') {
+    return renderMarkdownString(data)
+  }
+  if (typeof data === 'number' || typeof data === 'boolean') {
     return <span className="text-zinc-300">{String(data)}</span>
   }
   if (Array.isArray(data)) {

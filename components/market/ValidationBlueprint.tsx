@@ -14,18 +14,19 @@ type Idea = {
   unit_economics?: any; 
 }
 
-// 🛡️ Validator's Bulletproof Parsers
+// 🛡️ Validator's Bulletproof Parsers — only allow string elements to avoid .replace / .map crashes
 const safeArrayParse = (data: any): string[] => {
-  if (Array.isArray(data)) return data;
-  if (typeof data === 'string') {
-    try { 
+  let arr: unknown[] = [];
+  if (Array.isArray(data)) arr = data;
+  else if (typeof data === 'string') {
+    try {
       const parsed = JSON.parse(data);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (e) { 
-      return []; 
+      arr = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      arr = [];
     }
   }
-  return [];
+  return arr.filter((x): x is string => typeof x === 'string');
 }
 
 const safeJsonParse = (data: any): Record<string, any> => {
@@ -61,12 +62,15 @@ export function ValidationBlueprintDashboard({ idea }: { idea: Idea }) {
           </div>
           <div className="p-5">
             <ul className="space-y-4">
-              {frictionList.map((item, idx) => (
-                <li key={idx} className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
-                  <span className="font-bold text-amber-500 mt-0.5">[{idx + 1}]</span>
-                  <span>{item.replace(/\*\*/g, '')}</span>
-                </li>
-              ))}
+              {frictionList.map((item, idx) => {
+                if (typeof item !== 'string') return null;
+                return (
+                  <li key={idx} className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
+                    <span className="font-bold text-amber-500 mt-0.5">[{idx + 1}]</span>
+                    <span>{item.replace(/\*\*/g, '')}</span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </section>
@@ -90,39 +94,43 @@ export function ValidationBlueprintDashboard({ idea }: { idea: Idea }) {
               <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
                 <span className="text-[10px] uppercase text-muted-foreground mb-1">Unit Price</span>
                 <span className="text-lg font-black text-foreground">
-                  {economics.unit_price ? `$${economics.unit_price.toLocaleString()}` : 'Var.'}
+                  {typeof economics.unit_price === 'number' && Number.isFinite(economics.unit_price)
+                    ? `$${economics.unit_price.toLocaleString()}`
+                    : 'Var.'}
                 </span>
               </div>
 
               <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
                 <span className="text-[10px] uppercase text-muted-foreground mb-1">Gross Margin</span>
-                <span className={`text-lg font-black ${economics.margin_pct ? 'text-green-500' : 'text-red-500'}`}>
-                  {economics.margin_pct ? `${economics.margin_pct}%` : 'N/A'}
+                <span className={`text-lg font-black ${economics.margin_pct != null && economics.margin_pct !== '' ? 'text-green-500' : 'text-red-500'}`}>
+                  {economics.margin_pct != null && economics.margin_pct !== '' ? `${String(economics.margin_pct)}%` : 'N/A'}
                 </span>
               </div>
 
               <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
                 <span className="text-[10px] uppercase text-muted-foreground mb-1">Rent Impact</span>
                 <span className={`text-lg font-black ${
-                  economics.rent_impact === 'High' ? 'text-red-500' : 
+                  economics.rent_impact === 'High' ? 'text-red-500' :
                   economics.rent_impact === 'Medium' ? 'text-amber-500' : 'text-foreground'
                 }`}>
-                  {economics.rent_impact || 'N/A'}
+                  {typeof economics.rent_impact === 'string' ? economics.rent_impact : 'N/A'}
                 </span>
               </div>
 
               <div className="bg-card p-4 flex flex-col items-center justify-center text-center">
                 <span className="text-[10px] uppercase text-muted-foreground mb-1">Fixed Mo. Costs</span>
                 <span className="text-lg font-black text-red-500">
-                  {economics.fixed_costs_monthly ? `$${economics.fixed_costs_monthly.toLocaleString()}` : 'Var.'}
+                  {typeof economics.fixed_costs_monthly === 'number' && Number.isFinite(economics.fixed_costs_monthly)
+                    ? `$${economics.fixed_costs_monthly.toLocaleString()}`
+                    : 'Var.'}
                 </span>
               </div>
             </div>
             
-            {economics.logic && (
+            {economics.logic != null && economics.logic !== '' && (
                 <div className="p-4 bg-muted/20 border-t border-border text-xs text-muted-foreground leading-relaxed border-l-2 border-l-primary">
                     <span className="font-bold text-foreground mr-2">LOGIC:</span>
-                    {economics.logic}
+                    {typeof economics.logic === 'string' ? economics.logic : String(economics.logic)}
                 </div>
             )}
           </section>
@@ -138,19 +146,22 @@ export function ValidationBlueprintDashboard({ idea }: { idea: Idea }) {
             </div>
             <div className="p-5">
               <ul className="space-y-5 border-l border-border ml-2 pl-4">
-                {gtmSteps.map((step, idx) => (
-                  <li key={idx} className="relative text-sm text-muted-foreground leading-relaxed">
-                    <span className="absolute -left-[21px] top-1 h-2 w-2 rounded-full bg-primary" />
-                    {step.replace(/\*\*/g, '')}
-                  </li>
-                ))}
+                {gtmSteps.map((step, idx) => {
+                  if (typeof step !== 'string') return null;
+                  return (
+                    <li key={idx} className="relative text-sm text-muted-foreground leading-relaxed">
+                      <span className="absolute -left-[21px] top-1 h-2 w-2 rounded-full bg-primary" />
+                      {step.replace(/\*\*/g, '')}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </section>
         )}
 
         {/* SECTION 4: Brutal Pre-Mortem */}
-        {idea.failure_modes && (
+        {idea.failure_modes != null && idea.failure_modes !== '' && (
           <section className="border border-red-900/30 bg-red-950/5 shadow-[4px_4px_0_0_#7f1d1d] flex flex-col">
             <div className="flex items-center gap-2 border-b border-red-900/30 bg-red-900/10 px-5 py-3">
               <FileWarning className="h-4 w-4 text-red-500" />
@@ -158,7 +169,7 @@ export function ValidationBlueprintDashboard({ idea }: { idea: Idea }) {
             </div>
             <div className="p-5 flex-1">
               <p className="text-sm leading-relaxed text-red-200/80">
-                {idea.failure_modes}
+                {typeof idea.failure_modes === 'string' ? idea.failure_modes : String(idea.failure_modes ?? '')}
               </p>
             </div>
           </section>
