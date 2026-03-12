@@ -4,18 +4,13 @@ import time
 import re
 import googlemaps
 import requests
+from datetime import datetime, timezone
+from typing import Any, Dict
 from dotenv import load_dotenv
 from supabase import create_client
 from google import genai
 
 load_dotenv()
-
-# DIAGNOSTIC: Ensure we are talking to the right server
-try:
-    current_ip = requests.get('https://api.ipify.org').text
-    print(f"🖥️  System Online. IP: {current_ip}")
-except:
-    pass
 
 # Initialize Clients
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
@@ -23,81 +18,35 @@ gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 gmaps = googlemaps.Client(key=os.getenv("GOOGLE_PLACES_API_KEY"))
 
 # PRODUCTION CONSTANTS
-MODEL_NAME = "gemini-2.5-flash"  # Use stable production string
-BATCH_LIMIT = 50                 # Increased as requested
-THROTTLE_TIME = 10               # Seconds to wait between reports
-
+MODEL_NAME = "gemini-2.0-flash" 
+BATCH_LIMIT = 50 
+THROTTLE_TIME = 8  # Balanced for speed and API safety
 
 def forensic_slugify(text: str) -> str:
-    """
-    Normalizes arbitrary niche/city strings into URL-safe slugs.
-
-    - Lowercases the text.
-    - Replaces spaces, slashes, backslashes, ampersands, and underscores with hyphens.
-    - Strips any character that isn't a letter, number, or hyphen.
-    - Collapses multiple hyphens into a single hyphen.
-    - Trims hyphens from the start and end of the string.
-    """
-    if not isinstance(text, str):
-        text = str(text or "")
-
-    # Lowercase and strip extra whitespace
+    if not isinstance(text, str): text = str(text or "")
     value = text.strip().lower()
-
-    # Replace separators & unsafe punctuation with hyphens
     value = re.sub(r"[\\\/&_\s]+", "-", value)
-
-    # Remove anything that's not a-z, 0-9, or hyphen
     value = re.sub(r"[^a-z0-9\-]", "", value)
-
-    # Collapse multiple hyphens
     value = re.sub(r"-{2,}", "-", value)
-
-    # Trim leading/trailing hyphens
     return value.strip("-")
 
-# --- 1. BUSINESS TYPE MAPPING ---
-def map_business_type(niche, business_type_input):
-    combined = f"{niche} {business_type_input}".lower()
-    mapping = {
-        'cafe': ['cafe', 'coffee'],
-        'bakery': ['bakery'],
-        'bar': ['bar', 'pub'],
-        'gym': ['gym', 'fitness'],
-        'hair_salon': ['salon', 'beauty'],
-        'pharmacy': ['pharmacy'],
-        'laundry': ['laundry'],
-        'spa': ['spa', 'wellness'],
-        'restaurant': ['restaurant', 'food'],
-    }
-    for key, keywords in mapping.items():
-        if any(kw in combined for kw in keywords):
-            return key
-    return 'establishment'
-
-# --- 2. GOOGLE MAPS HARVESTER (Stable Buffers) ---
-def harvest_local_evidence(niche, city, region, business_type):
-    location_query = f"{city}, {region}"
-    print(f"📡 Harvesting Real Evidence for {niche} in {location_query}...")
+# --- 1. HARVESTER: TEXT-SEARCH UPGRADE ---
+def harvest_local_evidence(niche, city, region):
+    """
+    Forensic Harvester: Uses Text Search instead of Nearby Search.
+    This provides 'thicker' competitor data and broader local SEO meat.
+    """
+    search_query = f"best {niche} in {city}, {region}"
+    print(f"📡 Harvesting Forensic Evidence for: {search_query}")
     
     try:
-        # A: Geocode
-        geo_res = gmaps.geocode(location_query)
-        if not geo_res: return None
-        latlng = geo_res[0]['geometry']['location']
-        
-        # B: Search Nearby
-        g_type = map_business_type(niche, business_type)
-        places_res = gmaps.places_nearby(
-            location=latlng,
-            radius=1500, 
-            type=g_type
-        )
+        # A: Get broad search results
+        places_res = gmaps.places(query=search_query)
         
         competitor_details = []
-        # Limiting to top 5 for quality
+        # Limiting to top 5 for maximum quality/review density
         for p in places_res.get('results', [])[:5]:
-            time.sleep(0.8) # 🟢 STABLE: Prevents Places API detail spikes
+            time.sleep(0.5) 
             details = gmaps.place(
                 place_id=p['place_id'],
                 fields=['name', 'rating', 'user_ratings_total', 'reviews', 'price_level']
@@ -112,7 +61,6 @@ def harvest_local_evidence(niche, city, region, business_type):
             })
             
         return {
-            "latlng": latlng,
             "competitors": competitor_details,
             "total_found": len(places_res.get('results', []))
         }
@@ -120,58 +68,71 @@ def harvest_local_evidence(niche, city, region, business_type):
         print(f"⚠️ Maps API Failure: {e}")
         return None
 
-# --- 3. JSON CLEANER ---
-def clean_json_string(raw_string):
-    clean = re.sub(r"```json|```", "", raw_string).strip()
-    clean = re.sub(r",\s*([\]}])", r"\1", clean)
-    return clean
-
-# --- 4. THE THICK GENERATOR ---
+# --- 2. THICK GENERATOR: NARRATIVE SYNTHESIS ---
 def generate_thick_report(seed, harvested_data):
     niche = seed['niche']
     city = seed['city']
-    competitor_context = json.dumps(harvested_data.get('competitors', []), indent=2) if harvested_data else "No live data."
+    region = seed['region']
     
-    prompt = f"Analyze market for '{niche}' in {city}. EVIDENCE: {competitor_context}. Return valid JSON."
+    competitors = harvested_data.get('competitors', []) if harvested_data else []
+    competitor_context = json.dumps(competitors, indent=2) if competitors else "NO_DIRECT_MAPS_DATA_FOUND"
+
+    # THE FORENSIC PROMPT: Prevents 'Insufficient Evidence' errors.
+    prompt = f"""
+    You are the Lead Analyst at Valifye Forensic Intelligence. 
+    Task: Draft a high-density, professional Market Audit for a '{niche}' in {city}, {region}.
+
+    RAW COMPETITOR DATA:
+    {competitor_context}
+
+    THICKNESS REQUIREMENTS:
+    1. If COMPETITOR DATA is missing, do NOT state "I cannot analyze". Instead, synthesize a report based on {city}'s known demographics, high-traffic corridors, and urban lifestyle trends.
+    2. MINIMUM LENGTH: 2500 characters of clean text.
+    3. MANDATORY JSON STRUCTURE:
+       - 'verdict': (BUILD, PIVOT, or KILL)
+       - 'logic_score': (0-100 based on market saturation vs demand)
+       - 'executive_summary': (Deep narrative analysis, min 300 words)
+       - 'micro_tam': {{ "realistic": "$", "optimistic": "$", "calculation_basis": "..." }}
+       - 'entry_playbook': [5 specific, localized tactical steps]
+       - 'market_gaps': [List of specific underserved needs in {city}]
+       - 'review_sentiment_audit': {{ "top_praises": [], "top_complaints": [] }}
+       - 'meta_description': (High-CTR SEO snippet)
+
+    Style: Professional, Cold, Tactical. 
+    Return ONLY raw valid JSON.
+    """
 
     try:
         response = gemini_client.models.generate_content(
             model=MODEL_NAME, 
             contents=prompt,
-            config={'temperature': 0.3} 
+            config={'response_mime_type': 'application/json', 'temperature': 0.4} 
         )
-        return json.loads(clean_json_string(response.text))
+        return json.loads(response.text)
     except Exception as e:
         print(f"❌ Gemini Error: {e}")
         return None
 
-# --- 5. MAIN PROCESSOR (The Loop) ---
+# --- 3. MAIN FACTORY LOOP ---
 def process_seo_factory():
-    print(f"🏭 Factory Initializing. Target Batch: {BATCH_LIMIT} reports.")
+    print(f"🏭 Factory Initializing. Syncing Local Intelligence...")
     
-    response = supabase.table("local_reports_content")\
-        .select("*")\
-        .eq("is_generated", False)\
-        .limit(BATCH_LIMIT)\
-        .execute()
-    
+    # Get seeds from your content table
+    response = supabase.table("local_reports_content").select("*").eq("is_generated", False).limit(BATCH_LIMIT).execute()
     seeds = response.data or []
+
     if not seeds:
-        print("📭 Nothing to process.")
+        print("📭 Factory Idle. No new seeds.")
         return
 
-    total = len(seeds)
     for index, seed in enumerate(seeds):
-        current_num = index + 1
         try:
-            print(f"\n--- [{current_num}/{total}] PROCESSING: {seed['niche']} ---")
+            print(f"\n--- [{index+1}/{len(seeds)}] ANALYZING: {seed['niche']} in {seed['city']} ---")
             
-            # Step 1: Maps Data
-            evidence = harvest_local_evidence(seed['niche'], seed['city'], seed['region'], seed.get('business_shape', 'store'))
+            # Step 1: Harvest
+            evidence = harvest_local_evidence(seed['niche'], seed['city'], seed['region'])
             
-            time.sleep(2) # 🟢 STABLE: Rest between APIs
-
-            # Step 2: Gemini Generation
+            # Step 2: Generate
             report_json = generate_thick_report(seed, evidence)
 
             if report_json:
@@ -179,7 +140,7 @@ def process_seo_factory():
                 city_slug = forensic_slugify(seed.get("city", ""))
                 slug = f"{niche_slug}-{city_slug}-market-audit"
                 
-                # Step 3: Save to DB
+                # Step 3: Upsert to public_seo_reports (Matching your table definition)
                 supabase.table("public_seo_reports").upsert({
                     "slug": slug,
                     "idea_title": f"Market Audit: {seed['niche']} in {seed['city']}",
@@ -187,20 +148,20 @@ def process_seo_factory():
                     "location_label": f"{seed['city']}, {seed['region']}",
                     "report_type": "forensic-audit",
                     "report_data": report_json,
+                    "logic_score": int(report_json.get('logic_score', 0)),
+                    "verdict": str(report_json.get('verdict', 'PENDING')),
+                    "meta_description": report_json.get('meta_description', ''),
                     "is_published": False 
                 }, on_conflict="slug").execute()
 
-                # Step 4: Finalize Seed
+                # Step 4: Mark Seed as Generated
                 supabase.table("local_reports_content").update({"is_generated": True}).eq("id", seed['id']).execute()
-                print(f"✅ Generated: {slug}")
+                print(f"✅ Forensic Report Symmetrized: {slug}")
                 
-            # Step 5: Safety Cooling
-            if current_num < total:
-                print(f"💤 Cooling down ({THROTTLE_TIME}s) to maintain stability...")
-                time.sleep(THROTTLE_TIME) 
+            time.sleep(THROTTLE_TIME) 
                 
         except Exception as e:
-            print(f"❌ Seed {seed.get('id')} failed: {e}")
+            print(f"❌ Factory Fault: {e}")
             continue
 
 if __name__ == "__main__":

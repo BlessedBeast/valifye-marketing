@@ -6,7 +6,7 @@ import {
   Activity,
   ListTree,
   ShieldAlert,
-  Terminal,
+  Database,
   AlertTriangle,
 } from 'lucide-react'
 import { ValifyeNavbar } from '@/components/valifye-navbar'
@@ -73,31 +73,42 @@ function safeUnitEconomics(logicAudit: LogicAudit | null): UnitEconomics | null 
   return null
 }
 
-function buildTerminalText(experiment: ExperimentData | null): string {
-  if (
-    !experiment ||
-    typeof experiment !== 'object' ||
-    Array.isArray(experiment) ||
-    !(experiment as any).raw_notes
-  ) {
-    return ''
+/** Recursive renderer for structured evidence data */
+function EvidenceNode({ data }: { data: unknown }) {
+  if (data === null || data === undefined) {
+    return <span className="text-zinc-500">—</span>
   }
-  const rawNotes: unknown = (experiment as any).raw_notes
-  if (!rawNotes || typeof rawNotes !== 'object' || Array.isArray(rawNotes)) return ''
-
-  let buf = ''
-  for (const [key, value] of Object.entries(rawNotes as Record<string, unknown>)) {
-    const filename = key.toLowerCase().replace(/\s+/g, '_')
-    const text =
-      typeof value === 'string'
-        ? value
-        : typeof value === 'object'
-          ? JSON.stringify(value, null, 2)
-          : String(value)
-
-    buf += `root@valifye:~# cat ${filename}.log\n${text}\n\n`
+  if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
+    return <span className="text-zinc-300">{String(data)}</span>
   }
-  return buf.trim()
+  if (Array.isArray(data)) {
+    return (
+      <ul className="mt-2 space-y-3 border-l-2 border-zinc-800/50 pl-4">
+        {data.map((item, i) => (
+          <li key={i}>
+            <EvidenceNode data={item} />
+          </li>
+        ))}
+      </ul>
+    )
+  }
+  if (typeof data === 'object') {
+    return (
+      <div className="space-y-2">
+        {Object.entries(data as Record<string, unknown>).map(([key, val]) => (
+          <div key={key} className="flex flex-col gap-1 sm:flex-row sm:gap-3">
+            <span className="shrink-0 text-[9px] font-bold uppercase tracking-widest text-zinc-500">
+              {key.replace(/_/g, ' ')}
+            </span>
+            <div className="min-w-0">
+              <EvidenceNode data={val} />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+  return <span className="text-zinc-300">{String(data)}</span>
 }
 
 function inferSectorFromTitle(title: string | null | undefined): string | null {
@@ -195,7 +206,7 @@ export default async function ReportDetailPage({ params }: Props) {
         )
       : []
 
-  const terminalText = buildTerminalText(experiment)
+  const rawNotes = (experiment as any)?.raw_notes as Record<string, unknown> | null
 
   // --- Sector context bridge ---
   const sectorName = inferSectorFromTitle(report.idea_title)
@@ -539,24 +550,28 @@ export default async function ReportDetailPage({ params }: Props) {
           </section>
         )}
 
-        {/* Terminal vault for raw notes */}
-        {terminalText && (
-          <section className="mb-10 border border-zinc-800 bg-[#080808] px-6 py-5">
-            <div className="flex items-center justify-between text-xs font-bold uppercase tracking-[0.3em] text-zinc-400">
-              <div className="flex items-center gap-2">
-                <Terminal className="h-4 w-4" />
-                <span>Raw Evidence Vault</span>
-              </div>
+        {/* Forensic Intelligence Annex: raw_notes as structured details */}
+        {rawNotes && Object.keys(rawNotes).length > 0 && (
+          <section className="mb-10">
+            <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-zinc-400">
+              <Database className="h-4 w-4" />
+              <span>Forensic Intelligence Annex</span>
             </div>
-            <details className="mt-3 border border-zinc-800 bg-black/90 px-4 py-3 text-[11px] text-emerald-200">
-              <summary className="cursor-pointer text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400">
-                Toggle raw_notes (terminal stream)
-              </summary>
-              <pre className="mt-3 whitespace-pre-wrap leading-relaxed">
-{`root@valifye:~# tail -n 200 evidence.log
-${terminalText}`}
-              </pre>
-            </details>
+            <div className="space-y-0">
+              {Object.entries(rawNotes).map(([key, value]) => (
+                <details
+                  key={key}
+                  className="mb-4 border border-zinc-800 bg-[#080808]"
+                >
+                  <summary className="cursor-pointer px-5 py-4 text-[11px] font-bold uppercase tracking-wider text-primary">
+                    {key.replace(/_/g, ' ')}
+                  </summary>
+                  <div className="border-t border-zinc-800 p-5 text-[11px] bg-black/50">
+                    <EvidenceNode data={value} />
+                  </div>
+                </details>
+              ))}
+            </div>
           </section>
         )}
       </main>
