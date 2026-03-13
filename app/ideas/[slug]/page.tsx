@@ -11,28 +11,21 @@ import { RelatedMarkets } from '@/components/market/RelatedMarkets'
 import { CityHubSidebar } from '@/components/market/CityHubSidebar'
 import { AppConversionBridge } from '@/components/market/AppConversionBridge'
 import { getIdeaBySlug } from '@/lib/marketData'
+import { createClient } from '@/utils/supabase/server'
 
 type Props = { params: Promise<{ slug: string }> }
 
 const LOCAL_INTELLIGENCE_CITIES = ['Austin', 'Miami', 'London', 'Denver', 'Seattle', 'Nashville'] as const
 
-/** Generate local report slug: [niche-part]-[city-slug]-market-audit */
-function localReportSlug(niche: string, cityName: string): string {
-  const nichePart = (niche ?? '')
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '') || 'market'
-  const cityPart = (cityName ?? '')
+/** Slugify a city name: 'New York' -> 'new-york' */
+function slugifyCity(cityName: string): string {
+  return (cityName ?? '')
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '') || 'city'
-  return `${nichePart}-${cityPart}-market-audit`
 }
 
 /** Deep-clone and filter array fields to only string elements to avoid dirty data crashes */
@@ -60,6 +53,43 @@ export default async function IdeaDossierPage({ params }: Props) {
 
   const idea = sanitizeIdeaData(raw as unknown as Record<string, unknown>) as unknown as typeof raw
   const hasBlueprint = Array.isArray(idea.local_friction) && idea.local_friction.length > 0
+
+  // --- Local Intelligence slug derivation ---
+  const currentCity = typeof idea.city === 'string' ? idea.city : String(idea.city ?? '')
+  const normalizedCity = currentCity.toLowerCase().replace(/\s+/g, '-')
+
+  let baseNicheSlug = slug
+  if (normalizedCity) {
+    const pattern = `in${normalizedCity}`
+    baseNicheSlug = baseNicheSlug.split(pattern).join('')
+  }
+  baseNicheSlug = baseNicheSlug.replace(/in[a-z-]+$/, '')
+  baseNicheSlug = baseNicheSlug.replace(/-+/g, '-').replace(/^-|-$/g, '') || slug
+
+  // Optional safety: only show cities that actually have a public SEO report for this niche
+  const candidates = LOCAL_INTELLIGENCE_CITIES.map((cityName) => {
+    const citySlug = slugifyCity(cityName)
+    const reportSlug = `${baseNicheSlug}-${citySlug}-market-audit`
+    return { cityName, reportSlug }
+  })
+
+  const supabase = createClient()
+  const { data: existingReports } = await supabase
+    .from('public_seo_reports')
+    .select('slug')
+    .in(
+      'slug',
+      candidates.map((c) => c.reportSlug),
+    )
+
+  const existingSlugs = new Set(
+    (existingReports ?? [])
+      .map((row: any) => row?.slug)
+      .filter((s: any) => typeof s === 'string'),
+  )
+
+  const filteredCandidates =
+    candidates.filter((c) => existingSlugs.has(c.reportSlug)) || []
 
   return (
     <div className="flex min-h-screen flex-col bg-background font-mono text-foreground">
@@ -132,24 +162,20 @@ export default async function IdeaDossierPage({ params }: Props) {
         <AppConversionBridge niche={idea.niche} city={idea.city} />
 
         {/* Forensic Local Intelligence */}
-        <section className="space-y-6 border-t border-border pt-10">
-          <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-primary mb-6">
-            Forensic Local Intelligence
-          </h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            Explore deep-dive market audits for this niche across major economic hubs.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {LOCAL_INTELLIGENCE_CITIES.map((cityName) => {
-              const reportSlug = localReportSlug(
-                typeof idea.niche === 'string' ? idea.niche : String(idea.niche ?? ''),
-                cityName
-              )
-              return (
+        {filteredCandidates.length > 0 && (
+          <section className="space-y-6 border-t border-border pt-10">
+            <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-primary mb-6">
+              Forensic Local Intelligence
+            </h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              Explore deep-dive market audits for this niche across major economic hubs.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredCandidates.map(({ cityName, reportSlug }) => (
                 <Link
                   key={cityName}
                   href={`/local-reports/report/${reportSlug}`}
-                  className="flex flex-col gap-2 bg-zinc-900/50 border border-zinc-800 p-4 transition-all hover:border-primary"
+                  className="flex flex-col gap-2 bg-zinc-900/50 border border-zinc-800 p-4 transition-all hover:border-primary hover:bg-zinc-900"
                 >
                   <div className="flex items-center gap-2 text-foreground">
                     <MapPin className="h-4 w-4 shrink-0 text-primary" />
@@ -159,10 +185,10 @@ export default async function IdeaDossierPage({ params }: Props) {
                     View Forensic Audit ›
                   </span>
                 </Link>
-              )
-            })}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
       <ValifyeFooter />
     </div>
