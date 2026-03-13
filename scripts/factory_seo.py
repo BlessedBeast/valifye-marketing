@@ -18,7 +18,7 @@ gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 gmaps = googlemaps.Client(key=os.getenv("GOOGLE_PLACES_API_KEY"))
 
 # PRODUCTION CONSTANTS
-MODEL_NAME = "gemini-2.0-flash" 
+MODEL_NAME = "gemini-2.5-flash" 
 BATCH_LIMIT = 50 
 THROTTLE_TIME = 8  # Balanced for speed and API safety
 

@@ -2,7 +2,7 @@ export const revalidate = 86400
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, MapPin } from 'lucide-react'
 import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
 import { ValidationBlueprintDashboard } from '@/components/market/ValidationBlueprint'
@@ -13,6 +13,27 @@ import { AppConversionBridge } from '@/components/market/AppConversionBridge'
 import { getIdeaBySlug } from '@/lib/marketData'
 
 type Props = { params: Promise<{ slug: string }> }
+
+const LOCAL_INTELLIGENCE_CITIES = ['Austin', 'Miami', 'London', 'Denver', 'Seattle', 'Nashville'] as const
+
+/** Generate local report slug: [niche-part]-[city-slug]-market-audit */
+function localReportSlug(niche: string, cityName: string): string {
+  const nichePart = (niche ?? '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || 'market'
+  const cityPart = (cityName ?? '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || 'city'
+  return `${nichePart}-${cityPart}-market-audit`
+}
 
 /** Deep-clone and filter array fields to only string elements to avoid dirty data crashes */
 function sanitizeIdeaData(rawIdea: Record<string, unknown>): Record<string, unknown> {
@@ -109,6 +130,39 @@ export default async function IdeaDossierPage({ params }: Props) {
       </section>
 
         <AppConversionBridge niche={idea.niche} city={idea.city} />
+
+        {/* Forensic Local Intelligence */}
+        <section className="space-y-6 border-t border-border pt-10">
+          <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-primary mb-6">
+            Forensic Local Intelligence
+          </h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            Explore deep-dive market audits for this niche across major economic hubs.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {LOCAL_INTELLIGENCE_CITIES.map((cityName) => {
+              const reportSlug = localReportSlug(
+                typeof idea.niche === 'string' ? idea.niche : String(idea.niche ?? ''),
+                cityName
+              )
+              return (
+                <Link
+                  key={cityName}
+                  href={`/local-reports/report/${reportSlug}`}
+                  className="flex flex-col gap-2 bg-zinc-900/50 border border-zinc-800 p-4 transition-all hover:border-primary"
+                >
+                  <div className="flex items-center gap-2 text-foreground">
+                    <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="font-semibold uppercase tracking-wide">{cityName}</span>
+                  </div>
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-primary">
+                    View Forensic Audit ›
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+        </section>
       </main>
       <ValifyeFooter />
     </div>
