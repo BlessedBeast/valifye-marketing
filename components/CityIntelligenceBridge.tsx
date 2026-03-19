@@ -72,8 +72,8 @@ export async function CityIntelligenceBridge({ currentCity, excludeSlug, current
   })
 
   return (
-    <section className="mt-10 border-t border-zinc-800 pt-8">
-      <h2 className="mb-6 text-xs font-bold uppercase tracking-[0.3em] text-amber-400">
+    <section className="mt-10 border-t border-border pt-8">
+      <h2 className="mb-6 text-xs font-bold uppercase tracking-[0.3em] text-primary">
         {city} Economic Intelligence
       </h2>
 
@@ -94,27 +94,27 @@ export async function CityIntelligenceBridge({ currentCity, excludeSlug, current
               <Link
                 key={idea.slug}
                 href={`/ideas/${idea.slug}`}
-                className="block border border-border bg-card p-4 text-xs transition-colors hover:border-amber-400 dark:border-zinc-800 dark:bg-zinc-950/60"
+                className="block border border-border bg-card p-4 text-xs transition-colors hover:border-primary"
               >
                 <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                   Blueprint · {idea.city}
                 </div>
-                <p className="line-clamp-2 text-[12px] font-semibold text-zinc-100">
+                <p className="line-clamp-2 text-[12px] font-semibold text-foreground">
                   {idea.niche}
                 </p>
                 <div className="mt-2 flex items-center justify-between text-[10px] font-mono text-muted-foreground">
                   <span>Opportunity</span>
-                  <span className="text-foreground dark:text-zinc-100">
+                  <span className="text-foreground">
                     {formatScore(idea.opportunity_score)}
                   </span>
                 </div>
-                <p className="mt-2 text-[10px] text-amber-300">
+                <p className="mt-2 text-[10px] text-primary">
                   View related local audits for {idea.city} below.
                 </p>
               </Link>
             ))}
             {!ideas.length && (
-              <div className="border border-border bg-card p-3 text-[11px] text-muted-foreground dark:border-zinc-800 dark:bg-zinc-950/40">
+              <div className="border border-border bg-card p-3 text-[11px] text-muted-foreground">
                 No blueprints yet for this city.
               </div>
             )}
@@ -131,29 +131,29 @@ export async function CityIntelligenceBridge({ currentCity, excludeSlug, current
               <Link
                 key={report.slug}
                 href={`/local-reports/report/${report.slug}`}
-                className="block border border-border bg-card p-4 text-xs transition-colors hover:border-amber-400 dark:border-zinc-800 dark:bg-zinc-950/60"
+                className="block border border-border bg-card p-4 text-xs transition-colors hover:border-primary"
               >
                 <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                   Local Audit
                   {report.location_label ? ` · ${report.location_label}` : null}
                 </div>
-                <p className="line-clamp-2 text-[12px] font-semibold text-zinc-100">
+                <p className="line-clamp-2 text-[12px] font-semibold text-foreground">
                   {report.idea_title || report.slug}
                 </p>
                 <div className="mt-2 flex items-center justify-between text-[10px] font-mono text-muted-foreground">
                   <span>Logic Score</span>
-                  <span className="text-foreground dark:text-zinc-100">
+                  <span className="text-foreground">
                     {formatScore(report.logic_score)}
                   </span>
                 </div>
-                <p className="mt-2 text-[10px] text-amber-300">
+                <p className="mt-2 text-[10px] text-primary">
                   Explore blueprint-level economics and demand for this city in the market ideas
                   engine.
                 </p>
               </Link>
             ))}
             {!locals.length && (
-              <div className="border border-border bg-card p-3 text-[11px] text-muted-foreground dark:border-zinc-800 dark:bg-zinc-950/40">
+              <div className="border border-border bg-card p-3 text-[11px] text-muted-foreground">
                 No local audits indexed yet.
               </div>
             )}

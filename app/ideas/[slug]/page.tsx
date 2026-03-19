@@ -175,7 +175,7 @@ export default async function IdeaDossierPage({ params }: Props) {
                 <Link
                   key={cityName}
                   href={`/local-reports/report/${reportSlug}`}
-                  className="flex flex-col gap-2 border border-border bg-card p-4 transition-all hover:border-primary hover:bg-background dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:bg-zinc-900"
+                  className="flex flex-col gap-2 border border-border bg-card p-4 transition-all hover:border-primary hover:bg-background/80"
                 >
                   <div className="flex items-center gap-2 text-foreground">
                     <MapPin className="h-4 w-4 shrink-0 text-primary" />

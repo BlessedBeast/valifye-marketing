@@ -74,27 +74,27 @@ export default async function HomePage() {
           </h2>
           <div className="grid gap-6 md:grid-cols-3">
             {/* 01. MARKET BLUEPRINTS */}
-            <article className="flex flex-col justify-between border border-emerald-500/60 bg-zinc-950 px-5 py-5 text-xs shadow-[0_0_0_1px_rgba(16,185,129,0.6)]">
+            <article className="flex flex-col justify-between border border-border bg-card px-5 py-5 text-xs text-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.6)]">
               <header className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-400">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
                     01. MARKET BLUEPRINTS
                   </span>
-                  <span className="rounded-sm border border-emerald-500/50 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.25em] text-emerald-300">
+                  <span className="rounded-sm border border-primary/50 bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.25em] text-primary">
                     STATIC
                   </span>
                 </div>
-                <p className="text-[11px] leading-relaxed text-zinc-300">
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
                   Static 2026 dossiers for baseline metrics. City and niche blueprints rendered as machine-readable JSON.
                 </p>
               </header>
-              <div className="mt-4 flex items-center justify-between border-t border-emerald-500/40 pt-3">
-                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300/80">
+              <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
                   /ideas
                 </span>
                 <Link
                   href="/ideas"
-                  className="inline-flex items-center gap-1 border border-emerald-500/60 bg-black px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300 transition-colors hover:bg-emerald-500 hover:text-black"
+                  className="inline-flex items-center gap-1 border border-primary bg-background px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
                 >
                   Open Blueprints
                   <ArrowRight className="h-3 w-3" />
@@ -103,28 +103,28 @@ export default async function HomePage() {
             </article>
 
             {/* 02. FORENSIC VERDICTS */}
-            <article className="flex flex-col justify-between border border-emerald-500/60 bg-zinc-950 px-5 py-5 text-xs shadow-[0_0_0_1px_rgba(16,185,129,0.6)]">
+            <article className="flex flex-col justify-between border border-border bg-card px-5 py-5 text-xs text-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.6)]">
               <header className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-400">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
                     02. FORENSIC VERDICTS
                   </span>
-                  <span className="rounded-sm border border-emerald-500/50 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.25em] text-emerald-300">
+                  <span className="rounded-sm border border-primary/50 bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.25em] text-primary">
                     DEEP AUDITS
                   </span>
                 </div>
-                <p className="text-[11px] leading-relaxed text-zinc-300">
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
                   Brutal deep-dive audits and integrity scores. Each file is a full-stack logic trace of why an idea
                   deserves code or a kill-shot.
                 </p>
               </header>
-              <div className="mt-4 flex items-center justify-between border-t border-emerald-500/40 pt-3">
-                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300/80">
+              <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
                   /reports
                 </span>
                 <Link
                   href="/reports"
-                  className="inline-flex items-center gap-1 border border-emerald-500/60 bg-black px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300 transition-colors hover:bg-emerald-500 hover:text-black"
+                  className="inline-flex items-center gap-1 border border-primary bg-background px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
                 >
                   Open Verdicts
                   <ArrowRight className="h-3 w-3" />
@@ -133,28 +133,28 @@ export default async function HomePage() {
             </article>
 
             {/* 03. LOCAL pSEO */}
-            <article className="flex flex-col justify-between border border-emerald-500/60 bg-zinc-950 px-5 py-5 text-xs shadow-[0_0_0_1px_rgba(16,185,129,0.6)]">
+            <article className="flex flex-col justify-between border border-border bg-card px-5 py-5 text-xs text-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.6)]">
               <header className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-400">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
                     03. LOCAL pSEO
                   </span>
-                  <span className="rounded-sm border border-emerald-500/50 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.25em] text-emerald-300">
+                  <span className="rounded-sm border border-primary/50 bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.25em] text-primary">
                     LIVE MAPS
                   </span>
                 </div>
-                <p className="text-[11px] leading-relaxed text-zinc-300">
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
                   Hyper-local competitor analysis and micro-TAM maps. Cached city hubs built from Places data and
                   forensic unit economics.
                 </p>
               </header>
-              <div className="mt-4 flex items-center justify-between border-t border-emerald-500/40 pt-3">
-                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300/80">
+              <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
                   /local-reports
                 </span>
                 <Link
                   href="/local-reports"
-                  className="inline-flex items-center gap-1 border border-emerald-500/60 bg-black px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300 transition-colors hover:bg-emerald-500 hover:text-black"
+                  className="inline-flex items-center gap-1 border border-primary bg-background px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
                 >
                   Open Local pSEO
                   <ArrowRight className="h-3 w-3" />
@@ -165,15 +165,15 @@ export default async function HomePage() {
         </section>
 
         {/* LATEST AUDITS – VERDICT TICKER */}
-        <section className="space-y-4 border border-border bg-zinc-950 px-5 py-5">
+        <section className="space-y-4 border border-border bg-card px-5 py-5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-zinc-400">
-              <Activity className="h-4 w-4 text-emerald-400" />
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground">
+              <Activity className="h-4 w-4 text-primary" />
               <span>Latest Audits</span>
             </div>
             <Link
               href="/reports"
-              className="inline-flex items-center gap-1 border border-emerald-500/60 bg-black px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300 transition-colors hover:bg-emerald-500 hover:text-black"
+              className="inline-flex items-center gap-1 border border-primary bg-background px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
             >
               View All Verdicts
               <ArrowRight className="h-3 w-3" />
@@ -181,7 +181,7 @@ export default async function HomePage() {
           </div>
 
           {audits.length === 0 ? (
-            <div className="border border-border bg-black/60 px-4 py-3 text-[11px] text-zinc-400">
+            <div className="border border-border bg-background/60 px-4 py-3 text-[11px] text-muted-foreground">
               No published audits yet. Run the verdict pipeline to populate this ticker.
             </div>
           ) : (
@@ -190,24 +190,24 @@ export default async function HomePage() {
                 <Link
                   key={audit.slug}
                   href={`/reports/${audit.slug}`}
-                  className="group flex flex-col justify-between border border-zinc-800 bg-black/80 px-4 py-3 text-left text-[11px] transition-colors hover:border-emerald-500"
+                  className="group flex flex-col justify-between border border-border bg-card px-4 py-3 text-left text-[11px] transition-colors hover:border-primary"
                 >
                   <div className="mb-2 space-y-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="inline-flex items-center gap-1 rounded-sm border border-emerald-500/60 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.25em] text-emerald-300">
+                      <span className="inline-flex items-center gap-1 rounded-sm border border-primary/60 bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.25em] text-primary">
                         {audit.final_verdict}
                       </span>
-                      <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-zinc-500">
+                      <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
                         {Number.isFinite(audit.overall_integrity_score)
                           ? `${audit.overall_integrity_score}/100`
                           : '—'}
                       </span>
                     </div>
-                    <p className="line-clamp-2 font-semibold text-zinc-100 group-hover:text-emerald-300">
+                    <p className="line-clamp-2 font-semibold text-foreground group-hover:text-primary">
                       {audit.idea_title}
                     </p>
                   </div>
-                  <span className="mt-auto text-[9px] font-bold uppercase tracking-[0.25em] text-zinc-500">
+                  <span className="mt-auto text-[9px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
                     Open Forensic Report →
                   </span>
                 </Link>

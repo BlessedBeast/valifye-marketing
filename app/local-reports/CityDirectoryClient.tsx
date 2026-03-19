@@ -45,7 +45,7 @@ export function CityDirectoryClient({ initialHubs }: Props) {
   }, [initialHubs, query])
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950 font-mono text-foreground">
+    <div className="flex min-h-screen flex-col bg-background font-mono text-foreground">
       <ValifyeNavbar />
 
       <main className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
@@ -99,12 +99,12 @@ export function CityDirectoryClient({ initialHubs }: Props) {
         {/* The Grid Logic */}
         <section className="space-y-4">
           {initialHubs.length === 0 ? (
-            <div className="border border-emerald-500 bg-zinc-950 px-5 py-12 text-center text-xs uppercase tracking-[0.18em] text-white">
+            <div className="border border-primary bg-card px-5 py-12 text-center text-xs uppercase tracking-[0.18em] text-foreground">
               <div className="flex flex-col items-center gap-4">
-                <Activity className="h-8 w-8 animate-pulse text-emerald-500" />
+                <Activity className="h-8 w-8 animate-pulse text-primary" />
                 <span className="text-lg font-black tracking-widest">Intelligence Gathering in Progress</span>
-                <p className="max-w-md normal-case text-zinc-400">
-                  The <code className="text-emerald-400">local_city_hubs</code> table is currently empty. Run the bridge scripts to cluster your pSEO reports.
+                <p className="max-w-md normal-case text-muted-foreground">
+                  The <code className="text-primary">local_city_hubs</code> table is currently empty. Run the bridge scripts to cluster your pSEO reports.
                 </p>
               </div>
             </div>
@@ -112,7 +112,7 @@ export function CityDirectoryClient({ initialHubs }: Props) {
             <>
               <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
                 <span>{filteredHubs.length} Active City Hubs</span>
-                <span className="flex items-center gap-2 text-emerald-500">
+                <span className="flex items-center gap-2 text-primary">
                   <Activity className="h-3 w-3" /> System Live
                 </span>
               </div>
@@ -143,7 +143,7 @@ export function CityDirectoryClient({ initialHubs }: Props) {
                             <MapPin className="h-3 w-3" />
                             {hub.city_name}{hub.region ? `, ${hub.region}` : ''}
                           </div>
-                          <span className="bg-zinc-800 px-2 py-0.5 text-[9px] font-bold text-emerald-400">
+                          <span className="border border-border bg-card px-2 py-0.5 text-[9px] font-bold text-primary">
                             {count} AUDITS
                           </span>
                         </div>
@@ -155,8 +155,8 @@ export function CityDirectoryClient({ initialHubs }: Props) {
                         {reports.length > 0 && (
                           <ul className="space-y-2 text-[11px] text-muted-foreground">
                             {reports.slice(0, 3).map((r: TopReport) => (
-                              <li key={r.slug} className="flex items-center gap-2 line-clamp-1 border-l-2 border-zinc-800 pl-2">
-                                <span className="text-emerald-500">›</span> {r.title}
+                              <li key={r.slug} className="flex items-center gap-2 line-clamp-1 border-l-2 border-border pl-2">
+                                <span className="text-primary">›</span> {r.title}
                               </li>
                             ))}
                           </ul>
@@ -166,7 +166,7 @@ export function CityDirectoryClient({ initialHubs }: Props) {
                       <div className="mt-8">
                         <Link
                           href={`/local-reports/city/${cityPath}`}
-                          className="group flex w-full items-center justify-between border border-border bg-zinc-900 px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-primary hover:text-black"
+                          className="group flex w-full items-center justify-between border border-border bg-background px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-foreground transition-all hover:bg-primary hover:text-primary-foreground"
                         >
                           Access Intelligence
                           <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
