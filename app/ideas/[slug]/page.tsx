@@ -18,6 +18,9 @@ type Props = { params: Promise<{ slug: string }> }
 
 const LOCAL_INTELLIGENCE_CITIES = ['Austin', 'Miami', 'London', 'Denver', 'Seattle', 'Nashville'] as const
 
+/** Local audit slugs (public_seo_reports) must use this prefix. Never link them to /reports/. */
+const LOCAL_REPORT_PATH_PREFIX = '/local-reports/report'
+
 /** Slugify a city name: 'New York' -> 'new-york' */
 function slugifyCity(cityName: string): string {
   return (cityName ?? '')
@@ -161,7 +164,7 @@ export default async function IdeaDossierPage({ params }: Props) {
 
         <AppConversionBridge niche={idea.niche} city={idea.city} />
 
-        {/* Forensic Local Intelligence */}
+        {/* Forensic Local Intelligence — links are public_seo_reports only; use /local-reports/report/ never /reports/ */}
         {filteredCandidates.length > 0 && (
           <section className="space-y-6 border-t border-border pt-10">
             <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-primary mb-6">
@@ -174,7 +177,7 @@ export default async function IdeaDossierPage({ params }: Props) {
               {filteredCandidates.map(({ cityName, reportSlug }) => (
                 <Link
                   key={cityName}
-                  href={`/local-reports/report/${reportSlug}`}
+                  href={`${LOCAL_REPORT_PATH_PREFIX}/${reportSlug}`}
                   className="flex flex-col gap-2 border border-border bg-card p-4 transition-all hover:border-primary hover:bg-background/80"
                 >
                   <div className="flex items-center gap-2 text-foreground">

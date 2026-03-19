@@ -1,6 +1,9 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 
+/** Route prefix for public_seo_reports (local pSEO audits). Never use /reports/ for these. */
+const LOCAL_REPORT_PATH_PREFIX = '/local-reports/report'
+
 type Props = {
   currentCity: string
   excludeSlug: string
@@ -121,7 +124,7 @@ export async function CityIntelligenceBridge({ currentCity, excludeSlug, current
           </div>
         </div>
 
-        {/* Local pSEO Audits */}
+        {/* Local pSEO Audits — from public_seo_reports only; must link to /local-reports/report/ */}
         <div className="space-y-3">
           <h3 className="text-[11px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
             Local Forensic Audits
@@ -130,7 +133,7 @@ export async function CityIntelligenceBridge({ currentCity, excludeSlug, current
             {locals.map((report) => (
               <Link
                 key={report.slug}
-                href={`/local-reports/report/${report.slug}`}
+                href={`${LOCAL_REPORT_PATH_PREFIX}/${report.slug}`}
                 className="block border border-border bg-card p-4 text-xs transition-colors hover:border-primary"
               >
                 <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
