@@ -13,6 +13,7 @@ import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
 import { getReportBySlug, getIndustryHubBySectorSlug, getReportsBySlugs } from '@/lib/reportData'
 import type { ExperimentData, LogicAudit, UnitEconomics } from '@/lib/reportData'
+import { IndustryIntelligenceBridge } from '@/components/IndustryIntelligenceBridge'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -641,6 +642,9 @@ export default async function ReportDetailPage({ params }: Props) {
             </div>
           </section>
         )}
+
+        {/* Sector-level related verdicts */}
+        <IndustryIntelligenceBridge sectorSlug={sectorSlug} excludeSlug={report.slug} />
       </main>
 
       <ValifyeFooter />

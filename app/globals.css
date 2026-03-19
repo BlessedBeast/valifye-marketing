@@ -1,5 +1,4 @@
 /* stylelint-disable at-rule-no-unknown */
-
 @import "tailwindcss";
 
 @theme {
@@ -8,23 +7,29 @@
   --color-primary: hsl(var(--primary));
   --color-border: hsl(var(--border));
   --color-card: hsl(var(--card));
+  /* Added Muted Foreground for scientific secondary text */
+  --color-muted-foreground: hsl(var(--muted-foreground));
 }
 
 @layer base {
   :root {
-    --background: 209 40% 96%;
-    --foreground: 222 47% 11%;
-    --primary: 200 98% 39%;
-    --border: 214 32% 87%;
-    --card: 210 40% 98%;
+    /* "Forensic Paper" - Neutral, high-authority white */
+    --background: 0 0% 98%;      /* zinc-50 */
+    --foreground: 240 10% 3.9%;  /* zinc-950 */
+    --primary: 24.6 95% 53.1%;   /* Valifye Orange */
+    --border: 240 5.9% 90%;      /* zinc-200 */
+    --card: 0 0% 100%;           /* Pure white */
+    --muted-foreground: 240 3.8% 46.1%; /* zinc-500 */
   }
 
   .dark {
-    --background: 240 14% 7%;
-    --foreground: 0 0% 95%;
-    --primary: 25 95% 53%;
-    --border: 240 12% 20%;
-    --card: 240 16% 12%;
+    /* "Forensic Noir" - Deep, ink-black depth */
+    --background: 240 10% 3.9%;  /* zinc-950 */
+    --foreground: 0 0% 98%;      /* zinc-50 */
+    --primary: 20.5 90.2% 48.2%; /* Slightly warmer orange */
+    --border: 240 3.7% 15.9%;    /* zinc-800 */
+    --card: 240 10% 3.9%;
+    --muted-foreground: 240 5% 64.9%; /* zinc-400 */
   }
 
   * {
@@ -32,26 +37,16 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "ss03", "cv08", "cv11";
   }
 }
 
-/* stylelint-enable at-rule-no-unknown */
-
 @layer utilities {
   @keyframes scan {
-    0% {
-      top: -5%;
-      opacity: 0;
-    }
-    50% {
-      top: 50%;
-      opacity: 1;
-    }
-    100% {
-      top: 105%;
-      opacity: 0;
-    }
+    0% { top: -5%; opacity: 0; }
+    50% { top: 50%; opacity: 1; }
+    100% { top: 105%; opacity: 0; }
   }
 
   .scanline {
@@ -59,9 +54,11 @@
     left: 0;
     right: 0;
     height: 40px;
-    background: rgba(249, 115, 22, 0.35); /* orange-500-ish */
-    box-shadow: 0 0 25px rgba(249, 115, 22, 0.8);
+    /* Uses the orange primary for brand consistency */
+    background: linear-gradient(to bottom, transparent, hsl(var(--primary) / 0.3), transparent);
+    box-shadow: 0 0 25px hsl(var(--primary) / 0.5);
     pointer-events: none;
     animation: scan 4s linear infinite;
   }
 }
+/* stylelint-enable at-rule-no-unknown */
