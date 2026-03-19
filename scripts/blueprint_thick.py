@@ -7,15 +7,17 @@ from supabase import create_client
 from google import genai
 from pydantic import BaseModel
 
-# Load environment variables
 load_dotenv()
+
+# Initialize Clients
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-current_year = datetime.datetime.now().year
+# PRODUCTION CONSTANTS
+CURRENT_YEAR = datetime.datetime.now().year
+MODEL_NAME = "gemini-2.5-flash" 
 
 # --- THE IRONCLAD SCHEMA ---
-# This forces Gemini to return EXACTLY this structure. No missing keys, no arrays of objects instead of strings.
 class UnitEconomics(BaseModel):
     unit_price: int
     margin_pct: int
@@ -34,93 +36,86 @@ class BlueprintSchema(BaseModel):
     trend: str
     breakeven_months: int
 
+# --- THE SYNTHESIS ENGINE ---
 def thicken_blueprint(row):
-    """Takes a thin DB row and forces the AI to construct a flawless Blueprint."""
-    niche = row['niche']
-    city = row['city']
+    niche = row.get('niche', 'Unknown Niche')
+    city = row.get('city', 'Unknown City')
+    region = row.get('region', '')
     
-    print(f"💉 Injecting Forensic Blueprint Data for: {niche} in {city}...")
+    print(f"💉 Injecting Forensic Substance for: {niche} in {city}...")
 
     prompt = f"""
-    Role: {current_year} Brutal Business Validator.
-    Context: {niche} in {city}, {row.get('region', '')}.
+    Role: {CURRENT_YEAR} Brutal Business Validator.
+    Context: {niche} in {city}, {region}.
 
     TASK: This database row has missing or thin data. Reconstruct a hyper-local Validation Blueprint.
     You MUST provide "Information Gain": specific authorities, corridors, or infrastructure projects in {city}.
 
     REQUIREMENTS:
-    1. local_friction: Provide exactly 3 specific local hurdles (Strings only).
-    2. gtm_playbook: Provide exactly 3 hyper-local entry steps (Strings only).
+    1. local_friction: Provide exactly 3 specific local hurdles.
+    2. gtm_playbook: Provide exactly 3 hyper-local entry steps.
     3. failure_modes: A brutal 2-sentence warning on HOW a founder will go bankrupt here.
-    4. unit_economics: Strict financial estimates for {current_year}.
+    4. unit_economics: Strict financial estimates for {CURRENT_YEAR}.
     5. market_narrative: A dense, 300-word authoritative summary of this market.
     """
 
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            # FIXED: Using 2.0-flash and enforcing the response_schema
-            response = client.models.generate_content(
-                model="gemini-2.5-flash", 
-                contents=prompt,
-                config={
-                    'response_mime_type': 'application/json',
-                    'response_schema': BlueprintSchema,
-                    'temperature': 0.1 # Low temp for data integrity
-                }
-            )
-            
-            # The SDK automatically parses the JSON when using response_schema
-            # We just need to convert the Pydantic object back to a dict for Supabase
-            return json.loads(response.text)
-            
-        except Exception as e:
-            print(f"⚠️ API Overloaded (Attempt {attempt+1}/{max_retries}). Error: {str(e)[:50]}")
-            time.sleep(5)
-            
-    return None
+    try:
+        response = client.models.generate_content(
+            model=MODEL_NAME, 
+            contents=prompt,
+            config={
+                'response_mime_type': 'application/json',
+                'response_schema': BlueprintSchema,
+                'temperature': 0.2 
+            }
+        )
+        return json.loads(response.text)
+    except Exception as e:
+        print(f"❌ Gemini Error: {str(e)[:50]}")
+        return None
 
-def run_blueprint_thickener(limit=50):
-    print("🕵️ Scanning 'market_data' for thin Blueprints (Targeting Drafts & Thin Published Pages)...")
+# --- THE MAIN SCANNER ---
+def run_blueprint_thickener(limit=100):
+    print("🕵️ Scanning 'market_data' for Ghost Content and Thin Blueprints...")
     
     # THE FORENSIC QUERY:
-    # Target 1: Anything explicitly marked draft/pending
-    # Target 2: Anything published but missing the 'local_friction' array
-    # Target 3: Anything published but stuck on the default opportunity_score of 50
-    response = supabase.table("market_data")\
-        .select("*")\
-        .or_("status.in.(draft,pending),local_friction.is.null,opportunity_score.eq.50")\
-        .order("updated_at", desc=False)\
-        .limit(limit)\
-        .execute()
+    # Matches the exact columns from your DDL (market_narrative, local_friction, status)
+    try:
+        response = supabase.table("market_data")\
+            .select("*")\
+            .or_(
+                "status.eq.draft,"
+                "market_narrative.ilike.%pending%," # TARGETS "Deep Validation Pending"
+                "local_friction.is.null"
+            )\
+            .order("updated_at", desc=False)\
+            .limit(limit)\
+            .execute()
+    except Exception as e:
+        print(f"❌ Database Query Error: {e}")
+        return
         
     rows = response.data or []
-
     if not rows:
-        print("📭 No thin blueprints found. Your database is fully hardened.")
+        print("📭 No thin blueprints found. Factory idle.")
         return
 
     updated_count = 0
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
     for row in rows:
-        # Check if the arrays are actually empty before spending credits
-        friction = row.get('local_friction')
-        gtm = row.get('gtm_playbook')
-        
-        # The Safety Net: If a row somehow sneaks through the query but is actually thick, skip it.
-        if friction and len(friction) >= 2 and gtm and len(gtm) >= 2 and row.get('opportunity_score') != 50:
-            print(f"⏩ {row['slug']} is already thick. Skipping.")
-            # Ensure status is published so we don't catch it in a weird state again
-            if row.get('status') != 'published':
-                supabase.table("market_data").update({"status": "published"}).eq("id", row['id']).execute()
+        # Final Safety Check: Don't overwrite if it actually looks good
+        narrative = str(row.get('market_narrative') or "")
+        if "pending" not in narrative.lower() and len(narrative) > 1000 and row.get('local_friction'):
+            print(f"⏩ {row['slug']} looks thick enough. Marking 'published'.")
+            supabase.table("market_data").update({"status": "published"}).eq("id", row['id']).execute()
             continue
 
-        # Trigger Thickening
         new_data = thicken_blueprint(row)
         
         if new_data:
             try:
-                # Upsert the perfectly structured JSON directly into Supabase
+                # Update matching your table schema exactly
                 supabase.table("market_data").update({
                     "market_narrative": new_data['market_narrative'],
                     "local_friction": new_data['local_friction'],
@@ -131,18 +126,19 @@ def run_blueprint_thickener(limit=50):
                     "difficulty_score": new_data['difficulty_score'],
                     "trend": new_data['trend'],
                     "breakeven_months": new_data['breakeven_months'],
-                    "status": "published", # Keep/Move to published
-                    "updated_at": datetime.datetime.utcnow().isoformat() # Mark it as fresh
+                    "status": "published", 
+                    "updated_at": now_iso,
+                    "published_at": now_iso # Trigger freshness signal
                 }).eq("id", row['id']).execute()
                 
-                print(f"✅ Thickened & Upgraded: {row['slug']} | Score: {new_data['opportunity_score']}")
+                print(f"✅ Structural Upgrade: {row['slug']} | Score: {new_data['opportunity_score']}")
                 updated_count += 1
-                time.sleep(4) # Protect against quota limits (15 requests per minute)
+                time.sleep(4) 
                 
             except Exception as e:
-                print(f"⚠️ Supabase Update failed for {row['slug']}: {e}")
+                print(f"⚠️ Update failed for {row['slug']}: {e}")
 
-    print(f"\n🏁 Mission Complete. {updated_count} Blueprints were structurally upgraded.")
+    print(f"\n🏁 Mission Complete. {updated_count} Blueprints transformed.")
 
 if __name__ == "__main__":
     run_blueprint_thickener(limit=500)

@@ -10,6 +10,7 @@ import { BenchmarkingModule } from '@/components/market/BenchmarkingModule'
 import { RelatedMarkets } from '@/components/market/RelatedMarkets'
 import { CityHubSidebar } from '@/components/market/CityHubSidebar'
 import { AppConversionBridge } from '@/components/market/AppConversionBridge'
+import { CityIntelligenceBridge } from '@/components/CityIntelligenceBridge'
 import { getIdeaBySlug } from '@/lib/marketData'
 import { createClient } from '@/utils/supabase/server'
 
@@ -55,15 +56,14 @@ export default async function IdeaDossierPage({ params }: Props) {
   const hasBlueprint = Array.isArray(idea.local_friction) && idea.local_friction.length > 0
 
   // --- Local Intelligence slug derivation ---
-  const currentCity = typeof idea.city === 'string' ? idea.city : String(idea.city ?? '')
-  const normalizedCity = currentCity.toLowerCase().replace(/\s+/g, '-')
-
+  // Start from the route slug and strip any trailing city indicator:
+  // e.g. 'amazon-kdp-in-new-york' -> 'amazon-kdp'
   let baseNicheSlug = slug
-  if (normalizedCity) {
-    const pattern = `in${normalizedCity}`
-    baseNicheSlug = baseNicheSlug.split(pattern).join('')
-  }
-  baseNicheSlug = baseNicheSlug.replace(/in[a-z-]+$/, '')
+  // Remove pattern '-in-{city-slug}' at the end if present
+  baseNicheSlug = baseNicheSlug.replace(/-in-[a-z0-9-]+$/i, '')
+  // Fallback: remove any trailing 'in{city-slug}' if it wasn't hyphenated
+  baseNicheSlug = baseNicheSlug.replace(/in[a-z0-9-]+$/i, '')
+  // Normalize any remaining dashes
   baseNicheSlug = baseNicheSlug.replace(/-+/g, '-').replace(/^-|-$/g, '') || slug
 
   // Optional safety: only show cities that actually have a public SEO report for this niche
@@ -189,6 +189,9 @@ export default async function IdeaDossierPage({ params }: Props) {
             </div>
           </section>
         )}
+
+        {/* Cross-engine city intelligence bridge */}
+        <CityIntelligenceBridge currentCity={idea.city} excludeSlug={slug} />
       </main>
       <ValifyeFooter />
     </div>

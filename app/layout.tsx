@@ -6,7 +6,23 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Valifye | Forensic Market Intelligence Engine',
   description:
-    'Stop building in the dark. Discover validated micro-SaaS opportunities and run them through our live intelligence engine.'
+    'Stop building in the dark. Discover validated micro-SaaS opportunities and run them through our live intelligence engine.',
+  icons: {
+    icon: [
+      {
+        url: '/icon.svg',
+        type: 'image/svg+xml'
+      }
+    ],
+    shortcut: '/icon.svg',
+    apple: '/icon.svg'
+  },
+  alternates: {
+    types: {
+      'application/rss+xml': '/sitemap.xml'
+    }
+  },
+  themeColor: '#000000'
 }
 
 const inter = Inter({
