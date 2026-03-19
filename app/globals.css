@@ -37,3 +37,31 @@
 }
 
 /* stylelint-enable at-rule-no-unknown */
+
+@layer utilities {
+  @keyframes scan {
+    0% {
+      top: -5%;
+      opacity: 0;
+    }
+    50% {
+      top: 50%;
+      opacity: 1;
+    }
+    100% {
+      top: 105%;
+      opacity: 0;
+    }
+  }
+
+  .scanline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: rgba(249, 115, 22, 0.35); /* orange-500-ish */
+    box-shadow: 0 0 25px rgba(249, 115, 22, 0.8);
+    pointer-events: none;
+    animation: scan 4s linear infinite;
+  }
+}
