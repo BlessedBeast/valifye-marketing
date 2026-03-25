@@ -10,9 +10,12 @@ type Props = { params: Promise<{ city: string }> }
 type LocalCityHubRow = {
   city_name: string
   region: string | null
-  report_count: number | null
-  top_reports: any
-  all_slugs: string[] | null
+}
+
+type PublicSeoReportCard = {
+  slug: string
+  idea_title: string | null
+  logic_score: number | null
 }
 
 function slugToCityName(slug: string): string {
@@ -40,7 +43,7 @@ export default async function LocalCityHubPage({ params }: Props) {
 
   const { data, error } = await supabase
     .from('local_city_hubs')
-    .select('city_name, region, report_count, top_reports, all_slugs')
+    .select('city_name, region')
     .ilike('city_name', formattedCityName)
     .maybeSingle<LocalCityHubRow>()
 
@@ -52,32 +55,24 @@ export default async function LocalCityHubPage({ params }: Props) {
     notFound()
   }
 
-  // Normalize top_reports if it comes back as a stringified JSON blob
-  let topReports = data.top_reports
-  if (typeof topReports === 'string') {
-    try {
-      topReports = JSON.parse(topReports)
-    } catch (e) {
-      console.error('Failed to parse top_reports JSON for city hub:', data.city_name, e)
-      topReports = []
-    }
+  const { data: publicReports, error: reportsError } = await supabase
+    .from('public_seo_reports')
+    .select('slug, idea_title, logic_score, location_label, published_at')
+    .eq('is_published', true)
+    .ilike('location_label', `%${formattedCityName}%`)
+    .order('published_at', { ascending: false })
+    .limit(100)
+
+  if (reportsError) {
+    console.error('Supabase Fetch Error (public_seo_reports city feed):', reportsError)
   }
 
-  const normalizedCount =
-    typeof data.report_count === 'number' && Number.isFinite(data.report_count)
-      ? data.report_count
-      : (Array.isArray(data.all_slugs) ? data.all_slugs.length : 0)
+  const liveReports: PublicSeoReportCard[] =
+    !reportsError && publicReports
+      ? (publicReports as PublicSeoReportCard[])
+      : []
 
-  const hub: LocalCityHubRow = {
-    city_name: data.city_name,
-    region: data.region,
-    report_count: normalizedCount,
-    top_reports: topReports,
-    all_slugs: data.all_slugs,
-  }
-
-  const cityLabel = hub.city_name || formattedCityName
-  const reports = Array.isArray(hub.top_reports) ? hub.top_reports : []
+  const cityLabel = data.city_name || formattedCityName
 
   return (
     <div className="min-h-screen bg-background font-mono text-foreground">
@@ -102,7 +97,7 @@ export default async function LocalCityHubPage({ params }: Props) {
             </span>
             <span className="inline-flex items-center gap-2 border border-border bg-background px-3 py-1 text-primary">
               {cityLabel}
-              {hub.region ? `, ${hub.region}` : null}
+              {data.region ? `, ${data.region}` : null}
             </span>
           </div>
         </header>
@@ -129,25 +124,26 @@ export default async function LocalCityHubPage({ params }: Props) {
                 <span>Audits Indexed</span>
                 <Activity className="h-3 w-3" />
               </span>
-              <span className="mt-3 text-2xl font-bold">{hub.report_count}</span>
+              <span className="mt-3 text-2xl font-bold">{liveReports.length}</span>
             </div>
           </div>
         </section>
 
-        {/* Grid of audits */}
+        {/* Grid of audits — live from public_seo_reports */}
         <section className="space-y-3">
           <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.18em]">
             <span>Cached audits in {cityLabel}</span>
-            <span className="text-muted-foreground">{hub.report_count} files</span>
+            <span className="text-muted-foreground">{liveReports.length} files</span>
           </div>
 
-          {reports.length === 0 ? (
+          {liveReports.length === 0 ? (
             <div className="border border-border bg-card p-6 text-sm text-muted-foreground">
-              No highlighted audits yet. Run the local pSEO pipeline to generate city-level hubs.
+              No published audits match this city in <span className="font-mono text-primary">public_seo_reports</span>{' '}
+              yet. Run the local pSEO pipeline or check <span className="font-mono">location_label</span> values.
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {reports.map((report) => (
+              {liveReports.map((report) => (
                 <article
                   key={report.slug}
                   className="flex flex-col justify-between border border-border bg-card p-4 text-xs shadow-[4px_4px_0_0_hsl(var(--primary))] transition-all hover:-translate-y-1 hover:border-primary hover:shadow-[4px_4px_0_0_hsl(var(--primary))]"
@@ -156,20 +152,20 @@ export default async function LocalCityHubPage({ params }: Props) {
                     <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                       Forensic pSEO audit
                     </p>
-                    <h2 className="text-sm font-semibold uppercase tracking-[0.16em] line-clamp-2">
-                      {report.title}
+                    <h2 className="line-clamp-2 text-sm font-semibold uppercase tracking-[0.16em] text-foreground">
+                      {report.idea_title?.trim() || report.slug}
                     </h2>
                   </header>
 
                   <div className="mt-auto flex items-center justify-between border-t border-border pt-3">
                     <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                      {typeof report.score === 'number' && Number.isFinite(report.score)
-                        ? `Score ${report.score}/100`
+                      {typeof report.logic_score === 'number' && Number.isFinite(report.logic_score)
+                        ? `Score ${report.logic_score}/100`
                         : 'Score pending'}
                     </span>
                     <Link
                       href={`/local-reports/report/${report.slug}`}
-                      className="inline-flex items-center gap-1 border border-border bg-background px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] hover:border-primary hover:text-primary"
+                      className="inline-flex items-center gap-1 border border-border bg-background px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-primary hover:text-primary"
                     >
                       Open audit
                       <ArrowRight className="h-3 w-3" />
@@ -186,4 +182,3 @@ export default async function LocalCityHubPage({ params }: Props) {
     </div>
   )
 }
-

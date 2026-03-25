@@ -123,4 +123,4 @@ def process_reports(limit=20):
     print("\n🏁 BATCH MISSION COMPLETE.")
 
 if __name__ == "__main__":
-    process_reports(limit=20)
+    process_reports(limit=50)

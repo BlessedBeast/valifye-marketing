@@ -3,12 +3,17 @@ import { supabase } from '@/lib/supabase'
 
 export const revalidate = 43200
 
-function slugify(value: string): string {
-  return value
+function slugify(value: unknown): string {
+  const normalized = String(value ?? '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '')
+
+  return normalized || 'unknown'
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -25,7 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${BASE_URL}/ideas`,
       lastModified: new Date(),
       changeFrequency: 'daily',
-      priority: 0.9,
+      priority: 1.0,
     },
   ]
 
@@ -71,15 +76,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${BASE_URL}/ideas/${page.slug}`,
       lastModified: page.updated_at ? new Date(page.updated_at) : now,
       changeFrequency: 'weekly',
-      priority: 0.6,
+      priority: 0.7,
     }))
 
-    const verdictPages: MetadataRoute.Sitemap = (verdictRes.data || []).map((page) => ({
-      url: `${BASE_URL}/reports/${page.slug}`,
-      lastModified: page.published_at ? new Date(page.published_at) : now,
-      changeFrequency: 'weekly',
-      priority: 0.6,
-    }))
+    // Data quarantine: keep local SEO slugs out of /reports/ URLs
+    const verdictPages: MetadataRoute.Sitemap = (verdictRes.data || [])
+      .filter((page) => typeof page.slug === 'string' && !page.slug.includes('-market-audit'))
+      .map((page) => ({
+        url: `${BASE_URL}/reports/${page.slug}`,
+        lastModified: page.published_at ? new Date(page.published_at) : now,
+        changeFrequency: 'weekly',
+        priority: 0.5,
+      }))
 
     const verdictIndustryHubs: MetadataRoute.Sitemap = (industryHubRes.data || [])
       .filter((hub) => !!hub.industry_name)
@@ -88,8 +96,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         return {
           url: `${BASE_URL}/reports/industry/${sectorSlug}`,
           lastModified: now,
-          changeFrequency: 'weekly',
-          priority: 0.8,
+          changeFrequency: 'daily',
+          priority: 0.9,
         }
       })
 
@@ -97,7 +105,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${BASE_URL}/local-reports/report/${page.slug}`,
       lastModified: page.published_at ? new Date(page.published_at) : now,
       changeFrequency: 'weekly',
-      priority: 0.6,
+      priority: 0.5,
     }))
 
     const localCityHubs: MetadataRoute.Sitemap = (localCityHubRes.data || [])
@@ -107,8 +115,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         return {
           url: `${BASE_URL}/local-reports/city/${citySlug}`,
           lastModified: now,
-          changeFrequency: 'weekly',
-          priority: 0.8,
+          changeFrequency: 'daily',
+          priority: 0.9,
         }
       })
 

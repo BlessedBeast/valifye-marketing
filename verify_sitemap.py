@@ -1,6 +1,4 @@
 import os
-import json
-from datetime import datetime, timezone
 from supabase import create_client
 from dotenv import load_dotenv
 
@@ -30,7 +28,6 @@ def sync_and_tag_aeo():
     # 1. Fetch all Published SEO Reports
     reports_resp = supabase.table("public_seo_reports").select("*").eq("is_published", True).execute()
     reports = reports_resp.data or []
-    all_slugs_data = [] # Store tuple of (slug, aeo_score)
     
     # 2. Fetch housed slugs from hubs to find orphans
     hubs = supabase.table("verdict_industry_hubs").select("all_slugs, industry_name").execute().data
@@ -46,9 +43,6 @@ def sync_and_tag_aeo():
     for r in reports:
         aeo_score = calculate_aeo_score(r['report_data'])
         aeo_tag = "high-confidence-audit" if aeo_score > 75 else "standard-market-snapshot"
-        
-        # Track for sitemap
-        all_slugs_data.append({"slug": r['slug'], "score": aeo_score})
 
         # Auto-link orphans to safety hub
         if r['slug'] in orphans:
@@ -61,37 +55,6 @@ def sync_and_tag_aeo():
         # Update report with AEO metadata
         new_report_data = {**(r.get('report_data') or {}), "aeo_meta": {"score": aeo_score, "tag": aeo_tag}}
         supabase.table("public_seo_reports").update({"report_data": new_report_data}).eq("id", r['id']).execute()
-
-    # 4. Generate the Advanced Sitemap
-    generate_advanced_xml(all_slugs_data)
-
-def generate_advanced_xml(slug_data):
-    print("🗺️  Publishing AEO-Hardened Sitemap...")
-    now_iso = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
-    base = "https://valifye.com/local-reports/report/"
-    
-    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
-    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    
-    # A. Static Core (Priority 1.0)
-    for path in ['', 'reports', 'reports/industry', 'local-reports']:
-        xml += f'  <url>\n    <loc>https://valifye.com/{path}</loc>\n    <lastmod>{now_iso}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n'
-
-    # B. pSEO Reports (AEO Variable Priority)
-    for entry in slug_data:
-        # Scale priority from 0.6 to 0.9 based on AEO score
-        # (aeo_score 100 = 0.9 priority | aeo_score 0 = 0.6 priority)
-        prio = round(0.6 + (entry['score'] / 100) * 0.3, 2)
-        freq = "daily" if entry['score'] > 80 else "weekly"
-        
-        xml += f'  <url>\n    <loc>{base}{entry["slug"]}</loc>\n    <lastmod>{now_iso}</lastmod>\n    <changefreq>{freq}</changefreq>\n    <priority>{prio}</priority>\n  </url>\n'
-
-    xml += '</urlset>'
-    
-    # Save to public folder
-    with open("public/sitemap.xml", "w") as f:
-        f.write(xml)
-    print(f"✅ Sitemap fully symmetrized. AEO scores injected into {len(slug_data)} routes.")
 
 if __name__ == "__main__":
     sync_and_tag_aeo()
