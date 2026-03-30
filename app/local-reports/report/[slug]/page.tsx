@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import {
   AlertTriangle,
@@ -25,6 +25,11 @@ type PublicSeoReportRow = {
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
+
+function fixSloppySlug(slug: string): string | null {
+  const cleaned = slug.replace(/([a-z0-9])in([a-z0-9])/g, '$1-in-$2')
+  return cleaned !== slug ? cleaned : null
+}
 
 // --- FORENSIC PARSER COMPONENT ---
 // Recursively renders nested JSON into clean UI, parsing basic markdown.
@@ -134,11 +139,23 @@ export default async function LocalSeoReportPage({ params }: Props) {
     console.error('Supabase Fetch Error (public_seo_reports):', error)
   }
 
-  if (!data) {
+  let report = data
+
+  if (!report) {
+    const corrected = fixSloppySlug(slug)
+    if (corrected) {
+      const { data: alt } = await supabase
+        .from('public_seo_reports')
+        .select('slug')
+        .eq('slug', corrected)
+        .maybeSingle<Pick<PublicSeoReportRow, 'slug'>>()
+      if (alt) {
+        permanentRedirect(`/local-reports/report/${corrected}`)
+      }
+    }
     notFound()
   }
 
-  const report = data
   const score =
     typeof report.logic_score === 'number' && Number.isFinite(report.logic_score)
       ? Math.round(report.logic_score)

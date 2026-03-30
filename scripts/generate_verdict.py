@@ -62,7 +62,24 @@ def analyze_with_valify_logic(title, description, raw_bundle):
         return json.loads(cleaned_text)
     except json.JSONDecodeError as e:
         print(f"❌ JSON Parse Failure after cleaning: {e}")
-        return None
+    return None
+
+
+def clean_slug(text: str) -> str:
+    """
+    Normalize idea titles into safe, hyphenated slugs.
+    Also fixes common 'sloppy' patterns like 'saasinahmedabad' -> 'saas-in-ahmedabad'.
+    """
+    value = (text or "").lower()
+    # Collapse any non-alphanumeric runs into single hyphens
+    value = re.sub(r"[^a-z0-9]+", "-", value)
+    value = re.sub(r"-{2,}", "-", value).strip("-")
+    # Insert missing hyphens around the 'in' preposition when it is glued to words
+    # e.g., plannerinkansas -> planner-in-kansas
+    value = re.sub(r"([a-z0-9])in([a-z0-9])", r"\\1-in-\\2", value)
+    # Final cleanup for any accidental double hyphens from replacements
+    value = re.sub(r"-{2,}", "-", value).strip("-")
+    return value
 
 def process_reports(limit=20):
     """MAIN BATCH PROCESSOR: Mapped to public.verdict_reports"""
@@ -80,7 +97,8 @@ def process_reports(limit=20):
     for index, item in enumerate(queue_data):
         current_num = index + 1
         try:
-            slug = f"{item['idea_title'].lower().replace(' ', '-')}-forensic-report"
+            raw_slug_source = f"{item['idea_title']}-forensic-report"
+            slug = clean_slug(raw_slug_source)
             
             # 🛡️ IDEMPOTENCY CHECK
             check_exists = supabase.table("verdict_reports").select("id").eq("slug", slug).execute()

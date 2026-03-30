@@ -23,12 +23,25 @@ BATCH_LIMIT = 50
 THROTTLE_TIME = 8  # Balanced for speed and API safety
 
 def forensic_slugify(text: str) -> str:
-    if not isinstance(text, str): text = str(text or "")
-    value = text.strip().lower()
-    value = re.sub(r"[\\\/&_\s]+", "-", value)
-    value = re.sub(r"[^a-z0-9\-]", "", value)
-    value = re.sub(r"-{2,}", "-", value)
-    return value.strip("-")
+    """
+    Forensic slug normalizer for niche and city labels.
+    Ensures:
+      - lowercase
+      - non-alphanumerics collapsed into single hyphens
+      - removes leading/trailing/double hyphens
+      - fixes 'sloppy' in-joins like 'plannerinkansas' -> 'planner-in-kansas'
+    """
+    if not isinstance(text, str):
+        text = str(text or "")
+    value = text.lower().strip()
+    # Collapse any non-alphanumeric runs into hyphens
+    value = re.sub(r"[^a-z0-9]+", "-", value)
+    value = re.sub(r"-{2,}", "-", value).strip("-")
+    # Insert missing hyphens around 'in' when glued to words
+    value = re.sub(r"([a-z0-9])in([a-z0-9])", r"\\1-in-\\2", value)
+    # Final cleanup
+    value = re.sub(r"-{2,}", "-", value).strip("-")
+    return value
 
 # --- 1. HARVESTER: TEXT-SEARCH UPGRADE ---
 def harvest_local_evidence(niche, city, region):

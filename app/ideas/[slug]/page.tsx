@@ -1,7 +1,7 @@
 export const revalidate = 86400
 
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import { ArrowLeft, MapPin } from 'lucide-react'
 import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
@@ -20,6 +20,11 @@ const LOCAL_INTELLIGENCE_CITIES = ['Austin', 'Miami', 'London', 'Denver', 'Seatt
 
 /** Local audit slugs (public_seo_reports) must use this prefix. Never link them to /reports/. */
 const LOCAL_REPORT_PATH_PREFIX = '/local-reports/report'
+
+function fixSloppySlug(slug: string): string | null {
+  const cleaned = slug.replace(/([a-z0-9])in([a-z0-9])/g, '$1-in-$2')
+  return cleaned !== slug ? cleaned : null
+}
 
 /** Slugify a city name: 'New York' -> 'new-york' */
 function slugifyCity(cityName: string): string {
@@ -52,6 +57,13 @@ export default async function IdeaDossierPage({ params }: Props) {
   const raw = await getIdeaBySlug(slug)
 
   if (!raw) {
+    const corrected = fixSloppySlug(slug)
+    if (corrected) {
+      const alt = await getIdeaBySlug(corrected)
+      if (alt) {
+        permanentRedirect(`/ideas/${corrected}`)
+      }
+    }
     notFound()
   }
 
