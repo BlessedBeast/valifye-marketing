@@ -67,15 +67,17 @@ export async function generateMetadata({
 }) {
   const { slug } = await params
 
+  const cleanSlug = decodeURIComponent(slug)
+
   // Debug logging for slug resolution in metadata
-  console.log('DEBUG[metadata]: Fetching slug for local-report page:', slug)
+  console.log('DEBUG[metadata]: Fetching slug for local-report page:', slug, 'clean:', cleanSlug)
 
   const supabase = createClient()
 
   const { data } = await supabase
     .from('public_seo_reports')
     .select('idea_title, location_label')
-    .eq('slug', slug)
+    .eq('slug', cleanSlug)
     .maybeSingle<{ idea_title: string | null; location_label: string | null }>()
 
   const idea = data?.idea_title || 'Local Market Audit'
@@ -195,17 +197,18 @@ function formatBoldText(text: string) {
 
 export default async function LocalSeoReportPage({ params }: Props) {
   const { slug } = await params
+  const cleanSlug = decodeURIComponent(slug)
   const supabase = createClient()
 
   // Debug logging to trace incoming slug
-  console.log('DEBUG[page]: Fetching slug for local-report page:', slug)
+  console.log('DEBUG[page]: Fetching slug for local-report page:', slug, 'clean:', cleanSlug)
 
   const { data, error } = await supabase
     .from('public_seo_reports')
     .select(
       'slug, idea_title, business_type, location_label, logic_score, report_type, report_data, country_code, country'
     )
-    .eq('slug', slug)
+    .eq('slug', cleanSlug)
     .maybeSingle<PublicSeoReportRow>()
 
   if (error) {
@@ -214,19 +217,24 @@ export default async function LocalSeoReportPage({ params }: Props) {
 
   let report = data
 
-  if (!report) {
-    const corrected = fixSloppySlug(slug)
-    if (corrected) {
-      const { data: alt } = await supabase
-        .from('public_seo_reports')
-        .select('slug')
-        .eq('slug', corrected)
-        .maybeSingle<Pick<PublicSeoReportRow, 'slug'>>()
-      if (alt) {
-        permanentRedirect(`/local-reports/report/${corrected}`)
-      }
-    }
-    notFound()
+  if (!report || error) {
+    return (
+      <div className="min-h-screen bg-black p-10 font-mono text-green-500">
+        <h1 className="mb-4 text-2xl text-red-500">🚨 FORENSIC DEBUG MODE</h1>
+        <p>
+          <strong>Raw Slug:</strong> {slug}
+        </p>
+        <p>
+          <strong>Cleaned Slug:</strong> {cleanSlug}
+        </p>
+        <p>
+          <strong>Supabase Error:</strong> {JSON.stringify(error || 'No error object returned')}
+        </p>
+        <p>
+          <strong>Supabase Data:</strong> {JSON.stringify(data || 'Data is null')}
+        </p>
+      </div>
+    )
   }
 
   const score =
