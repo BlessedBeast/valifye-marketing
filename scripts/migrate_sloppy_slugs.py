@@ -19,31 +19,23 @@ def get_client():
   return create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 
-SLOPPY_PATTERN = re.compile(r"([a-z0-9])in([a-z0-9])")
-
-
 def looks_sloppy(slug: str) -> bool:
-  """Detect 'glued' in patterns like plannerinkansas or saasinahmedabad."""
+  """Detect malformed slugs that are not strictly lowercase a-z, 0-9, hyphen."""
   if not isinstance(slug, str):
     return False
-  return bool(SLOPPY_PATTERN.search(slug))
+  if slug == "":
+    return False
+  return bool(re.search(r"[^a-z0-9-]|-{2,}", slug))
 
 
 def normalize_slug(slug: str) -> str:
-    """
-    Surgical slug cleaning using a safe lambda replacement
-    to avoid literal backslash errors.
-    """
+    """Normalize to lowercase alphanumeric slug with single hyphens only."""
     if not slug: return ""
-    # 1. Lowercase and basic hyphenation
+    # Lowercase and basic hyphenation
     value = slug.lower().strip()
     value = re.sub(r"[^a-z0-9]+", "-", value)
-    
-    # 2. THE FIX: Use a lambda to ensure 'in' is correctly padded
-    # This replaces 'wordinword' with 'word-in-word'
-    value = re.sub(r"([a-z0-9])in([a-z0-9])", lambda m: f"{m.group(1)}-in-{m.group(2)}", value)
-    
-    # 3. Clean up double hyphens
+
+    # Clean up double hyphens
     value = re.sub(r"-{2,}", "-", value).strip("-")
     return value
 

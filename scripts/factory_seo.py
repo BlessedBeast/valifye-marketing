@@ -29,7 +29,6 @@ def forensic_slugify(text: str) -> str:
       - lowercase
       - non-alphanumerics collapsed into single hyphens
       - removes leading/trailing/double hyphens
-      - fixes 'sloppy' in-joins like 'plannerinkansas' -> 'planner-in-kansas'
     """
     if not isinstance(text, str):
         text = str(text or "")
@@ -37,8 +36,6 @@ def forensic_slugify(text: str) -> str:
     # Collapse any non-alphanumeric runs into hyphens
     value = re.sub(r"[^a-z0-9]+", "-", value)
     value = re.sub(r"-{2,}", "-", value).strip("-")
-    # Insert missing hyphens around 'in' when glued to words
-    value = re.sub(r"([a-z0-9])in([a-z0-9])", r"\\1-in-\\2", value)
     # Final cleanup
     value = re.sub(r"-{2,}", "-", value).strip("-")
     return value

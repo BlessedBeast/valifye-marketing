@@ -68,15 +68,11 @@ def analyze_with_valify_logic(title, description, raw_bundle):
 def clean_slug(text: str) -> str:
     """
     Normalize idea titles into safe, hyphenated slugs.
-    Also fixes common 'sloppy' patterns like 'saasinahmedabad' -> 'saas-in-ahmedabad'.
     """
     value = (text or "").lower()
     # Collapse any non-alphanumeric runs into single hyphens
     value = re.sub(r"[^a-z0-9]+", "-", value)
     value = re.sub(r"-{2,}", "-", value).strip("-")
-    # Insert missing hyphens around the 'in' preposition when it is glued to words
-    # e.g., plannerinkansas -> planner-in-kansas
-    value = re.sub(r"([a-z0-9])in([a-z0-9])", r"\\1-in-\\2", value)
     # Final cleanup for any accidental double hyphens from replacements
     value = re.sub(r"-{2,}", "-", value).strip("-")
     return value
