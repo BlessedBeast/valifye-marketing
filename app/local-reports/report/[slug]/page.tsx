@@ -1,6 +1,6 @@
 import NextDynamic from 'next/dynamic'
 import Script from 'next/script'
-import { notFound, permanentRedirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import {
   AlertTriangle,
@@ -92,11 +92,6 @@ export async function generateMetadata({
     title,
     description
   }
-}
-
-function fixSloppySlug(slug: string): string | null {
-  const cleaned = slug.replace(/([a-z0-9])in([a-z0-9])/g, '$1-in-$2')
-  return cleaned !== slug ? cleaned : null
 }
 
 // --- FORENSIC PARSER COMPONENT ---
@@ -214,17 +209,6 @@ export default async function LocalSeoReportPage({ params }: Props) {
   let report = data
 
   if (!report) {
-    const corrected = fixSloppySlug(slug)
-    if (corrected) {
-      const { data: alt } = await supabase
-        .from('public_seo_reports')
-        .select('slug')
-        .eq('slug', corrected)
-        .maybeSingle<Pick<PublicSeoReportRow, 'slug'>>()
-      if (alt) {
-        permanentRedirect(`/local-reports/report/${corrected}`)
-      }
-    }
     notFound()
   }
 
