@@ -1,6 +1,6 @@
 import { Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -21,7 +21,10 @@ export const metadata: Metadata = {
     types: {
       'application/rss+xml': '/sitemap.xml'
     }
-  },
+  }
+}
+
+export const viewport: Viewport = {
   themeColor: '#000000'
 }
 

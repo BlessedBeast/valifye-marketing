@@ -1,3 +1,5 @@
+import NextDynamic from 'next/dynamic'
+import Script from 'next/script'
 import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -11,6 +13,36 @@ import { createClient } from '@/utils/supabase/server'
 import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
 
+const DeliveryMarginCalculator = NextDynamic(
+  () =>
+    import('@/components/DeliveryMarginCalculator').then(
+      (m) => m.DeliveryMarginCalculator
+    ),
+  { ssr: true }
+)
+
+const SBALoanScanner = NextDynamic(
+  () =>
+    import('@/components/SBALoanScanner').then((m) => m.SBALoanScanner),
+  { ssr: true }
+)
+
+const FranchiseBleedSimulator = NextDynamic(
+  () =>
+    import('@/components/FranchiseBleedSimulator').then(
+      (m) => m.FranchiseBleedSimulator
+    ),
+  { ssr: true }
+)
+
+const UKVATCliffScanner = NextDynamic(
+  () =>
+    import('@/components/UKVATCliffScanner').then(
+      (m) => m.UKVATCliffScanner
+    ),
+  { ssr: true }
+)
+
 type Props = { params: Promise<{ slug: string }> }
 
 type PublicSeoReportRow = {
@@ -21,10 +53,42 @@ type PublicSeoReportRow = {
   logic_score: number | null
   report_type: string | null
   report_data: Record<string, any> | null
+  country_code: string | null
+  country: string | null
 }
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
+
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const supabase = createClient()
+
+  const { data } = await supabase
+    .from('public_seo_reports')
+    .select('idea_title, location_label')
+    .eq('slug', slug)
+    .maybeSingle<{ idea_title: string | null; location_label: string | null }>()
+
+  const idea = data?.idea_title || 'Local Market Audit'
+  const location = data?.location_label || ''
+
+  const titleLocation =
+    location && location.trim().length > 0 ? ` in ${location.trim()}` : ''
+
+  const title = `${idea}${titleLocation} — Forensic Market Audit | Valifye`
+
+  const description = `Detailed 10-page market intelligence report for ${idea}${titleLocation}. Analysis of competitors, unit economics, and local 2026 regulations.`
+
+  return {
+    title,
+    description
+  }
+}
 
 function fixSloppySlug(slug: string): string | null {
   const cleaned = slug.replace(/([a-z0-9])in([a-z0-9])/g, '$1-in-$2')
@@ -131,7 +195,9 @@ export default async function LocalSeoReportPage({ params }: Props) {
 
   const { data, error } = await supabase
     .from('public_seo_reports')
-    .select('slug, idea_title, business_type, location_label, logic_score, report_type, report_data')
+    .select(
+      'slug, idea_title, business_type, location_label, logic_score, report_type, report_data, country_code, country'
+    )
     .eq('slug', slug)
     .maybeSingle<PublicSeoReportRow>()
 
@@ -168,9 +234,129 @@ export default async function LocalSeoReportPage({ params }: Props) {
   const cityPart = rawCity || null
   const regionPart = rawRegion || null
 
+  const context = [
+    report.idea_title || '',
+    report.business_type || '',
+    report.report_type || ''
+  ]
+    .join(' ')
+    .toLowerCase()
+
+  const businessType = (report.business_type || '').toLowerCase()
+
+  const isFoodLike = ['food', 'restaurant', 'cafe', 'delivery', 'kitchen'].some(
+    (keyword) => context.includes(keyword.toLowerCase())
+  )
+  const isFranchise = context.includes('franchise')
+
+  const isRetailServiceOrEcom = ['retail', 'service', 'e-commerce', 'ecommerce'].some(
+    (keyword) => businessType.includes(keyword)
+  )
+
+  type Region = 'NORTH_AMERICA' | 'INDIA' | 'UK' | 'EU' | 'OTHER'
+
+  function mapRegionFromCountry(code: string | null): Region {
+    const v = (code || '').trim().toUpperCase()
+    if (!v) return 'OTHER'
+    if (v === 'US' || v === 'CA') return 'NORTH_AMERICA'
+    if (v === 'IN') return 'INDIA'
+    if (v === 'GB' || v === 'UK') return 'UK'
+    if (['DE', 'FR', 'IT', 'ES', 'NL', 'BE'].includes(v)) return 'EU'
+    return 'OTHER'
+  }
+
+  const explicitCode = (report.country_code || report.country || '').toUpperCase() || null
+  const region: Region = mapRegionFromCountry(explicitCode)
+
+  // Currency symbol by region
+  let currencySymbol = '$'
+  if (region === 'UK') currencySymbol = '£'
+  else if (region === 'EU') currencySymbol = '€'
+  else if (region === 'INDIA') currencySymbol = '₹'
+  else if (region === 'NORTH_AMERICA') currencySymbol = '$'
+
+  // Platform label for delivery marketplaces
+  let platformLabel = 'Delivery Platforms'
+  if (region === 'INDIA') {
+    platformLabel = 'Swiggy/Zomato'
+  } else if (region === 'NORTH_AMERICA') {
+    platformLabel = 'DoorDash/UberEats'
+  } else if (region === 'UK' || region === 'EU') {
+    platformLabel = 'Deliveroo/JustEat'
+  }
+
+  type LeadMagnetType = 'delivery' | 'franchise' | 'scanner' | 'vat' | 'none'
+  let LeadMagnetComponent: LeadMagnetType = 'none'
+  let useEUForVAT = false
+
+  if (region === 'UK' || region === 'EU') {
+    if (isFoodLike) {
+      LeadMagnetComponent = 'delivery'
+    } else if (isRetailServiceOrEcom) {
+      LeadMagnetComponent = 'vat'
+      useEUForVAT = region === 'EU'
+    }
+  } else if (region === 'INDIA') {
+    if (isFoodLike) {
+      LeadMagnetComponent = 'delivery'
+    } else {
+      LeadMagnetComponent = 'franchise'
+    }
+  } else if (region === 'NORTH_AMERICA') {
+    const isUS = explicitCode === 'US'
+    if (isFoodLike) {
+      LeadMagnetComponent = 'delivery'
+    } else if (isUS) {
+      LeadMagnetComponent = 'scanner'
+    }
+  } else if (region === 'OTHER') {
+    if (isFoodLike) {
+      LeadMagnetComponent = 'delivery'
+    }
+  }
+
+  // Global safeguard: if business is not food and country is not US, hide lead magnet.
+  const isUSCountry = explicitCode === 'US'
+  if (!isFoodLike && !isUSCountry) {
+    LeadMagnetComponent = 'none'
+  }
+
+  const primaryTool =
+    LeadMagnetComponent === 'delivery'
+      ? 'DeliveryMarginCalculator'
+      : LeadMagnetComponent === 'scanner'
+        ? 'SBALoanScanner'
+        : LeadMagnetComponent === 'vat'
+          ? 'UKVATCliffScanner'
+          : LeadMagnetComponent === 'franchise'
+            ? 'FranchiseBleedSimulator'
+            : null
+
+  const canonicalUrl = `https://valifye.com/local-reports/report/${report.slug}`
+
   return (
     <div className="flex min-h-screen flex-col bg-[#050505] font-sans text-zinc-100">
       <ValifyeNavbar />
+      {primaryTool && (
+        <Script id="lead-magnet-calculate-action" type="application/ld+json">
+          {JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'CalculateAction',
+            name: primaryTool,
+            target: {
+              '@type': 'EntryPoint',
+              urlTemplate: canonicalUrl,
+              inLanguage: 'en-GB'
+            },
+            instrument: {
+              '@type': 'SoftwareApplication',
+              name: primaryTool,
+              applicationCategory: 'BusinessApplication',
+              operatingSystem: 'Web'
+            }
+          })}
+        </Script>
+      )}
 
       {/* High Urgency Sticky Banner */}
       <div className="sticky top-0 z-30 border-b border-zinc-900 bg-[#050505]/95 backdrop-blur font-mono">
@@ -258,15 +444,15 @@ export default async function LocalSeoReportPage({ params }: Props) {
               <BarChart3 className="h-4 w-4" />
               Intelligence Annex
             </h2>
-            
-            <div className="grid gap-6 md:grid-cols-2 items-start">
+
+            <div className="grid items-start gap-6 md:grid-cols-2">
               {Object.entries(report.report_data).map(([rawKey, value]) => {
                 const label = rawKey.replace(/_/g, ' ')
-                
+
                 return (
                   <div
                     key={rawKey}
-                    className="flex flex-col border border-zinc-800 bg-[#080808] overflow-hidden"
+                    className="flex flex-col overflow-hidden border border-zinc-800 bg-[#080808]"
                   >
                     {/* Card Header */}
                     <div className="border-b border-zinc-800 bg-black/40 px-5 py-3">
@@ -274,7 +460,7 @@ export default async function LocalSeoReportPage({ params }: Props) {
                         {label}
                       </h3>
                     </div>
-                    
+
                     {/* Card Body with Recursive Renderer */}
                     <div className="p-5 font-mono text-[11px]">
                       <ForensicDataNode data={value} />
@@ -282,6 +468,33 @@ export default async function LocalSeoReportPage({ params }: Props) {
                   </div>
                 )
               })}
+            </div>
+          </section>
+        )}
+
+        {/* Lead magnet tool injection */}
+        {LeadMagnetComponent !== 'none' && (
+          <section className="mt-16 border-t border-slate-800 bg-slate-900/50 py-16">
+            <h2 className="mb-8 font-mono text-xs font-bold uppercase tracking-[0.3em] text-zinc-300">
+              Run a Quick Logic Check
+            </h2>
+
+            <div className="max-w-3xl">
+              {LeadMagnetComponent === 'delivery' && (
+                <DeliveryMarginCalculator
+                  platformLabel={platformLabel}
+                  currencySymbol={currencySymbol}
+                />
+              )}
+              {LeadMagnetComponent === 'franchise' && (
+                <FranchiseBleedSimulator currencySymbol={currencySymbol} />
+              )}
+              {LeadMagnetComponent === 'scanner' && (
+                <SBALoanScanner currencySymbol={currencySymbol} />
+              )}
+              {LeadMagnetComponent === 'vat' && (
+                <UKVATCliffScanner isEU={useEUForVAT} />
+              )}
             </div>
           </section>
         )}
