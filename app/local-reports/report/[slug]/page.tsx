@@ -53,8 +53,6 @@ type PublicSeoReportRow = {
   logic_score: number | null
   report_type: string | null
   report_data: Record<string, any> | null
-  country_code: string | null
-  country: string | null
 }
 
 export const dynamic = 'force-dynamic'
@@ -205,9 +203,7 @@ export default async function LocalSeoReportPage({ params }: Props) {
 
   const { data, error } = await supabase
     .from('public_seo_reports')
-    .select(
-      'slug, idea_title, business_type, location_label, logic_score, report_type, report_data, country_code, country'
-    )
+    .select('slug, idea_title, business_type, location_label, logic_score, report_type, report_data')
     .eq('slug', cleanSlug)
     .maybeSingle<PublicSeoReportRow>()
 
@@ -217,24 +213,19 @@ export default async function LocalSeoReportPage({ params }: Props) {
 
   let report = data
 
-  if (!report || error) {
-    return (
-      <div className="min-h-screen bg-black p-10 font-mono text-green-500">
-        <h1 className="mb-4 text-2xl text-red-500">🚨 FORENSIC DEBUG MODE</h1>
-        <p>
-          <strong>Raw Slug:</strong> {slug}
-        </p>
-        <p>
-          <strong>Cleaned Slug:</strong> {cleanSlug}
-        </p>
-        <p>
-          <strong>Supabase Error:</strong> {JSON.stringify(error || 'No error object returned')}
-        </p>
-        <p>
-          <strong>Supabase Data:</strong> {JSON.stringify(data || 'Data is null')}
-        </p>
-      </div>
-    )
+  if (!report) {
+    const corrected = fixSloppySlug(slug)
+    if (corrected) {
+      const { data: alt } = await supabase
+        .from('public_seo_reports')
+        .select('slug')
+        .eq('slug', corrected)
+        .maybeSingle<Pick<PublicSeoReportRow, 'slug'>>()
+      if (alt) {
+        permanentRedirect(`/local-reports/report/${corrected}`)
+      }
+    }
+    notFound()
   }
 
   const score =
@@ -273,17 +264,18 @@ export default async function LocalSeoReportPage({ params }: Props) {
   type Region = 'NORTH_AMERICA' | 'INDIA' | 'UK' | 'EU' | 'OTHER'
 
   function mapRegionFromCountry(code: string | null): Region {
-    const v = (code || '').trim().toUpperCase()
+    const v = (code || '').trim().toLowerCase()
     if (!v) return 'OTHER'
-    if (v === 'US' || v === 'CA') return 'NORTH_AMERICA'
-    if (v === 'IN') return 'INDIA'
-    if (v === 'GB' || v === 'UK') return 'UK'
-    if (['DE', 'FR', 'IT', 'ES', 'NL', 'BE'].includes(v)) return 'EU'
+    if (['uk', 'london', 'england', 'manchester'].some((k) => v.includes(k)))
+      return 'UK'
+    if (['india', 'ahmedabad', 'mumbai', 'delhi'].some((k) => v.includes(k)))
+      return 'INDIA'
+    if (['texas', 'usa', 'california', 'new york'].some((k) => v.includes(k)))
+      return 'NORTH_AMERICA'
     return 'OTHER'
   }
 
-  const explicitCode =
-    (report.country_code || report.country || '').toUpperCase() || null
+  const explicitCode = (report.location_label || '').trim()
   const region: Region = mapRegionFromCountry(explicitCode)
 
   // Currency symbol by region
@@ -334,7 +326,7 @@ export default async function LocalSeoReportPage({ params }: Props) {
   }
 
   // Global safeguard: if business is not food and country is not US, hide lead magnet.
-  const isUSCountry = explicitCode === 'US'
+  const isUSCountry = region === 'NORTH_AMERICA'
   if (!isFoodLike && !isUSCountry) {
     LeadMagnetComponent = 'none'
   }
