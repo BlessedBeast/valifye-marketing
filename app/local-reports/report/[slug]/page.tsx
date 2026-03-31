@@ -60,19 +60,45 @@ type PublicSeoReportRow = {
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
+function buildSlugCandidates(rawSlug: string): string[] {
+  const candidates = new Set<string>()
+
+  const base = rawSlug.trim()
+  if (base) candidates.add(base)
+
+  // Strip trailing "-market-audit"
+  const withoutAudit = base.replace(/-market-audit$/, '')
+  if (withoutAudit && withoutAudit !== base) candidates.add(withoutAudit)
+
+  // Apply sloppy fix heuristic on both versions
+  const sloppyBase = fixSloppySlug(base)
+  if (sloppyBase) candidates.add(sloppyBase)
+
+  const sloppyWithoutAudit = fixSloppySlug(withoutAudit)
+  if (sloppyWithoutAudit) candidates.add(sloppyWithoutAudit)
+
+  return Array.from(candidates)
+}
+
 export async function generateMetadata({
   params
 }: {
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+
+  // Debug logging for slug resolution in metadata
+  console.log('DEBUG[metadata]: Fetching slug for local-report page:', slug)
+
   const supabase = createClient()
+
+  const slugCandidates = buildSlugCandidates(slug)
 
   const { data } = await supabase
     .from('public_seo_reports')
-    .select('idea_title, location_label')
-    .eq('slug', slug)
-    .maybeSingle<{ idea_title: string | null; location_label: string | null }>()
+    .select('idea_title, location_label, slug')
+    .in('slug', slugCandidates)
+    .maybeSingle<{ idea_title: string | null; location_label: string | null; slug: string }>()
 
   const idea = data?.idea_title || 'Local Market Audit'
   const location = data?.location_label || ''
@@ -193,12 +219,17 @@ export default async function LocalSeoReportPage({ params }: Props) {
   const { slug } = await params
   const supabase = createClient()
 
+  // Debug logging to trace incoming slug
+  console.log('DEBUG[page]: Fetching slug for local-report page:', slug)
+
+  const slugCandidates = buildSlugCandidates(slug)
+
   const { data, error } = await supabase
     .from('public_seo_reports')
     .select(
       'slug, idea_title, business_type, location_label, logic_score, report_type, report_data, country_code, country'
     )
-    .eq('slug', slug)
+    .in('slug', slugCandidates)
     .maybeSingle<PublicSeoReportRow>()
 
   if (error) {
@@ -208,41 +239,35 @@ export default async function LocalSeoReportPage({ params }: Props) {
   let report = data
 
   if (!report) {
-    const corrected = fixSloppySlug(slug)
-    if (corrected) {
-      const { data: alt } = await supabase
-        .from('public_seo_reports')
-        .select('slug')
-        .eq('slug', corrected)
-        .maybeSingle<Pick<PublicSeoReportRow, 'slug'>>()
-      if (alt) {
-        permanentRedirect(`/local-reports/report/${corrected}`)
-      }
-    }
-    notFound()
+    console.warn(
+      'DEBUG[page]: No public_seo_reports row found for slug candidates:',
+      slug,
+      slugCandidates
+    )
+    // Do not hard-404 while debugging slug issues – render a soft error state below.
   }
 
   const score =
-    typeof report.logic_score === 'number' && Number.isFinite(report.logic_score)
+    report && typeof report.logic_score === 'number' && Number.isFinite(report.logic_score)
       ? Math.round(report.logic_score)
       : null
 
-  const [rawCity, rawRegion] = (report.location_label || '')
-    .split(',')
-    .map((s) => s.trim())
+  const locationLabel = report?.location_label || ''
+
+  const [rawCity, rawRegion] = locationLabel.split(',').map((s) => s.trim())
 
   const cityPart = rawCity || null
   const regionPart = rawRegion || null
 
   const context = [
-    report.idea_title || '',
-    report.business_type || '',
-    report.report_type || ''
+    report?.idea_title || '',
+    report?.business_type || '',
+    report?.report_type || ''
   ]
     .join(' ')
     .toLowerCase()
 
-  const businessType = (report.business_type || '').toLowerCase()
+  const businessType = (report?.business_type || '').toLowerCase()
 
   const isFoodLike = ['food', 'restaurant', 'cafe', 'delivery', 'kitchen'].some(
     (keyword) => context.includes(keyword.toLowerCase())
@@ -265,7 +290,8 @@ export default async function LocalSeoReportPage({ params }: Props) {
     return 'OTHER'
   }
 
-  const explicitCode = (report.country_code || report.country || '').toUpperCase() || null
+  const explicitCode =
+    (report?.country_code || report?.country || '').toUpperCase() || null
   const region: Region = mapRegionFromCountry(explicitCode)
 
   // Currency symbol by region
@@ -332,7 +358,7 @@ export default async function LocalSeoReportPage({ params }: Props) {
             ? 'FranchiseBleedSimulator'
             : null
 
-  const canonicalUrl = `https://valifye.com/local-reports/report/${report.slug}`
+  const canonicalUrl = `https://valifye.com/local-reports/report/${report?.slug || slug}`
 
   return (
     <div className="flex min-h-screen flex-col bg-[#050505] font-sans text-zinc-100">
@@ -390,10 +416,10 @@ export default async function LocalSeoReportPage({ params }: Props) {
             <ArrowLeft className="h-3 w-3" />
             Local Market Database
           </Link>
-          {report.location_label && (
+          {locationLabel && (
             <span className="hidden sm:inline-flex items-center gap-2 text-zinc-400">
               <MapPin className="h-3 w-3 text-primary" />
-              {report.location_label}
+              {locationLabel}
             </span>
           )}
         </div>
@@ -407,9 +433,9 @@ export default async function LocalSeoReportPage({ params }: Props) {
                 Forensic Local Audit
               </div>
               <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-50 sm:text-4xl md:text-5xl leading-none">
-                {report.idea_title || 'Unnamed Local Market Audit'}
+                {report?.idea_title || 'Unnamed Local Market Audit'}
               </h1>
-              {report.location_label && (
+              {locationLabel && (
                 <p className="text-sm leading-relaxed text-zinc-400 font-serif italic">
                   Archived market intelligence for{' '}
                   <span className="font-semibold text-zinc-100 not-italic">
@@ -438,7 +464,7 @@ export default async function LocalSeoReportPage({ params }: Props) {
         </header>
 
         {/* Structured Intelligence Grid */}
-        {report.report_data && typeof report.report_data === 'object' && (
+        {report?.report_data && typeof report.report_data === 'object' && (
           <section className="mb-12">
             <h2 className="mb-6 flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-primary">
               <BarChart3 className="h-4 w-4" />
