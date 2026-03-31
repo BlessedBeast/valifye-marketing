@@ -260,7 +260,11 @@ export default async function LocalSeoReportPage({ params }: Props) {
   }
 
   const explicitCode = (report.location_label || '').trim()
+  const locationLower = explicitCode.toLowerCase()
   const region: Region = mapRegionFromCountry(explicitCode)
+  const isUSCountry = ['usa', 'united states', 'texas', 'california', 'new york'].some((k) =>
+    locationLower.includes(k)
+  )
 
   // Currency symbol by region
   let currencySymbol = '$'
@@ -297,10 +301,9 @@ export default async function LocalSeoReportPage({ params }: Props) {
       LeadMagnetComponent = 'franchise'
     }
   } else if (region === 'NORTH_AMERICA') {
-    const isUS = explicitCode === 'US'
     if (isFoodLike) {
       LeadMagnetComponent = 'delivery'
-    } else if (isUS) {
+    } else if (isUSCountry) {
       LeadMagnetComponent = 'scanner'
     }
   } else if (region === 'OTHER') {
@@ -309,9 +312,9 @@ export default async function LocalSeoReportPage({ params }: Props) {
     }
   }
 
-  // Global safeguard: if business is not food and country is not US, hide lead magnet.
-  const isUSCountry = region === 'NORTH_AMERICA'
-  if (!isFoodLike && !isUSCountry) {
+  // Global safeguard: don't suppress region-specific tools (UK/EU VAT, India franchise).
+  // Only hide when no regional rule selected a component and it's not a US SBA case.
+  if (!isFoodLike && !isUSCountry && LeadMagnetComponent === 'none') {
     LeadMagnetComponent = 'none'
   }
 
@@ -465,6 +468,13 @@ export default async function LocalSeoReportPage({ params }: Props) {
             </div>
           </section>
         )}
+
+        <div className="mb-8 border border-red-500 bg-red-900/50 p-4 font-mono text-xs">
+          <p>DEBUG MAGNET STATE:</p>
+          <p>isFoodLike: {String(isFoodLike)}</p>
+          <p>Region Infer: {region}</p>
+          <p>Component Selected: {LeadMagnetComponent}</p>
+        </div>
 
         {/* Lead magnet tool injection */}
         {LeadMagnetComponent !== 'none' && (

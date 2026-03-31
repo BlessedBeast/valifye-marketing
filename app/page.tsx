@@ -1,5 +1,15 @@
 import Link from 'next/link'
-import { ArrowRight, Database, Zap, Scale, Activity } from 'lucide-react'
+import {
+  ArrowRight,
+  Database,
+  Zap,
+  Scale,
+  Activity,
+  Calculator,
+  TrendingDown,
+  Percent,
+  Landmark
+} from 'lucide-react'
 import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
 import { createClient } from '@/utils/supabase/server'
@@ -161,6 +171,67 @@ export default async function HomePage() {
                 </Link>
               </div>
             </article>
+          </div>
+        </section>
+
+        {/* FREE FORENSIC CALCULATORS */}
+        <section className="space-y-6">
+          <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground">
+            Free Forensic Calculators
+          </h2>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                icon: Calculator,
+                title: 'Delivery Margin Calculator',
+                subtext:
+                  'Stress-test third-party delivery fees before they consume your unit economics.',
+                href: '/tools/delivery-calculator'
+              },
+              {
+                icon: Landmark,
+                title: 'SBA Loan Scanner',
+                subtext:
+                  'Pressure-test lender readiness and debt assumptions against 2026 rates.',
+                href: '/tools/sba-loan-scanner'
+              },
+              {
+                icon: TrendingDown,
+                title: 'Franchise Profit Simulator',
+                subtext:
+                  'Measure royalty bleed and fee drag before long-term franchise commitments.',
+                href: '/tools/franchise-profit-simulator'
+              },
+              {
+                icon: Percent,
+                title: 'UK VAT Cliff Scanner',
+                subtext:
+                  'Model the profitability valley around VAT threshold transition points.',
+                href: '/tools/uk-vat-cliff-scanner'
+              }
+            ].map((tool) => (
+              <article
+                key={tool.href}
+                className="flex flex-col justify-between border border-border bg-card p-5 text-xs shadow-[0_0_0_1px_hsl(var(--primary)/0.5)]"
+              >
+                <div className="space-y-3">
+                  <tool.icon className="h-5 w-5 text-primary" />
+                  <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-foreground">
+                    {tool.title}
+                  </h3>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    {tool.subtext}
+                  </p>
+                </div>
+                <Link
+                  href={tool.href}
+                  className="mt-5 inline-flex items-center gap-2 border border-primary bg-background px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                >
+                  Open Tool
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </article>
+            ))}
           </div>
         </section>
 
