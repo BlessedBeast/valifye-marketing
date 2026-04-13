@@ -1,7 +1,9 @@
 import type { MetadataRoute } from 'next'
 import { supabase } from '@/lib/supabase'
 
-export const revalidate = 43200
+// 🚨 TEMPORARY CACHE FLUSH: Set to 0 to force Next.js to pull all 2,198+ pages.
+// Once the audit passes, change this back to 43200 (12 hours) and push again.
+export const revalidate = 0
 
 /**
  * Standardizes strings into SEO-friendly slugs.
@@ -41,8 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   try {
-    // 2. Fetch all dynamic data in parallel
-    // 2. Fetch all dynamic data in parallel
+    // 2. Fetch all dynamic data in parallel with Hardened Limits
     const [
       ideasRes,
       verdictRes,
@@ -133,7 +134,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
 
     // 4. THE DEDUPLICATION ENGINE
-    // Combine everything into one master list
     const allEntries: MetadataRoute.Sitemap = [
       ...staticRoutes,
       ...ideaPages,
@@ -143,10 +143,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...localCityHubs,
     ]
 
-    // Use a Set to track URLs we have already added
     const uniqueUrlSet = new Set<string>()
     
-    // Filter the master list to ensure each URL only appears once
     const finalSitemap = allEntries.filter((entry) => {
       if (uniqueUrlSet.has(entry.url)) {
         console.warn(`Sitemap duplicate filtered: ${entry.url}`)
