@@ -1,4 +1,4 @@
-name: Nightly Forensic Indexer & Auditor
+name: Valifye Sentinel (Nightly Orchestrator & Auditor)
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch: 
 
 jobs:
-  index_and_audit:
+  sentinel_orchestrator:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -26,49 +26,45 @@ jobs:
           mkdir -p scripts
           echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > scripts/service-account.json
 
-      # --- RUN ALL THREE INDEXING ENGINES ---
-      
-      
-      - name: Run Global Indexing Queue
+      # --- THE FOREMAN SEQUENCE ---
+      - name: Phase 1 to 4 (Repair, Gate, Bridge, Sitemap)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          # 1. Legacy Blueprints Engine (Drafts -> Live)
-          if [ -f "scripts/publish_and_index.py" ]; then 
-            echo "🚀 Running Legacy Blueprint Indexer..."
-            python scripts/publish_and_index.py
-          fi
-          
-          # 2. Validation Reports Engine
-          if [ -f "scripts/index_validation_reports.py" ]; then 
-            echo "🚀 Running Validation Report Indexer..."
-            python scripts/index_validation_reports.py
-          fi
-          
-          # 3. pSEO Local Market Engine
-          if [ -f "scripts/index_seo_reports.py" ]; then 
-            echo "🚀 Running pSEO Local Indexer..."
-            python scripts/index_seo_reports.py
-          fi
+          echo "🩹 PHASE 1: Repairing Slugs..."
+          if [ -f "scripts/migrate_sloppy_slugs.py" ]; then python scripts/migrate_sloppy_slugs.py; fi
+
+          echo "🛡️  PHASE 2: Quality Gates (Draft -> Live)..."
+          if [ -f "scripts/publish_and_index.py" ]; then python scripts/publish_and_index.py; fi
+          if [ -f "scripts/index_validation_reports.py" ]; then python scripts/index_validation_reports.py; fi
+          if [ -f "scripts/index_seo_reports.py" ]; then python scripts/index_seo_reports.py; fi
+
+          echo "🏗️  PHASE 3: Hub Synchronization..."
+          if [ -f "scripts/generate_city_graphs.py" ]; then python scripts/generate_city_graphs.py; fi
+          if [ -f "scripts/build_verdict_bridges.py" ]; then python scripts/build_verdict_bridges.py; fi
+          if [ -f "scripts/local_bridges.py" ]; then python scripts/local_bridges.py; fi
+
+          echo "📡 PHASE 4: Master Sitemap Generation..."
+          if [ -f "generate_master_sitemap.py" ]; then python generate_master_sitemap.py; fi
 
       # --- PERFORM FINAL INTEGRITY AUDIT ---
-      - name: Run Triple-Engine Sitemap Audit
+      - name: Run Master Sitemap Audit
         id: sitemap_audit
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          # Looking for verify_sitemap.py in the ROOT as per your requirement
-          if [ -f "verify_sitemap.py" ]; then
-            python verify_sitemap.py > audit_output.txt
+          if [ -f "check_sitemap.py" ]; then
+            python check_sitemap.py > audit_output.txt
             cat audit_output.txt
             
-            # Extract Global Metrics for Slack
-            echo "TOTAL_ORPHAN=$(grep 'TOTAL_ORPHANS=' audit_output.txt | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
-            echo "TOTAL_PENDING=$(grep 'TOTAL_PENDING_INDEX=' audit_output.txt | cut -d '=' -f2 || echo '0')" >> $GITHUB_ENV
+            # Extract Metrics for Slack (Fixing the previous silent bug)
+            # Sums up all numbers preceding the word "orphaned" or "Missing"
+            echo "TOTAL_ORPHAN=$(grep -oP '\d+(?= orphaned| Missing from Sitemap)' audit_output.txt | awk '{s+=$1} END {if (s=="") print "0"; else print s}')" >> $GITHUB_ENV
+            echo "TOTAL_ZOMBIE=$(grep -oP '\d+(?= Zombie Links)' audit_output.txt | awk '{s+=$1} END {if (s=="") print "0"; else print s}')" >> $GITHUB_ENV
           else
-            echo "❌ verify_sitemap.py NOT FOUND IN ROOT!"
+            echo "❌ check_sitemap.py NOT FOUND IN ROOT!"
             exit 1
           fi
 
@@ -78,7 +74,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           TOTAL_ORPHAN: ${{ env.TOTAL_ORPHAN }}
-          TOTAL_PENDING: ${{ env.TOTAL_PENDING }}
+          TOTAL_ZOMBIE: ${{ env.TOTAL_ZOMBIE }}
         run: |
           python - << 'PY'
           import os, requests
@@ -88,20 +84,21 @@ jobs:
               except: return 0
 
           orphans = safe_int(os.getenv("TOTAL_ORPHAN"))
-          pending = safe_int(os.getenv("TOTAL_PENDING"))
+          zombies = safe_int(os.getenv("TOTAL_ZOMBIE"))
           
-          color = "#36a64f" if orphans == 0 else "#FF0000"
-          status = "✅ SEO HEALTHY" if orphans == 0 else "🚨 ACTION REQUIRED"
+          issues = orphans + zombies
+          color = "#36a64f" if issues == 0 else "#FF0000"
+          status = "✅ SEO HEALTHY" if issues == 0 else "🚨 ACTION REQUIRED"
           
           payload = {
               "attachments": [{
                   "color": color,
-                  "title": f"🛡️ Valifye Global SEO Audit: {status}",
+                  "title": f"🛡️ Valifye Sentinel Audit: {status}",
                   "text": (
                       f"*Master Audit Summary (All Engines)*\n"
-                      f"🛑 *Total Orphans:* `{orphans}`\n"
-                      f"📡 *Remaining in Index Queue:* `{pending}`\n\n"
-                      f"_Engines: Blueprints, Validation Audits, pSEO Local Reports._"
+                      f"🛑 *Orphaned/Missing Pages:* `{orphans}`\n"
+                      f"🧟 *Zombie/Dead Links:* `{zombies}`\n\n"
+                      f"_Engines synced, Hubs bridged, and Sitemap generated._"
                   ),
                   "footer": "Valifye Automation Engine 2026",
                   "footer_icon": "https://valifye.com/favicon.ico"

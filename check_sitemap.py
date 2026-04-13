@@ -1,4 +1,5 @@
 import os
+import re
 from supabase import create_client
 from dotenv import load_dotenv
 
@@ -6,62 +7,83 @@ from dotenv import load_dotenv
 load_dotenv()
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
 
-def audit_engine_3():
+def run_sitemap_file_audit():
     print("\n" + "="*60)
-    print("🔬 ENGINE 3 X-RAY: LOCAL SEO REPORTS & CITY HUBS")
+    print("📡 VALIFYE SITEMAP FILE AUDITOR (V11.0)")
     print("="*60)
 
-    # 1. Fetch all Published SEO Reports
-    print("📡 Fetching Local SEO Reports...")
-    seo_resp = supabase.table("public_seo_reports").select("slug, location_label, is_published").eq("is_published", True).execute()
-    reports = seo_resp.data or []
-    report_slugs = {r['slug'] for r in reports}
+    # --- 1. LOAD SITEMAP FILE ---
+    sitemap_path = "new sitemap.txt"
+    if not os.path.exists(sitemap_path):
+        print(f"❌ ERROR: '{sitemap_path}' not found. Please ensure the file exists.")
+        return
 
-    # 2. Fetch all Local City Hubs
-    print("📡 Fetching Local City Hubs...")
-    hubs_resp = supabase.table("local_city_hubs").select("city_name, all_slugs").execute()
-    city_hubs = hubs_resp.data or []
+    with open(sitemap_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    # Extract all slugs from <loc> tags or raw URLs
+    # This regex handles both https://valifye.com/ideas/slug and raw slugs
+    found_urls = re.findall(r'https://valifye\.com/ideas/([a-zA-Z0-9\-_]+)', content)
+    sitemap_slugs = set(found_urls)
     
-    housed_slugs = set()
-    hub_map = {}
+    print(f"📂 Sitemap File Loaded: {len(sitemap_slugs)} unique URLs detected.")
+
+    # --- 2. FETCH DATABASE TRUTH ---
+    print("📡 Fetching Published Slugs from Supabase...")
     
-    for h in city_hubs:
-        slug_list = h.get('all_slugs') or []
-        housed_slugs.update(slug_list)
-        hub_map[h['city_name']] = len(slug_list)
+    e1_db = {r['slug'] for r in supabase.table("market_data").select("slug").eq("status", "published").execute().data or []}
+    e2_db = {r['slug'] for r in supabase.table("verdict_reports").select("slug").eq("is_published", True).execute().data or []}
+    e3_db = {r['slug'] for r in supabase.table("public_seo_reports").select("slug").eq("is_published", True).execute().data or []}
+    
+    all_published_db = e1_db | e2_db | e3_db
+    print(f"✅ DB Truth: {len(all_published_db)} total published records found.")
 
-    # 3. Calculations
-    orphans = report_slugs - housed_slugs
-    invaders = housed_slugs - report_slugs
+    # --- 3. CROSS-REFERENCE CALCULATIONS ---
+    
+    # Missing: In DB but NOT in Sitemap (Google won't find these)
+    missing_from_sitemap = all_published_db - sitemap_slugs
+    
+    # Zombies: In Sitemap but NOT in DB (Google is crawling dead/deleted links)
+    zombies_in_sitemap = sitemap_slugs - all_published_db
+    
+    # Sloppy Check: Are there any double-city slugs actually inside the live sitemap?
+    double_city_ghosts = [s for s in sitemap_slugs if re.search(r'-in-([a-z-]+)-in-\1', s)]
 
-    # --- RESULTS DASHBOARD ---
+    # --- 4. FINAL HEALTH DASHBOARD ---
     print("\n" + "="*60)
-    print("📊 ENGINE 3 HEALTH DASHBOARD")
+    print("📊 SITEMAP VS. DATABASE ALIGNMENT")
     print("="*60)
     
-    print(f"\n🏘️  [CITY HUB DISTRIBUTION: {len(city_hubs)} Hubs]")
-    # Show top 5 cities by report count
-    sorted_hubs = sorted(hub_map.items(), key=lambda x: x[1], reverse=True)
-    for name, count in sorted_hubs[:10]:
-        print(f"   • {name.ljust(25)} : {str(count).rjust(4)} reports")
+    print(f"\n🧱 [COVERAGE]")
+    print(f"   • Database (Published) : {len(all_published_db)}")
+    print(f"   • Sitemap (Live)      : {len(sitemap_slugs)}")
+    
+    sync_status = "✅ PERFECT SYNC" if len(missing_from_sitemap) == 0 and len(zombies_in_sitemap) == 0 else "⚠️ DISCREPANCIES FOUND"
+    print(f"   • Sync Status         : {sync_status}")
 
-    print(f"\n🏗️  [STRUCTURAL INTEGRITY]")
-    print(f"   • Total Published SEO Reports : {len(reports)}")
-    print(f"   • Properly Housed             : {len(report_slugs & housed_slugs)}")
-    print(f"   • Orphaned (No Hub)           : {len(orphans)}")
-    print(f"   • Invaders (Ghost Links)      : {len(invaders)}")
+    print(f"\n🚨 [CRITICAL LEAKS]")
+    print(f"   • Missing from Sitemap: {len(missing_from_sitemap)} (Invisible to Google)")
+    print(f"   • Zombie Links        : {len(zombies_in_sitemap)} (Dead URLs being crawled)")
+    print(f"   • Double-City Errors  : {len(double_city_ghosts)} (Still in sitemap!)")
 
-    if orphans:
-        print("\n⚠️  ORPHAN SAMPLES (Local reports not in any city hub):")
-        for o in list(orphans)[:5]:
-            print(f"   -> {o}")
+    if missing_from_sitemap:
+        print("\n📍 MISSING SAMPLES (Add these to sitemap logic):")
+        for s in list(missing_from_sitemap)[:3]:
+            print(f"   -> {s}")
 
-    if invaders:
-        print("\n🚨 INVADER SAMPLES (Dead links in city hubs):")
-        for i in list(invaders)[:5]:
-            print(f"   -> {i}")
+    if zombies_in_sitemap:
+        print("\n📍 ZOMBIE SAMPLES (Remove these from sitemap file):")
+        for z in list(zombies_in_sitemap)[:3]:
+            print(f"   -> {z}")
+
+    if double_city_ghosts:
+        print("\n📍 DOUBLE-CITY SAMPLES (Urgent Fix Required):")
+        for d in double_city_ghosts[:3]:
+            print(f"   -> {d}")
 
     print("\n" + "="*60)
+    print("🏁 Audit Complete. Use this to verify your XML generation logic.")
+    print("="*60 + "\n")
 
 if __name__ == "__main__":
-    audit_engine_3()
+    run_sitemap_file_audit()
