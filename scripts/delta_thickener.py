@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import datetime
 from dotenv import load_dotenv
 from supabase import create_client
 from google import genai
@@ -10,82 +11,85 @@ load_dotenv()
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-# 2026 SEO Gate
-MIN_CONTENT_LENGTH = 2000 
+# PRODUCTION CONFIG
+MODEL_NAME = "gemini-1.5-flash" # More stable than 2.0/2.5 for high-volume tasks
+CURRENT_YEAR = datetime.datetime.now().year
 
-def get_missing_data(title, current_narrative, current_exp_data):
+def get_blueprint_data(niche, city, region):
     """
-    INJECTION MODE: Adds the 'Missing Pillars' required for AEO Authority.
+    Synthesizes the 4-part forensic depth required for Engine 1.
     """
-    print(f"💉 Injecting forensic depth for: {title}...")
+    print(f"💉 Injecting forensic substance for: {niche} in {city}...")
     
     prompt = f"""
-    Context: {title}
-    Current Narrative: {current_narrative}
-    Existing Data: {json.dumps(current_exp_data)}
+    Context: {niche} in {city}, {region} ({CURRENT_YEAR})
+    Task: Generate a high-density Validation Blueprint for this local market.
 
-    TASK: This report is too 'Thin' for 2026 Search Standards. 
-    Expand it by generating these specific forensic pillars:
-    
-    1. 'unit_economics': {{ 'cpa': float, 'ltv': float, 'payback_months': int, 'math_verdict': 'brutal summary' }}
-    2. 'market_entities': [ 'Competitor Name', 'Niche Keyword', 'Legacy Workaround' ]
-    3. 'aeo_summary': 'A 250-word authoritative 'Direct Answer' for AI Search Engines.'
-    4. 'thick_case_study': 'A simulated 300-word failure or success story from a trial run.'
-
-    Return ONLY the raw JSON for these keys.
+    Return ONLY raw JSON for these keys:
+    1. 'market_narrative': A 300-word authoritative overview of the local demand.
+    2. 'local_friction': [List of 3 specific local hurdles]
+    3. 'gtm_playbook': [3 hyper-local entry steps]
+    4. 'failure_modes': 'A 2-sentence warning on how a founder goes bankrupt here.'
+    5. 'unit_economics': {{ 'unit_price': int, 'margin_pct': int, 'rent_impact': 'High/Medium/Low' }}
     """
     
-    try:
-        # 🔥 UPDATED MODEL NAME
-        res = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
-        # Clean markdown
-        clean_text = res.text.strip().replace("```json", "").replace("```", "")
-        return json.loads(clean_text)
-    except Exception as e:
-        print(f"❌ Gemini Error for {title}: {e}")
-        return None
+    # Simple Retry Loop for 503 Errors
+    for attempt in range(3):
+        try:
+            res = client.models.generate_content(model=MODEL_NAME, contents=prompt)
+            clean_text = res.text.strip().replace("```json", "").replace("```", "")
+            return json.loads(clean_text)
+        except Exception as e:
+            if "503" in str(e):
+                print(f"⚠️ Server busy, retrying in 5s... (Attempt {attempt+1})")
+                time.sleep(5)
+                continue
+            print(f"❌ Error: {e}")
+            return None
+    return None
 
-def run_delta_thicken():
-    print("🕵️ Finding the 'Thin' 15 reports...")
+def run_engine1_thickener():
+    print("🕵️ Finding 'Pending' Ghosts and 'Draft' Blueprints...")
     
-    # 🎯 TARGETED FETCH: Only unpublished reports
-    # Corrected table name to 'verdict_reports'
-    reports = supabase.table("verdict_reports").select("*").eq("is_published", False).execute().data
+    # 1. Fetch Targets
+    # Priority 1: Those with "pending" text
+    # Priority 2: Those stuck in "draft"
+    resp = supabase.table("market_data").select("*").or_("status.eq.draft,market_narrative.ilike.%pending%").limit(50).execute()
+    rows = resp.data or []
     
-    if not reports:
-        print("📭 No thin reports found. Everything is already live or processed.")
+    if not rows:
+        print("📭 Database is clean. No blueprints need thickening.")
         return
 
     updated_count = 0
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
-    for r in reports:
-        exp_data = r.get("experiment_data") or {}
-        logic_audit = exp_data.get("logic_audit") or {}
-
-        # Calculate current length to confirm it actually needs thickening
-        current_len = len(r['forensic_narrative'] or '') + len(json.dumps(exp_data))
+    for r in rows:
+        # Determine if it's a ghost or draft for logging
+        label = "REPAIRING" if "pending" in (r['market_narrative'] or "").lower() else "THICKENING"
         
-        if current_len >= MIN_CONTENT_LENGTH:
-            print(f"⏩ {r['idea_title']} is already thick enough ({current_len} chars). Skipping.")
-            continue
-
-        delta = get_missing_data(r['idea_title'], r['forensic_narrative'], exp_data)
+        data = get_blueprint_data(r['niche'], r['city'], r['region'])
         
-        if delta:
-            # Merge the new pillars into the logic_audit
-            updated_logic_audit = {**logic_audit, **delta}
-            updated_exp_data = {**exp_data, "logic_audit": updated_logic_audit}
-            
-            # 🔥 Corrected Table Name
-            supabase.table("verdict_reports").update({
-                "experiment_data": updated_exp_data
-            }).eq("id", r['id']).execute()
-            
-            print(f"✅ Thickened: {r['idea_title']}")
-            updated_count += 1
-            time.sleep(2) # Protect API limits
+        if data:
+            try:
+                supabase.table("market_data").update({
+                    "market_narrative": data.get("market_narrative"),
+                    "local_friction": data.get("local_friction"),
+                    "gtm_playbook": data.get("gtm_playbook"),
+                    "failure_modes": data.get("failure_modes"),
+                    "unit_economics": data.get("unit_economics"),
+                    "status": "published",
+                    "updated_at": now,
+                    "published_at": now
+                }).eq("id", r['id']).execute()
+                
+                print(f"✅ {label}: {r['slug']}")
+                updated_count += 1
+                time.sleep(3) # Safe buffer
+            except Exception as e:
+                print(f"⚠️ Database Update Failed: {e}")
 
-    print(f"🏁 Mission Complete. {updated_count} reports are now 'Thick'.")
+    print(f"🏁 Mission Complete. {updated_count} Blueprints are now forensic-grade.")
 
 if __name__ == "__main__":
-    run_delta_thicken()
+    run_engine1_thickener()

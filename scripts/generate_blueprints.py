@@ -1,163 +1,143 @@
 import os
-import json
 import time
 import datetime
+import json
 from dotenv import load_dotenv
 from supabase import create_client
 from google import genai
+from pydantic import BaseModel
 
-# Load environment variables
 load_dotenv()
 
-# Initialize Supabase
-supabase = create_client(
-    os.getenv("SUPABASE_URL"),
-    os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-)
-
-# Initialize Gemini 2.5 Flash (The fast, stable model)
+# Initialize Clients
+supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Dynamic data currency for prompts
-current_year = datetime.datetime.now().year
+# PRODUCTION CONSTANTS
+CURRENT_YEAR = datetime.datetime.now().year
+MODEL_NAME = "gemini-2.5-flash" 
 
-def expand_to_blueprint(seed):
-    """
-    Takes a research seed and expands it into a 4-part 'Validation Blueprint'
-    optimized for AEO (Answer Engine Optimization) and GEO (Generative Engine Optimization).
-    """
-    niche = seed['niche']
-    city = seed['city']
+class UnitEconomics(BaseModel):
+    unit_price: int
+    margin_pct: int
+    fixed_costs_monthly: int
+    rent_impact: str
+    logic: str
+
+class BlueprintSchema(BaseModel):
+    local_friction: list[str]
+    gtm_playbook: list[str]
+    failure_modes: str
+    unit_economics: UnitEconomics
+    market_narrative: str
+    opportunity_score: int
+    difficulty_score: int
+    trend: str
+    breakeven_months: int
+
+# --- THE SYNTHESIS ENGINE (WITH RETRY LOGIC) ---
+def thicken_blueprint(row):
+    niche = row.get('niche', 'Unknown Niche')
+    city = row.get('city', 'Unknown City')
+    region = row.get('region', '')
     
-    print(f"🏗️  Building Blueprint & Calculating Scores for: {niche} in {city}...")
+    print(f"🧬  Synthesizing Substance for: {niche} in {city}...")
 
     prompt = f"""
-    Role: {current_year} Brutal Business Validator.
-    Context: {niche} in {city}, {seed['region']}.
-    City Intelligence: {seed['city_intel']}
-    Expert Strategy Seed: {seed['expert_guide_text']}
-
-    TASK: Expand this data into a structured 'Validation Blueprint'.
-    You are writing for the {current_year} to {current_year + 2} economic landscape.
-    Do NOT hardcode the year "{current_year}" anywhere; always reason relative to the provided years.
-
-    AEO/GEO Information Gain Requirement:
-    - You MUST provide "Information Gain": specific, citable facts about {city} that go beyond generic training data.
-    - Name concrete authorities, corridors, policies, infrastructure projects, or neighborhoods that real founders reference.
-
-    1. LOCAL FRICTION: 3 specific local hurdles.
-    2. GTM PLAYBOOK: 3 hyper-local steps to find the first 10 customers.
-    3. THE PRE-MORTEM: A brutal 2-sentence warning on exactly HOW a founder will go bankrupt.
-    
-    4. LOCAL UNIT ECONOMICS (MANDATORY HARD METRICS): 
-       Provide specific 2026 estimates for this niche in {city}.
-       - unit_price: (Integer)
-       - margin_pct: (Integer)
-       - fixed_costs_monthly: (Integer)
-       - rent_impact: "High", "Medium", or "Low"
-       - logic: Dense 3-sentence breakdown.
-
-    5. BRUTAL METRICS SCORING (CRITICAL):
-       - opportunity_score (0-100)
-       - difficulty_score (0-100)
-       - saturation_score (0-100)
-       - trend_impact: "up", "down", or "flat"
-       - breakeven_months (Integer)
-
-    Return ONLY raw JSON with keys: local_friction, gtm_playbook, failure_modes, unit_economics, market_narrative, opportunity_score, difficulty_score, saturation_score, trend_impact, breakeven_months.
+    Role: {CURRENT_YEAR} Brutal Business Validator.
+    Context: {niche} in {city}, {region}.
+    TASK: Reconstruct a hyper-local Validation Blueprint with Information Gain.
     """
 
-    # --- RESILIENCY BLOCK 1: Gemini API Retry ---
-    max_retries = 3
-    response = None
+    # --- RETRY BLOCK: Exponential Backoff ---
+    max_retries = 5
+    wait_time = 5 # Start with 5 seconds
+
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
-                model="gemini-2.5-flash", 
-                contents=prompt
+                model=MODEL_NAME, 
+                contents=prompt,
+                config={
+                    'response_mime_type': 'application/json',
+                    'response_schema': BlueprintSchema,
+                    'temperature': 0.2 
+                }
             )
-            break # Exit loop if successful
+            return json.loads(response.text)
+
         except Exception as e:
-            print(f"⚠️ Gemini API Overloaded (Attempt {attempt+1}/{max_retries}). Waiting 5 seconds... Error: {str(e)[:50]}")
-            time.sleep(5)
-            
-    if not response:
-        print(f"❌ Skipping {niche} in {city} due to persistent Gemini API failures.")
-        return False
-    # --------------------------------------------
- 
-    try:
-        # Clean and parse JSON
-        clean_json = response.text.strip().replace("```json", "").replace("```", "")
-        data = json.loads(clean_json)
-
-        # SAFE-FETCH: Using .get() ensures we never crash on missing keys
-        opp_score = data.get('opportunity_score', 50)
-        diff_score = data.get('difficulty_score', 50)
-        trend = data.get('trend_impact', 'flat')
-        breakeven = data.get('breakeven_months', 12)
-
-        # UPSERT: saturation_score OMITTED as it is a DB-generated column
-        supabase.table("market_data").upsert({
-            "niche": niche,
-            "city": city,
-            "region": seed['region'],
-            "market_narrative": data.get('market_narrative', "Analysis pending..."),
-            "local_friction": data.get('local_friction', []),
-            "gtm_playbook": data.get('gtm_playbook', []),
-            "failure_modes": data.get('failure_modes', "Generic risk: High competition."),
-            "unit_economics": data.get('unit_economics', {}), 
-            "opportunity_score": opp_score,
-            "difficulty_score": diff_score,
-            "trend": trend,
-            "breakeven_months": breakeven,
-            "business_shape": seed['business_shape'],
-            "status": "draft",
-            "data_source": "Valifye Blueprint 2.5"
-        }, on_conflict="niche,city").execute()
-
-        # Update status in content_plan
-        supabase.table("content_plan").update({"is_generated": True}).eq("id", seed['id']).execute()
-        
-        print(f"✅ Blueprint Live: {niche} in {city} | Opp: {opp_score}")
-        return True
-
-    except Exception as e:
-        print(f"❌ JSON/Database Error for {niche}: {e}")
-        return False
-        
-def run_factory(limit=5):
-    print(f"🚀 Starting Validation Factory (Batch Limit: {limit})...")
+            if "503" in str(e) or "overloaded" in str(e).lower():
+                print(f"⚠️  Server Busy (Attempt {attempt+1}/{max_retries}). Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+                wait_time *= 2 # Double the wait time for the next attempt
+            else:
+                print(f"❌ Gemini Error: {str(e)[:100]}")
+                return None
     
-    # --- RESILIENCY BLOCK 3: Supabase Fetch Retry ---
-    max_retries = 3
-    seeds = None
-    
-    for attempt in range(max_retries):
-        try:
-            seeds = supabase.table("content_plan")\
-                .select("*")\
-                .eq("is_generated", False)\
-                .limit(limit)\
-                .execute().data
-            break
-        except Exception as e:
-            print(f"⚠️ Supabase connection dropped (Attempt {attempt + 1}/{max_retries}). Retrying in 2 seconds...")
-            time.sleep(2)
-            
-    if seeds is None:
-        print("❌ Critical Failure: Could not connect to Supabase after multiple attempts. Exiting.")
-        return
-    # ------------------------------------------------------------------
+    print(f"🛑 Giving up on {niche} after {max_retries} attempts.")
+    return None
 
-    if not seeds:
-        print("ℹ️ No pending seeds in content_plan. Factory idle.")
+# --- THE MAIN SCANNER ---
+def run_forensic_thickener(limit=50):
+    print("\n" + "="*60)
+    print("🕵️  ENGINE 1: SELF-HEALING THICKENER STARTING")
+    print("="*60)
+    
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    # PHASE 1: TARGET GHOSTS (The 13 Pending Pages)
+    ghosts = supabase.table("market_data")\
+        .select("*")\
+        .ilike("market_narrative", "%pending%")\
+        .execute().data or []
+    
+    # PHASE 2: TARGET DRAFTS
+    drafts = supabase.table("market_data")\
+        .select("*")\
+        .eq("status", "draft")\
+        .limit(limit)\
+        .execute().data or []
+
+    queue = ghosts + drafts
+    
+    if not queue:
+        print("📭 No targets found.")
         return
 
-    for seed in seeds:
-        success = expand_to_blueprint(seed)
-        if success:
-            time.sleep(3) # Safe buffer to respect 1000/day limits
+    updated_count = 0
+    for row in queue:
+        is_ghost = "pending" in str(row.get('market_narrative', "")).lower()
+        prefix = "💉 [REPAIRING GHOST]" if is_ghost else "🏗️ [THICKENING DRAFT]"
+        
+        new_data = thicken_blueprint(row)
+        
+        if new_data:
+            try:
+                supabase.table("market_data").update({
+                    "market_narrative": new_data['market_narrative'],
+                    "local_friction": new_data['local_friction'],
+                    "gtm_playbook": new_data['gtm_playbook'],
+                    "failure_modes": new_data['failure_modes'],
+                    "unit_economics": new_data['unit_economics'],
+                    "opportunity_score": new_data['opportunity_score'],
+                    "difficulty_score": new_data['difficulty_score'],
+                    "trend": new_data['trend'],
+                    "breakeven_months": new_data['breakeven_months'],
+                    "status": "published", 
+                    "updated_at": now_iso,
+                    "published_at": now_iso
+                }).eq("id", row['id']).execute()
+                
+                print(f"{prefix} SUCCESS: {row['slug']}")
+                updated_count += 1
+                # Increase sleep between rows to reduce pressure on the API
+                time.sleep(5) 
+                
+            except Exception as e:
+                print(f"⚠️ Update failed for {row['slug']}: {e}")
+
+    print(f"\n🏁 MISSION COMPLETE: {updated_count} Blueprints Hardened.")
 
 if __name__ == "__main__":
-    run_factory(limit=50) # Reduced from 100 to 50 to prevent instant quota burn
+    run_forensic_thickener(limit=100)

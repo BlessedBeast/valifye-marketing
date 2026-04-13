@@ -3,19 +3,17 @@ import json
 from supabase import create_client
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
-
-# Initialize Supabase Client
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
 
 def build_local_knowledge_bridges():
-    print("🏗️  Building pSEO City Knowledge Bridges (V3.2)...")
+    print("🏗️  Building pSEO City Knowledge Bridges (V3.3)...")
     
-    # 1. Get all generated local reports
     try:
+        # Fetch data
         response = supabase.table("public_seo_reports")\
-            .select("slug, idea_title, location_label, logic_score, report_data")\
+            .select("slug, idea_title, location_label, logic_score")\
+            .eq("is_published", True)\
             .execute()
         data = response.data
     except Exception as e:
@@ -23,14 +21,12 @@ def build_local_knowledge_bridges():
         return
 
     if not data:
-        print("📭 No pSEO reports found to cluster.")
+        print("📭 No published pSEO reports found.")
         return
 
-    # 2. Group reports by City and Region
-    # We use a tuple (city, region) as the key to match DB constraints
+    # Grouping logic
     city_clusters = {}
     for row in data:
-        # location_label is usually "City, Region" (e.g., "Austin, TX")
         label = row.get('location_label') or "Unknown, Unknown"
         parts = [p.strip() for p in label.split(',')]
         
@@ -38,40 +34,35 @@ def build_local_knowledge_bridges():
         region = parts[1] if len(parts) > 1 else "Unknown"
         
         cluster_key = (city, region)
-        
         if cluster_key not in city_clusters:
             city_clusters[cluster_key] = []
         city_clusters[cluster_key].append(row)
 
     success_count = 0
 
-    # 3. Process each cluster
     for (city, region), reports in city_clusters.items():
-        print(f"🔗 Linking {len(reports)} market audits in {city}, {region}...")
+        print(f"🔗 Linking {len(reports)} reports in {city}, {region}...")
         
-        # Sort by logic_score (descending) to find top opportunities
-        sorted_reports = sorted(reports, key=lambda x: float(x.get('logic_score') or 0), reverse=True)
+        # Sort by logic_score
+        sorted_reports = sorted(reports, key=lambda x: int(x.get('logic_score') or 0), reverse=True)
         
-        # Build the top 5 summary list
-        top_5_summary = []
-        for r in sorted_reports[:5]:
-            top_5_summary.append({
+        # Build Top 5 (Pass as LIST, not stringified JSON)
+        top_5_summary = [
+            {
                 "slug": r['slug'],
                 "title": r['idea_title'],
                 "score": r['logic_score']
-            })
+            } for r in sorted_reports[:5]
+        ]
 
-        # Prepare the payload to match local_city_hubs table
         hub_data = {
             "city_name": city,
             "region": region,
             "report_count": len(reports),
-            # Explicitly stringify JSON for DB stability
-            "top_reports": json.dumps(top_5_summary),
+            "top_reports": top_5_summary, # Supabase-py handles the serialization
             "all_slugs": [r['slug'] for r in reports]
         }
         
-        # 4. Upsert into local_city_hubs matching the composite unique constraint
         try:
             supabase.table("local_city_hubs")\
                 .upsert(hub_data, on_conflict="city_name, region")\

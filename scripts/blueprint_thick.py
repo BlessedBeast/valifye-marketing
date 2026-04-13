@@ -38,25 +38,28 @@ class BlueprintSchema(BaseModel):
 
 # --- THE SYNTHESIS ENGINE ---
 def thicken_blueprint(row):
+    """
+    Core Gemini logic to transform a thin row into a Forensic Blueprint.
+    """
     niche = row.get('niche', 'Unknown Niche')
     city = row.get('city', 'Unknown City')
     region = row.get('region', '')
     
-    print(f"💉 Injecting Forensic Substance for: {niche} in {city}...")
+    print(f"🧬  Synthesizing Substance for: {niche} in {city}...")
 
     prompt = f"""
     Role: {CURRENT_YEAR} Brutal Business Validator.
     Context: {niche} in {city}, {region}.
 
-    TASK: This database row has missing or thin data. Reconstruct a hyper-local Validation Blueprint.
+    TASK: Reconstruct a hyper-local Validation Blueprint. 
     You MUST provide "Information Gain": specific authorities, corridors, or infrastructure projects in {city}.
 
     REQUIREMENTS:
-    1. local_friction: Provide exactly 3 specific local hurdles.
-    2. gtm_playbook: Provide exactly 3 hyper-local entry steps.
-    3. failure_modes: A brutal 2-sentence warning on HOW a founder will go bankrupt here.
+    1. local_friction: 3 specific local hurdles.
+    2. gtm_playbook: 3 hyper-local entry steps.
+    3. failure_modes: Brutal 2-sentence warning on HOW a founder will go bankrupt here.
     4. unit_economics: Strict financial estimates for {CURRENT_YEAR}.
-    5. market_narrative: A dense, 300-word authoritative summary of this market.
+    5. market_narrative: Dense, 400-word authoritative summary of this market.
     """
 
     try:
@@ -71,51 +74,51 @@ def thicken_blueprint(row):
         )
         return json.loads(response.text)
     except Exception as e:
-        print(f"❌ Gemini Error: {str(e)[:50]}")
+        print(f"❌ Gemini Error for {niche}: {str(e)[:50]}")
         return None
 
-# --- THE MAIN SCANNER ---
-def run_blueprint_thickener(limit=100):
-    print("🕵️ Scanning 'market_data' for Ghost Content and Thin Blueprints...")
+# --- THE SURGICAL THICKENER ---
+def run_forensic_thickener(limit=50):
+    print("\n" + "="*60)
+    print("🕵️  ENGINE 1: SELF-HEALING THICKENER STARTING")
+    print("="*60)
     
-    # THE FORENSIC QUERY:
-    # Matches the exact columns from your DDL (market_narrative, local_friction, status)
-    try:
-        response = supabase.table("market_data")\
-            .select("*")\
-            .or_(
-                "status.eq.draft,"
-                "market_narrative.ilike.%pending%," # TARGETS "Deep Validation Pending"
-                "local_friction.is.null"
-            )\
-            .order("updated_at", desc=False)\
-            .limit(limit)\
-            .execute()
-    except Exception as e:
-        print(f"❌ Database Query Error: {e}")
-        return
-        
-    rows = response.data or []
-    if not rows:
-        print("📭 No thin blueprints found. Factory idle.")
-        return
-
-    updated_count = 0
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
-    for row in rows:
-        # Final Safety Check: Don't overwrite if it actually looks good
-        narrative = str(row.get('market_narrative') or "")
-        if "pending" not in narrative.lower() and len(narrative) > 1000 and row.get('local_friction'):
-            print(f"⏩ {row['slug']} looks thick enough. Marking 'published'.")
-            supabase.table("market_data").update({"status": "published"}).eq("id", row['id']).execute()
-            continue
+    # PHASE 1: TARGET GHOSTS (The 13 Pending Pages)
+    print("🔍 Phase 1: Identifying 'Pending' Ghosts...")
+    ghosts = supabase.table("market_data")\
+        .select("*")\
+        .ilike("market_narrative", "%pending%")\
+        .execute().data or []
+    
+    # PHASE 2: TARGET DRAFTS (Regular Pipeline)
+    print(f"🔍 Phase 2: Identifying Thin Drafts (Limit: {limit})...")
+    drafts = supabase.table("market_data")\
+        .select("*")\
+        .eq("status", "draft")\
+        .limit(limit)\
+        .execute().data or []
 
+    # Combine: Ghosts first, then Drafts
+    queue = ghosts + drafts
+    
+    if not queue:
+        print("📭 No targets found. Pipeline is healthy.")
+        return
+
+    print(f"🚀 Processing Queue: {len(queue)} Blueprints...")
+    
+    updated_count = 0
+    for row in queue:
+        # Determine if this was a ghost or a draft
+        is_ghost = "pending" in str(row.get('market_narrative', "")).lower()
+        prefix = "💉 [REPAIRING GHOST]" if is_ghost else "🏗️ [THICKENING DRAFT]"
+        
         new_data = thicken_blueprint(row)
         
         if new_data:
             try:
-                # Update matching your table schema exactly
                 supabase.table("market_data").update({
                     "market_narrative": new_data['market_narrative'],
                     "local_friction": new_data['local_friction'],
@@ -128,17 +131,19 @@ def run_blueprint_thickener(limit=100):
                     "breakeven_months": new_data['breakeven_months'],
                     "status": "published", 
                     "updated_at": now_iso,
-                    "published_at": now_iso # Trigger freshness signal
+                    "published_at": now_iso
                 }).eq("id", row['id']).execute()
                 
-                print(f"✅ Structural Upgrade: {row['slug']} | Score: {new_data['opportunity_score']}")
+                print(f"{prefix} SUCCESS: {row['slug']}")
                 updated_count += 1
-                time.sleep(4) 
+                time.sleep(3) # Respect API limits
                 
             except Exception as e:
                 print(f"⚠️ Update failed for {row['slug']}: {e}")
 
-    print(f"\n🏁 Mission Complete. {updated_count} Blueprints transformed.")
+    print("\n" + "="*60)
+    print(f"🏁 MISSION COMPLETE: {updated_count} Blueprints Hardened.")
+    print("="*60 + "\n")
 
 if __name__ == "__main__":
-    run_blueprint_thickener(limit=500)
+    run_forensic_thickener(limit=100)

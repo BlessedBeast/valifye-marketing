@@ -1,47 +1,67 @@
-import xml.etree.ElementTree as ET
-import re
+import os
+from supabase import create_client
+from dotenv import load_dotenv
 
-def check_valifye_sitemap_v2(file_path):
-    print(f"🔍 Forensic Scan V2: {file_path}")
+# Initialize
+load_dotenv()
+supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
+
+def audit_engine_3():
+    print("\n" + "="*60)
+    print("🔬 ENGINE 3 X-RAY: LOCAL SEO REPORTS & CITY HUBS")
+    print("="*60)
+
+    # 1. Fetch all Published SEO Reports
+    print("📡 Fetching Local SEO Reports...")
+    seo_resp = supabase.table("public_seo_reports").select("slug, location_label, is_published").eq("is_published", True).execute()
+    reports = seo_resp.data or []
+    report_slugs = {r['slug'] for r in reports}
+
+    # 2. Fetch all Local City Hubs
+    print("📡 Fetching Local City Hubs...")
+    hubs_resp = supabase.table("local_city_hubs").select("city_name, all_slugs").execute()
+    city_hubs = hubs_resp.data or []
     
-    # Common words containing 'in' that are NOT errors
-    false_positives = ['monitoring', 'viking', 'fintech', 'pricing', 'sentinel', 'origin', 'business', 'mapping', 'printing', 'shipping', 'main']
+    housed_slugs = set()
+    hub_map = {}
     
-    with open(file_path, 'r', encoding='utf-8') as f:
-        # Skip browser warning lines if they exist
-        content = "".join([line for line in f if not line.strip().startswith('This XML file')])
-        root = ET.fromstring(content)
+    for h in city_hubs:
+        slug_list = h.get('all_slugs') or []
+        housed_slugs.update(slug_list)
+        hub_map[h['city_name']] = len(slug_list)
 
-    namespace = {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
-    urls = [url.find('ns:loc', namespace).text for url in root.findall('ns:url', namespace)]
+    # 3. Calculations
+    orphans = report_slugs - housed_slugs
+    invaders = housed_slugs - report_slugs
+
+    # --- RESULTS DASHBOARD ---
+    print("\n" + "="*60)
+    print("📊 ENGINE 3 HEALTH DASHBOARD")
+    print("="*60)
     
-    seen = set()
-    duplicates = []
-    real_sloppy_slugs = []
+    print(f"\n🏘️  [CITY HUB DISTRIBUTION: {len(city_hubs)} Hubs]")
+    # Show top 5 cities by report count
+    sorted_hubs = sorted(hub_map.items(), key=lambda x: x[1], reverse=True)
+    for name, count in sorted_hubs[:10]:
+        print(f"   • {name.ljust(25)} : {str(count).rjust(4)} reports")
 
-    for url in urls:
-        # 1. Check Duplicates
-        if url in seen:
-            duplicates.append(url)
-        seen.add(url)
+    print(f"\n🏗️  [STRUCTURAL INTEGRITY]")
+    print(f"   • Total Published SEO Reports : {len(reports)}")
+    print(f"   • Properly Housed             : {len(report_slugs & housed_slugs)}")
+    print(f"   • Orphaned (No Hub)           : {len(orphans)}")
+    print(f"   • Invaders (Ghost Links)      : {len(invaders)}")
 
-        # 2. Check for REAL Sloppy Slugs (Smarter Regex)
-        # We look for [a-z]in[a-z] but EXCLUDE our false positive list
-        if 'in' in url and '-in-' not in url:
-            # Check if 'in' is glued to letters
-            match = re.search(r'([a-z0-9]+)in([a-z0-9]+)', url)
-            if match:
-                full_word = match.group(0)
-                # If the 'glued' word isn't in our safe list, it might be an error
-                if not any(safe in full_word for safe in false_positives):
-                    real_sloppy_slugs.append(url)
+    if orphans:
+        print("\n⚠️  ORPHAN SAMPLES (Local reports not in any city hub):")
+        for o in list(orphans)[:5]:
+            print(f"   -> {o}")
 
-    print(f"📊 Total URLs: {len(urls)}")
-    print(f"👯 Duplicates Found: {len(duplicates)}")
-    for d in duplicates: print(f"   -> {d}")
-    
-    print(f"🚩 Potential Real Sloppy Slugs: {len(real_sloppy_slugs)}")
-    for s in real_sloppy_slugs: print(f"   -> {s}")
+    if invaders:
+        print("\n🚨 INVADER SAMPLES (Dead links in city hubs):")
+        for i in list(invaders)[:5]:
+            print(f"   -> {i}")
+
+    print("\n" + "="*60)
 
 if __name__ == "__main__":
-    check_valifye_sitemap_v2("new sitemap.txt")
+    audit_engine_3()
