@@ -3,6 +3,11 @@ import { supabase } from '@/lib/supabase'
 
 export const revalidate = 43200
 
+/**
+ * Standardizes strings into SEO-friendly slugs.
+ * Used here to ensure City Hubs and Industry Hubs match the URL structure 
+ * expected by the frontend.
+ */
 function slugify(value: unknown): string {
   const normalized = String(value ?? '')
     .normalize('NFKD')
@@ -19,6 +24,7 @@ function slugify(value: unknown): string {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const BASE_URL = 'https://valifye.com'
 
+  // 1. Define Static Routes
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: BASE_URL,
@@ -35,6 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   try {
+    // 2. Fetch all dynamic data in parallel
     const [
       ideasRes,
       verdictRes,
@@ -72,6 +79,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const now = new Date()
 
+    // 3. Map Database Rows to Sitemap Objects
     const ideaPages: MetadataRoute.Sitemap = (ideasRes.data || []).map((page) => ({
       url: `${BASE_URL}/ideas/${page.slug}`,
       lastModified: page.updated_at ? new Date(page.updated_at) : now,
@@ -79,7 +87,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }))
 
-    // Data quarantine: keep local SEO slugs out of /reports/ URLs
     const verdictPages: MetadataRoute.Sitemap = (verdictRes.data || [])
       .filter((page) => typeof page.slug === 'string' && !page.slug.includes('-market-audit'))
       .map((page) => ({
@@ -120,7 +127,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }
       })
 
-    return [
+    // 4. THE DEDUPLICATION ENGINE
+    // Combine everything into one master list
+    const allEntries: MetadataRoute.Sitemap = [
       ...staticRoutes,
       ...ideaPages,
       ...verdictPages,
@@ -128,6 +137,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...localSeoPages,
       ...localCityHubs,
     ]
+
+    // Use a Set to track URLs we have already added
+    const uniqueUrlSet = new Set<string>()
+    
+    // Filter the master list to ensure each URL only appears once
+    const finalSitemap = allEntries.filter((entry) => {
+      if (uniqueUrlSet.has(entry.url)) {
+        console.warn(`Sitemap duplicate filtered: ${entry.url}`)
+        return false
+      }
+      uniqueUrlSet.add(entry.url)
+      return true
+    })
+
+    return finalSitemap
+
   } catch (err) {
     console.error('Sitemap generation failed:', err)
     return staticRoutes
