@@ -2281,12 +2281,22 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://valifye.com/ideas/ai-agent-for-collaborative-robot-programming-in-german-smes-in-berlin</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://valifye.com/ideas/midc-zero-waste-industrial-water-circularity-in-pune</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://valifye.com/ideas/sriperumbudur-ev-battery-fire-safe-storage-hubs-in-chennai</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/ideas/clyde-side-clydebuilt-green-hydrogen-maritime-retrofitting-in-glasgow</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -4206,17 +4216,17 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://valifye.com/ideas/ai-agent-for-bicycle-only-last-mile-dispatch-in-berlin-in-berlin</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://valifye.com/ideas/ai-tutor-for-product-management-certifications-for-it-pros-in-bangalore</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://valifye.com/ideas/d2c-intermodal-optimized-midwest-basics-apparel-in-chicago</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/ideas/ai-agent-for-bicycle-only-last-mile-dispatch-in-berlin</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -4987,16 +4997,6 @@
   </url>
   <url>
     <loc>https://valifye.com/ideas/art-deed-nyc-in-new-york</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://valifye.com/ideas/rental-smart-austin-in-austin</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://valifye.com/ideas/concierge-agent-dxb-in-dubai</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

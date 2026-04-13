@@ -42,6 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     // 2. Fetch all dynamic data in parallel
+    // 2. Fetch all dynamic data in parallel
     const [
       ideasRes,
       verdictRes,
@@ -54,21 +55,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .select('slug, updated_at')
         .eq('status', 'published')
         .order('created_at', { ascending: false })
-        .limit(45000),
+        .limit(10000), // Hardened
       supabase
         .from('verdict_reports')
         .select('slug, published_at')
-        .eq('is_published', true),
+        .eq('is_published', true)
+        .limit(5000),  // Hardened
       supabase
         .from('verdict_industry_hubs')
-        .select('industry_name'),
+        .select('industry_name')
+        .limit(1000), 
       supabase
         .from('public_seo_reports')
         .select('slug, published_at')
-        .eq('is_published', true),
+        .eq('is_published', true)
+        .limit(10000), // CRITICAL: This was previously capped at 1000!
       supabase
         .from('local_city_hubs')
-        .select('city_name'),
+        .select('city_name')
+        .limit(5000),  // Hardened
     ])
 
     if (ideasRes.error) throw ideasRes.error

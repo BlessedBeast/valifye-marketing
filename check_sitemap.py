@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 from supabase import create_client
 from dotenv import load_dotenv
 
@@ -8,81 +9,81 @@ load_dotenv()
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
 
 def run_sitemap_file_audit():
+    # Fix for Windows Emoji rendering
+    if sys.platform == "win32":
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
     print("\n" + "="*60)
-    print("📡 VALIFYE SITEMAP FILE AUDITOR (V11.0)")
+    print("📡 VALIFYE SITEMAP VALIDATOR: MANUAL PASTE MODE")
     print("="*60)
 
-    # --- 1. LOAD SITEMAP FILE ---
-    sitemap_path = "new sitemap.txt"
+    # --- 1. LOAD THE MANUALLY PASTED DATA ---
+    sitemap_path = "new_sitemap.txt"
     if not os.path.exists(sitemap_path):
-        print(f"❌ ERROR: '{sitemap_path}' not found. Please ensure the file exists.")
+        print(f"❌ ERROR: '{sitemap_path}' not found.")
+        print("💡 Create 'new_sitemap.txt' and paste your XML content there.")
         return
 
     with open(sitemap_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    # Extract all slugs from <loc> tags or raw URLs
-    # This regex handles both https://valifye.com/ideas/slug and raw slugs
-    found_urls = re.findall(r'https://valifye\.com/ideas/([a-zA-Z0-9\-_]+)', content)
-    sitemap_slugs = set(found_urls)
+    # This regex is robust: it handles <loc> tags or raw URLs
+    # It captures the slug after /ideas/
+    found_slugs = re.findall(r'/ideas/([a-zA-Z0-9\-_]+)', content)
+    sitemap_slugs = set(found_slugs)
     
-    print(f"📂 Sitemap File Loaded: {len(sitemap_slugs)} unique URLs detected.")
+    print(f"📂 Sitemap Content Parsed: {len(sitemap_slugs)} unique URLs detected.")
 
     # --- 2. FETCH DATABASE TRUTH ---
     print("📡 Fetching Published Slugs from Supabase...")
     
-    e1_db = {r['slug'] for r in supabase.table("market_data").select("slug").eq("status", "published").execute().data or []}
-    e2_db = {r['slug'] for r in supabase.table("verdict_reports").select("slug").eq("is_published", True).execute().data or []}
-    e3_db = {r['slug'] for r in supabase.table("public_seo_reports").select("slug").eq("is_published", True).execute().data or []}
+    # Engine 1, 2, and 3
+    e1 = {r['slug'] for r in supabase.table("market_data").select("slug").eq("status", "published").execute().data or []}
+    e2 = {r['slug'] for r in supabase.table("verdict_reports").select("slug").eq("is_published", True).execute().data or []}
+    e3 = {r['slug'] for r in supabase.table("public_seo_reports").select("slug").eq("is_published", True).execute().data or []}
     
-    all_published_db = e1_db | e2_db | e3_db
-    print(f"✅ DB Truth: {len(all_published_db)} total published records found.")
+    db_truth = e1 | e2 | e3
+    print(f"✅ DB Truth: {len(db_truth)} total published records found.")
 
-    # --- 3. CROSS-REFERENCE CALCULATIONS ---
+    # --- 3. THE FORENSIC COMPARISON ---
+    missing_from_sitemap = db_truth - sitemap_slugs
+    zombies_in_sitemap = sitemap_slugs - db_truth
     
-    # Missing: In DB but NOT in Sitemap (Google won't find these)
-    missing_from_sitemap = all_published_db - sitemap_slugs
-    
-    # Zombies: In Sitemap but NOT in DB (Google is crawling dead/deleted links)
-    zombies_in_sitemap = sitemap_slugs - all_published_db
-    
-    # Sloppy Check: Are there any double-city slugs actually inside the live sitemap?
-    double_city_ghosts = [s for s in sitemap_slugs if re.search(r'-in-([a-z-]+)-in-\1', s)]
+    # Catching the 'Double-City' bug in the live file
+    stuttering_slugs = [s for s in sitemap_slugs if re.search(r'-in-([a-z-]+)-in-\1', s)]
 
     # --- 4. FINAL HEALTH DASHBOARD ---
     print("\n" + "="*60)
-    print("📊 SITEMAP VS. DATABASE ALIGNMENT")
+    print("📊 LIVE SITEMAP INTEGRITY REPORT")
     print("="*60)
     
     print(f"\n🧱 [COVERAGE]")
-    print(f"   • Database (Published) : {len(all_published_db)}")
-    print(f"   • Sitemap (Live)      : {len(sitemap_slugs)}")
+    print(f"   • Database (What should be live) : {len(db_truth)}")
+    print(f"   • Sitemap (What Google sees)     : {len(sitemap_slugs)}")
     
-    sync_status = "✅ PERFECT SYNC" if len(missing_from_sitemap) == 0 and len(zombies_in_sitemap) == 0 else "⚠️ DISCREPANCIES FOUND"
-    print(f"   • Sync Status         : {sync_status}")
+    if len(missing_from_sitemap) == 0 and len(zombies_in_sitemap) == 0:
+        print(f"   • Sync Status                    : ✅ PERFECT ALIGNMENT")
+    else:
+        print(f"   • Sync Status                    : ⚠️ MISMATCH DETECTED")
 
     print(f"\n🚨 [CRITICAL LEAKS]")
-    print(f"   • Missing from Sitemap: {len(missing_from_sitemap)} (Invisible to Google)")
-    print(f"   • Zombie Links        : {len(zombies_in_sitemap)} (Dead URLs being crawled)")
-    print(f"   • Double-City Errors  : {len(double_city_ghosts)} (Still in sitemap!)")
+    print(f"   • Missing Pages (Invisible)      : {len(missing_from_sitemap)}")
+    print(f"   • Zombie Links (404 Risk)        : {len(zombies_in_sitemap)}")
+    print(f"   • Double-City Errors             : {len(stuttering_slugs)}")
 
     if missing_from_sitemap:
-        print("\n📍 MISSING SAMPLES (Add these to sitemap logic):")
-        for s in list(missing_from_sitemap)[:3]:
+        print("\n📍 TOP MISSING (Need to regenerate sitemap):")
+        for s in list(missing_from_sitemap)[:5]:
             print(f"   -> {s}")
 
     if zombies_in_sitemap:
-        print("\n📍 ZOMBIE SAMPLES (Remove these from sitemap file):")
-        for z in list(zombies_in_sitemap)[:3]:
+        print("\n📍 TOP ZOMBIES (Old URLs still live!):")
+        for z in list(zombies_in_sitemap)[:5]:
             print(f"   -> {z}")
 
-    if double_city_ghosts:
-        print("\n📍 DOUBLE-CITY SAMPLES (Urgent Fix Required):")
-        for d in double_city_ghosts[:3]:
-            print(f"   -> {d}")
-
     print("\n" + "="*60)
-    print("🏁 Audit Complete. Use this to verify your XML generation logic.")
+    print("🏁 Final Audit Complete.")
     print("="*60 + "\n")
 
 if __name__ == "__main__":
