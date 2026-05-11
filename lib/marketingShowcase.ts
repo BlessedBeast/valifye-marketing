@@ -258,10 +258,17 @@ export async function getMarketingShowcaseBySlug(
 }
 
 /**
- * Fetch a list of marketing_showcase rows filtered by report_type and ordered
- * by created_at descending. Each `types` entry is matched against the legacy
- * `report_type` column AND the normalized template, so callers can pass either
- * raw DB values ("Local Market Scout") or normalized template names ("scout").
+ * Fetch a list of marketing_showcase rows and return only those whose
+ * (normalized) template matches the requested set.
+ *
+ * The fetch is intentionally unfiltered at the database level — Supabase's
+ * `.in()` and `.or()` filters do exact, case-sensitive comparisons, so any DB
+ * value like `'Local Market Scout'`, `'Scout '`, or `'battlefield-saas'`
+ * silently fails to match `'scout'` / `'battlefield'`. We pull the (small,
+ * curated) table once and run every row through `normalizeTemplate()` — the
+ * same canonicalizer used by the rest of the codebase — to compare against the
+ * caller's requested template set. That makes the helper agnostic to whatever
+ * casing or column the row happens to use.
  */
 export async function getShowcaseList(
   types: string[]
@@ -274,71 +281,70 @@ export async function getShowcaseList(
 
   if (cleanedTypes.length === 0) return []
 
-  const normalizedRequested = new Set<ShowcaseTemplate>(
+  const requested = new Set<ShowcaseTemplate>(
     cleanedTypes.map((t) => normalizeTemplate(t))
   )
 
-  // Primary path: filter directly on the `report_type` column.
   const { data, error } = await supabase
     .from(TABLE_NAME)
     .select('*')
-    .in('report_type', cleanedTypes)
     .order('created_at', { ascending: false })
 
   if (error) {
     console.error(
-      'Supabase Fetch Error (marketing_showcase list by report_type):',
-      error
+      '[marketing_showcase] Fetch failed:',
+      error.message,
+      error.details ?? '',
+      error.hint ?? ''
     )
     return []
   }
 
   const rows = Array.isArray(data) ? (data as MarketingShowcaseRow[]) : []
-  const matchedSlugs = new Set<string>()
 
-  type SortEntry = { report: MarketingShowcaseReport; sortKey: number }
-  const collected: SortEntry[] = []
-
-  const pushRow = (row: MarketingShowcaseRow) => {
-    const normalized = normalizeMarketingShowcaseRow(row)
-    if (!normalized.slug || matchedSlugs.has(normalized.slug)) return
-    if (!normalizedRequested.has(normalized.template)) return
-    matchedSlugs.add(normalized.slug)
-    const createdAt = asString(row.created_at) ?? normalized.updatedAt ?? null
-    collected.push({
-      report: normalized,
-      sortKey: createdAt ? Date.parse(createdAt) : 0
-    })
-  }
-
-  for (const row of rows) pushRow(row)
-
-  // Secondary path: catch rows where the type is stored under `template` or
-  // `template_type` (legacy / mixed schema). One additional read, deduped by
-  // slug so it never doubles rows that came back from the primary filter.
-  const { data: fallbackData, error: fallbackError } = await supabase
-    .from(TABLE_NAME)
-    .select('*')
-    .or(
-      [
-        `template.in.(${cleanedTypes.join(',')})`,
-        `template_type.in.(${cleanedTypes.join(',')})`
-      ].join(',')
-    )
-    .order('created_at', { ascending: false })
-
-  if (fallbackError) {
-    // Non-fatal: the legacy columns may not exist on every deployment.
+  if (rows.length === 0) {
     console.warn(
-      'Supabase Fetch Warning (marketing_showcase fallback template columns):',
-      fallbackError.message
+      '[marketing_showcase] Query returned 0 rows. If you can see rows in the ' +
+        'Supabase dashboard but this list is empty, the anon client is being ' +
+        'blocked by Row Level Security. Add a public SELECT policy on ' +
+        '`public.marketing_showcase` for the `anon` and `authenticated` roles.'
     )
-  } else if (Array.isArray(fallbackData)) {
-    for (const row of fallbackData as MarketingShowcaseRow[]) {
-      pushRow(row)
-    }
+    return []
   }
 
-  collected.sort((a, b) => b.sortKey - a.sortKey)
-  return collected.map((entry) => entry.report)
+  const matched: MarketingShowcaseReport[] = []
+  const seenSlugs = new Set<string>()
+
+  for (const row of rows) {
+    const normalized = normalizeMarketingShowcaseRow(row)
+    if (!normalized.slug || seenSlugs.has(normalized.slug)) continue
+    if (!requested.has(normalized.template)) continue
+    seenSlugs.add(normalized.slug)
+    matched.push(normalized)
+  }
+
+  if (matched.length === 0) {
+    const distinctRawTypes = Array.from(
+      new Set(
+        rows
+          .map((row) =>
+            asString(row.report_type) ??
+              asString(row.template) ??
+              asString(row.template_type) ??
+              ''
+          )
+          .filter((s) => s.length > 0)
+      )
+    )
+    console.warn(
+      '[marketing_showcase] Fetched %d rows but none normalized to %o. ' +
+        'Raw report_type / template values found in DB: %o. ' +
+        'Update the row values or extend `normalizeTemplate()` to recognize them.',
+      rows.length,
+      Array.from(requested),
+      distinctRawTypes
+    )
+  }
+
+  return matched
 }
