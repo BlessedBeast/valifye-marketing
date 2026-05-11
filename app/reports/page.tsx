@@ -280,14 +280,19 @@ export default async function IntelligencePathfinderPage() {
         accentClassName="text-emerald-400"
       />
 
-      {industryHubs.length > 0 && (
-        <section className="space-y-4">
-          <SubSectionHeader
-            title="Browse All Sectors"
-            count={industryHubs.length}
-            countLabel="sector hubs"
-            icon={<Layers className="h-3.5 w-3.5 text-emerald-300" />}
-          />
+      <section className="space-y-4">
+        <SubSectionHeader
+          title="Browse All Sectors"
+          count={industryHubs.length}
+          countLabel="sector hubs"
+          icon={<Layers className="h-3.5 w-3.5 text-emerald-300" />}
+        />
+        {industryHubs.length === 0 ? (
+          <div className="rounded-md border border-dashed border-zinc-800 bg-slate-900/30 px-6 py-8 text-center text-sm text-zinc-500">
+            No industry hubs published yet. Hubs surface as soon as a sector has
+            at least one verdict report.
+          </div>
+        ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {industryHubs.map((hub) => {
               const industry = hub.industry_name || 'Unlabeled'
@@ -334,8 +339,8 @@ export default async function IntelligencePathfinderPage() {
               )
             })}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       <section className="space-y-4">
         <SubSectionHeader
