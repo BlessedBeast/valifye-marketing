@@ -8,11 +8,14 @@ import {
   Calculator,
   TrendingDown,
   Percent,
-  Landmark
+  Landmark,
+  Crosshair
 } from 'lucide-react'
 import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
+import { ComparisonCard } from '@/components/compare/ComparisonCard'
 import { createClient } from '@/utils/supabase/server'
+import { getComparisonList } from '@/lib/comparisonData'
 
 export const metadata = {
   title: 'Valifye | Forensic Market Intelligence Engine',
@@ -30,15 +33,18 @@ type LatestAudit = {
 export default async function HomePage() {
   const supabase = createClient()
 
-  const { data: latestAudits } = await supabase
-    .from('verdict_reports')
-    .select('slug, idea_title, final_verdict, overall_integrity_score')
-    .eq('is_published', true)
-    .order('published_at', { ascending: false })
-    .limit(3)
+  const [latestAuditsRes, comparisons] = await Promise.all([
+    supabase
+      .from('verdict_reports')
+      .select('slug, idea_title, final_verdict, overall_integrity_score')
+      .eq('is_published', true)
+      .order('published_at', { ascending: false })
+      .limit(3),
+    getComparisonList(3)
+  ])
 
-  const audits: LatestAudit[] = Array.isArray(latestAudits)
-    ? (latestAudits as LatestAudit[])
+  const audits: LatestAudit[] = Array.isArray(latestAuditsRes?.data)
+    ? (latestAuditsRes.data as LatestAudit[])
     : []
 
   return (
@@ -286,6 +292,44 @@ export default async function HomePage() {
             </div>
           )}
         </section>
+
+        {/* COMPETITIVE INTELLIGENCE — Forensic Comparisons preview */}
+        {comparisons.length > 0 && (
+          <section
+            aria-label="Forensic Comparisons"
+            className="space-y-8"
+          >
+            <header className="space-y-3">
+              <p className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.32em] text-amber-400">
+                <Crosshair className="h-3.5 w-3.5" />
+                Forensic Comparisons
+              </p>
+              <h2 className="font-serif text-3xl font-black leading-tight tracking-tight text-foreground md:text-4xl lg:text-5xl">
+                Why Founders are Ditching Legacy Tools
+              </h2>
+              <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground md:text-base">
+                We audited the market leaders. They provide theory; we provide
+                forensic truth.
+              </p>
+            </header>
+
+            <div className="grid gap-5 grid-cols-1 md:grid-cols-3">
+              {comparisons.map((report) => (
+                <ComparisonCard key={report.slug} report={report} />
+              ))}
+            </div>
+
+            <div className="flex justify-center pt-2">
+              <Link
+                href="/compare"
+                className="group inline-flex items-center gap-3 rounded-md border border-zinc-700 bg-slate-900/30 px-8 py-4 text-xs font-bold uppercase tracking-[0.22em] text-zinc-300 transition-all hover:border-amber-400 hover:text-amber-200 hover:shadow-[0_0_40px_-10px_rgba(245,158,11,0.6)]"
+              >
+                View All Forensic Takedowns
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
+          </section>
+        )}
 
         {/* HOW IT WORKS */}
         <section

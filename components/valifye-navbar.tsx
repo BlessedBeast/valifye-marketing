@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { ChevronDown, Library, MapPin, Shield } from 'lucide-react'
+import { ChevronDown, Crosshair, Library, MapPin, Shield } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { ThemeToggle } from '@/components/theme-toggle'
 
@@ -20,6 +20,13 @@ const vaultLinks = [
     description: 'SaaS & AI Competitive Intel.',
     Icon: Shield,
     accent: 'text-cyan-300'
+  },
+  {
+    href: '/compare',
+    label: 'Compare Tools',
+    description: 'Valifye vs. The Incumbents.',
+    Icon: Crosshair,
+    accent: 'text-rose-300'
   },
   {
     href: '/reports',
