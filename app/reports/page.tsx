@@ -1,16 +1,20 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import {
+  Archive,
   ArrowRight,
   ArrowUpRight,
   Clock,
   Crosshair,
+  FileText,
+  Layers,
   Map as MapIcon,
   Rocket,
   Scale,
   Shield,
   Skull,
   Sparkles,
+  Zap,
   type LucideIcon
 } from 'lucide-react'
 import { MarketingShell } from '@/components/MarketingShell'
@@ -19,6 +23,7 @@ import {
   type MarketingShowcaseReport,
   type ShowcaseTemplate
 } from '@/lib/marketingShowcase'
+import { getIndustryHubs, getReportsList } from '@/lib/reportData'
 import { cn } from '@/lib/utils'
 
 const SITE_URL = 'https://valifye.com'
@@ -105,8 +110,23 @@ function formatRelative(iso?: string): string {
   return `${Math.floor(diffDays / 365)} yr ago`
 }
 
+function formatScore(score: number) {
+  return Number.isFinite(score) ? `${score}/100` : '—'
+}
+
+function verdictClass(v: string) {
+  if (v === 'KILL') return 'border-red-500/50 bg-red-950/50 text-red-200'
+  if (v === 'BUILD')
+    return 'border-emerald-500/50 bg-emerald-950/30 text-emerald-200'
+  return 'border-amber-500/50 bg-amber-950/30 text-amber-200'
+}
+
 export default async function IntelligencePathfinderPage() {
-  const reports = await getShowcaseList(ALL_TYPES)
+  const [reports, industryHubs, validationReports] = await Promise.all([
+    getShowcaseList(ALL_TYPES),
+    getIndustryHubs(),
+    getReportsList(50)
+  ])
 
   const localCount = reports.filter((r) =>
     LOCAL_TYPES.includes(r.template)
@@ -164,7 +184,10 @@ export default async function IntelligencePathfinderPage() {
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500 md:justify-start">
           <span className="rounded-full border border-zinc-700/60 bg-zinc-900/50 px-3 py-1">
-            {totalCount} Forensic Audits Indexed
+            {totalCount} Featured Audits
+          </span>
+          <span className="rounded-full border border-zinc-700/60 bg-zinc-900/50 px-3 py-1">
+            {validationReports.length} Archive Reports
           </span>
           <span className="rounded-full border border-amber-500/30 bg-amber-500/[0.06] px-3 py-1 text-amber-200">
             {localCount} Local
@@ -175,10 +198,21 @@ export default async function IntelligencePathfinderPage() {
         </div>
       </section>
 
+      {/* ───────────── FEATURED MARKET AUDITS (new) ───────────── */}
+      <DivisionHeader
+        eyebrow="Featured Market Audits"
+        title="High-fidelity, fully formatted intelligence reports."
+        description="Hand-crafted forensic showcases. Each one is a complete audit engineered for operators making a real decision."
+        icon={<Sparkles className="h-3.5 w-3.5" />}
+        accentClassName="text-primary"
+      />
+
       <section className="space-y-4">
         <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">
           <span>Choose Your Battleground</span>
-          <span className="hidden text-zinc-600 md:inline">Two divisions. One engine.</span>
+          <span className="hidden text-zinc-600 md:inline">
+            Two divisions. One engine.
+          </span>
         </div>
         <div className="grid gap-6 lg:grid-cols-2">
           <BentoCard
@@ -236,7 +270,196 @@ export default async function IntelligencePathfinderPage() {
           </ol>
         )}
       </section>
+
+      {/* ───────────── FULL FORENSIC ARCHIVE (legacy) ───────────── */}
+      <DivisionHeader
+        eyebrow="Full Forensic Archive"
+        title="Every validated business idea, ever."
+        description="The open database of forensic verdicts. Browse by sector or scan the full feed of standard validation reports."
+        icon={<Archive className="h-3.5 w-3.5" />}
+        accentClassName="text-emerald-400"
+      />
+
+      {industryHubs.length > 0 && (
+        <section className="space-y-4">
+          <SubSectionHeader
+            title="Browse All Sectors"
+            count={industryHubs.length}
+            countLabel="sector hubs"
+            icon={<Layers className="h-3.5 w-3.5 text-emerald-300" />}
+          />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {industryHubs.map((hub) => {
+              const industry = hub.industry_name || 'Unlabeled'
+              const top = Array.isArray(hub.top_verdicts)
+                ? hub.top_verdicts.slice(0, 2)
+                : []
+              const slug =
+                hub.sector_slug ||
+                industry
+                  .toLowerCase()
+                  .trim()
+                  .replace(/[^a-z0-9]+/g, '-')
+                  .replace(/^-+|-+$/g, '')
+              return (
+                <Link
+                  key={industry}
+                  href={`/reports/industry/${slug}`}
+                  className="flex flex-col justify-between border border-zinc-800 bg-zinc-900 px-5 py-4 text-left text-xs transition-colors hover:border-emerald-500 hover:bg-zinc-900/90"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-zinc-300">
+                        {industry}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
+                        {hub.report_count} files
+                      </span>
+                    </div>
+                    {top.length > 0 && (
+                      <ul className="space-y-1 text-[11px] text-zinc-300">
+                        {top.map((v) => (
+                          <li key={v.slug} className="line-clamp-1">
+                            {v.title}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between border-t border-zinc-800 pt-3 text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
+                    <span>Open Sector Hub</span>
+                    <ArrowRight className="h-3 w-3 text-emerald-400" />
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      <section className="space-y-4">
+        <SubSectionHeader
+          title="Validation Reports"
+          count={validationReports.length}
+          countLabel="reports indexed"
+          icon={<FileText className="h-3.5 w-3.5 text-primary" />}
+          rightSlot={
+            <span className="inline-flex items-center gap-2 text-primary">
+              <Zap className="h-3 w-3" /> System Live
+            </span>
+          }
+        />
+
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+          {validationReports.length === 0 ? (
+            <div className="col-span-full border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+              No validation reports yet. Run the verdict pipeline to generate
+              forensic reports.
+            </div>
+          ) : (
+            validationReports.map((report) => (
+              <Link
+                key={report.slug}
+                href={`/reports/${report.slug}`}
+                className="group flex flex-col justify-between border border-border bg-card p-5 text-left transition-all hover:-translate-y-1 hover:border-primary hover:shadow-[4px_4px_0_0_hsl(var(--primary))]"
+              >
+                <div className="mb-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1 border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${verdictClass(
+                        report.final_verdict
+                      )}`}
+                    >
+                      <Scale className="h-3 w-3" />
+                      {report.final_verdict}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">
+                      {formatScore(report.overall_integrity_score)}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold leading-snug tracking-tight text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                    {report.idea_title}
+                  </h3>
+                </div>
+                <div className="mt-auto flex items-center justify-between border-t border-border pt-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  <span>Integrity Score</span>
+                  <span className="inline-flex items-center gap-1 text-primary">
+                    Open Report
+                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+      </section>
     </MarketingShell>
+  )
+}
+
+type DivisionHeaderProps = {
+  eyebrow: string
+  title: string
+  description: string
+  icon?: React.ReactNode
+  accentClassName?: string
+}
+
+function DivisionHeader({
+  eyebrow,
+  title,
+  description,
+  icon,
+  accentClassName
+}: DivisionHeaderProps) {
+  return (
+    <section
+      aria-label={eyebrow}
+      className="space-y-3 border-y border-zinc-800/80 py-6"
+    >
+      <p
+        className={cn(
+          'inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.32em]',
+          accentClassName ?? 'text-zinc-400'
+        )}
+      >
+        {icon}
+        {eyebrow}
+      </p>
+      <h2 className="font-serif text-2xl font-bold tracking-tight text-zinc-100 md:text-3xl">
+        {title}
+      </h2>
+      <p className="max-w-3xl text-sm leading-relaxed text-zinc-500">
+        {description}
+      </p>
+    </section>
+  )
+}
+
+type SubSectionHeaderProps = {
+  title: string
+  count: number
+  countLabel: string
+  icon?: React.ReactNode
+  rightSlot?: React.ReactNode
+}
+
+function SubSectionHeader({
+  title,
+  count,
+  countLabel,
+  icon,
+  rightSlot
+}: SubSectionHeaderProps) {
+  return (
+    <div className="flex flex-col gap-2 border-b border-border pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground md:flex-row md:items-center md:justify-between">
+      <span className="inline-flex items-center gap-2">
+        {icon}
+        {title}
+        <span className="text-zinc-500"> · {count} {countLabel}</span>
+      </span>
+      {rightSlot}
+    </div>
   )
 }
 
