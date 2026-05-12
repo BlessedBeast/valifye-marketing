@@ -291,7 +291,7 @@ function ForensicMatrix({ report }: { report: ComparisonReport }) {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b border-zinc-800 bg-zinc-950/60 text-left text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
-                <th scope="col" className="w-2/5 px-5 py-4">
+                <th scope="col" className="min-w-[200px] w-2/5 px-5 py-4">
                   Feature
                 </th>
                 <th scope="col" className="w-[30%] px-5 py-4">
@@ -334,11 +334,11 @@ function MatrixRow({
     >
       <th
         scope="row"
-        className="px-5 py-5 text-left align-top font-serif text-base font-bold leading-snug text-zinc-100"
+        className="min-w-[200px] px-5 py-5 text-left align-top font-serif text-base font-bold leading-snug text-zinc-100"
       >
         <span className="block">{row.feature}</span>
         {row.gap && (
-          <span className="mt-1 block text-xs font-normal italic leading-relaxed text-zinc-500">
+          <span className="mt-1 block text-sm font-normal italic leading-relaxed text-zinc-300">
             {row.gap}
           </span>
         )}
@@ -372,29 +372,31 @@ function CellValue({
 }) {
   const isValifye = tone === 'valifye'
 
+  if (isValifye) {
+    return (
+      <div className="flex flex-col gap-1">
+        <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-300">
+          <Check className="h-4 w-4 text-emerald-400" aria-hidden />
+          Yes
+        </span>
+        {note && (
+          <span className="text-xs leading-relaxed text-zinc-500">{note}</span>
+        )}
+      </div>
+    )
+  }
+
   let body: React.ReactNode
   if (value === true) {
     body = (
-      <span
-        className={cn(
-          'inline-flex items-center gap-2 text-sm font-semibold',
-          isValifye ? 'text-emerald-300' : 'text-zinc-300'
-        )}
-      >
-        <Check
-          className={cn('h-4 w-4', isValifye ? 'text-emerald-400' : 'text-zinc-400')}
-        />
+      <span className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-300">
+        <Check className="h-4 w-4 text-zinc-400" />
         Yes
       </span>
     )
   } else if (value === false) {
     body = (
-      <span
-        className={cn(
-          'inline-flex items-center gap-2 text-sm font-semibold',
-          isValifye ? 'text-emerald-300' : 'text-rose-400'
-        )}
-      >
+      <span className="inline-flex items-center gap-2 text-sm font-semibold text-rose-400">
         <X className="h-4 w-4" />
         No
       </span>
@@ -408,14 +410,7 @@ function CellValue({
     )
   } else {
     body = (
-      <span
-        className={cn(
-          'text-sm leading-snug',
-          isValifye ? 'font-semibold text-emerald-200' : 'text-zinc-300'
-        )}
-      >
-        {String(value)}
-      </span>
+      <span className="text-sm leading-snug text-zinc-300">{String(value)}</span>
     )
   }
 
@@ -452,7 +447,7 @@ function KillShot({ report }: { report: ComparisonReport }) {
             <AlertOctagon className="h-3.5 w-3.5" />
             The Kill Shot
           </p>
-          <h2 className="font-serif text-3xl font-black leading-tight tracking-tight text-zinc-50 md:text-5xl">
+          <h2 className="font-serif text-2xl font-semibold leading-snug tracking-tight text-zinc-50 md:text-3xl">
             {report.verdictSummary}
           </h2>
         </header>
