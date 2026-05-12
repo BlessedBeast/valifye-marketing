@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import {
   AlertTriangle,
@@ -28,11 +27,11 @@ import { cn } from '@/lib/utils'
 
 const SITE_URL = 'https://valifye.com'
 
-/** Supabase Storage — Execution Arsenal & Pivot Playbook report captures */
-const EXECUTION_ARSENAL_IMAGE =
-  'https://ivjcwulrmxqexytudhtu.supabase.co/storage/v1/object/public/comparison%20screenshot/arsnel.jpg'
-const PIVOT_PLAYBOOK_IMAGE =
-  'https://ivjcwulrmxqexytudhtu.supabase.co/storage/v1/object/public/comparison%20screenshot/pivot.jpg'
+/** Supabase Storage — Two Paths deliverable previews */
+const PATH_A_BLUEPRINT_IMAGE =
+  'https://ivjcwulrmxqexytudhtu.supabase.co/storage/v1/object/public/comparison%20screenshot/90-day-roadmap.png'
+const PATH_B_RECOVERY_IMAGE =
+  'https://ivjcwulrmxqexytudhtu.supabase.co/storage/v1/object/public/comparison%20screenshot/local-market-scout-pivot.png'
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -233,8 +232,9 @@ export default async function SolutionPillarPage({ params }: Props) {
               title="The Execution Arsenal"
               icon={Target}
               accent="emerald"
-              imageSrc={EXECUTION_ARSENAL_IMAGE}
-              imageAlt="Execution Arsenal: roadmap, Mom Test scripts, and customer finder artifacts"
+              evidenceTone="blueprint"
+              imageSrc={PATH_A_BLUEPRINT_IMAGE}
+              imageAlt="90-day execution roadmap and success blueprint deliverable"
               body="If your audit passes, we hand you the 90-Day Roadmap, Mom Test Scripts, and Customer Finder—so you ship with discipline instead of hope."
               previewLines={[
                 '90-DAY ROADMAP · v2',
@@ -247,8 +247,9 @@ export default async function SolutionPillarPage({ params }: Props) {
               title="The Pivot Playbook"
               icon={GitBranch}
               accent="cyan"
-              imageSrc={PIVOT_PLAYBOOK_IMAGE}
-              imageAlt="Pivot Playbook: three adjacent Blue Ocean pivot vectors"
+              evidenceTone="recovery"
+              imageSrc={PATH_B_RECOVERY_IMAGE}
+              imageAlt="Local market scout pivot playbook for capital recovery"
               body="If the audit fails, we provide three adjacent Blue Ocean pivots engineered to salvage momentum and protect remaining capital."
               previewLines={[
                 'PIVOT VECTOR 01 · adjacency',
@@ -323,30 +324,33 @@ function OutcomePathPanel({
   title,
   icon: Icon,
   accent,
+  evidenceTone,
   imageSrc,
   imageAlt,
   body,
-  previewLines,
-  imageObjectFit = 'contain'
+  previewLines
 }: {
   path: string
   title: string
   icon: typeof Target
   accent: 'emerald' | 'cyan'
+  evidenceTone: 'blueprint' | 'recovery'
   imageSrc: string
   imageAlt: string
   body: string
   previewLines: string[]
-  imageObjectFit?: 'cover' | 'contain'
 }) {
   const isEmerald = accent === 'emerald'
+  const isBlueprint = evidenceTone === 'blueprint'
+
   return (
     <div
       className={cn(
         'flex flex-col overflow-hidden rounded-xl border bg-slate-950/50',
-        isEmerald
-          ? 'border-emerald-500/30 shadow-[0_0_45px_-22px_rgba(16,185,129,0.45)]'
-          : 'border-cyan-500/30 shadow-[0_0_45px_-22px_rgba(34,211,238,0.25)]'
+        isBlueprint &&
+          'border-emerald-500/40 shadow-[0_0_56px_-18px_rgba(16,185,129,0.55)] ring-1 ring-emerald-400/15',
+        !isBlueprint &&
+          'border-cyan-500/35 shadow-[0_0_52px_-18px_rgba(34,211,238,0.38),0_0_48px_-22px_rgba(245,158,11,0.14)] ring-1 ring-amber-400/15'
       )}
     >
       <div
@@ -355,7 +359,7 @@ function OutcomePathPanel({
           isEmerald ? 'border-emerald-500/15' : 'border-cyan-500/15'
         )}
       >
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <p
             className={cn(
               'font-mono text-[10px] font-bold uppercase tracking-[0.28em]',
@@ -364,6 +368,15 @@ function OutcomePathPanel({
           >
             Path {path}
           </p>
+          {isBlueprint ? (
+            <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-emerald-300/75">
+              Success blueprint
+            </p>
+          ) : (
+            <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-amber-300/80">
+              Capital recovery
+            </p>
+          )}
           <h3 className="font-serif text-xl font-black tracking-tight text-zinc-50 md:text-2xl">
             {title}
           </h3>
@@ -385,24 +398,20 @@ function OutcomePathPanel({
 
         <div
           className={cn(
-            'relative aspect-[3/4] w-full overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950',
-            'shadow-[0_0_0_1px_rgba(39,39,42,0.95),0_0_36px_-12px_rgba(9,9,11,0.85)]',
-            isEmerald
-              ? 'ring-1 ring-emerald-500/10'
-              : 'ring-1 ring-cyan-500/10'
+            'w-full overflow-hidden rounded-lg border border-zinc-800 bg-[#09090b]',
+            isBlueprint &&
+              'shadow-[0_0_40px_-12px_rgba(16,185,129,0.35)] ring-1 ring-emerald-500/20',
+            !isBlueprint &&
+              'shadow-[0_0_40px_-12px_rgba(34,211,238,0.22),0_0_36px_-14px_rgba(245,158,11,0.1)] ring-1 ring-cyan-400/20'
           )}
         >
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={imageSrc}
             alt={imageAlt}
-            fill
-            className={cn(
-              imageObjectFit === 'contain'
-                ? 'object-contain object-top'
-                : 'object-cover object-top'
-            )}
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            priority={false}
+            className="block h-auto w-full max-w-full object-contain object-top"
+            loading="lazy"
+            decoding="async"
           />
         </div>
 

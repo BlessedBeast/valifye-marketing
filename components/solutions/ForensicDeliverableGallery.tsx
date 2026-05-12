@@ -7,6 +7,9 @@ import { X } from 'lucide-react'
 import type { SolutionReportScreenshot } from '@/lib/solutionData'
 import { cn } from '@/lib/utils'
 
+/** Matches typical report canvas / slate export background */
+const REPORT_CANVAS_BG = '#09090b'
+
 type Props = {
   shots: SolutionReportScreenshot[]
 }
@@ -31,48 +34,36 @@ function LightboxImage({ shot }: { shot: SolutionReportScreenshot }) {
     }
     return null
   }
-  if (src.startsWith('/')) {
-    return (
-      <Image
-        src={src}
-        alt={shot.caption || shot.label}
-        width={1600}
-        height={1200}
-        className="max-h-[85vh] w-auto max-w-full object-contain"
-      />
-    )
-  }
+
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
       alt={shot.caption || shot.label}
-      className="max-h-[85vh] w-auto max-w-full object-contain"
+      className="max-h-[90vh] w-auto max-w-[min(100vw-2rem,1600px)] object-contain object-top"
     />
   )
 }
 
 function DeliverableSlideMedia({
   shot,
-  sizes,
   priority
 }: {
   shot: SolutionReportScreenshot
-  sizes: string
   priority?: boolean
 }) {
   const src = resolveSrc(shot)
   if (src) {
-    const isLocal = src.startsWith('/')
-    if (isLocal) {
+    if (src.startsWith('/')) {
       return (
         <Image
           src={src}
           alt={shot.caption || shot.label}
-          fill
+          width={1400}
+          height={2000}
           priority={priority}
-          sizes={sizes}
-          className="object-contain object-top"
+          sizes="100vw"
+          className="block h-auto w-full max-w-full object-contain object-top"
         />
       )
     }
@@ -81,7 +72,7 @@ function DeliverableSlideMedia({
       <img
         src={src}
         alt={shot.caption || shot.label}
-        className="h-full w-full object-contain object-top"
+        className="block h-auto w-full max-w-full object-contain object-top"
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"
       />
@@ -90,14 +81,20 @@ function DeliverableSlideMedia({
 
   if (shot.placeholder?.trim()) {
     return (
-      <div className="flex h-full min-h-[220px] w-full items-center justify-center p-6 text-center font-mono text-xs leading-relaxed text-zinc-500 md:min-h-[280px]">
+      <div
+        className="flex w-full items-center justify-center px-6 py-12 text-center font-mono text-xs leading-relaxed text-zinc-500"
+        style={{ backgroundColor: REPORT_CANVAS_BG }}
+      >
         {shot.placeholder}
       </div>
     )
   }
 
   return (
-    <div className="flex h-full min-h-[200px] w-full items-center justify-center font-mono text-[10px] uppercase tracking-widest text-zinc-600">
+    <div
+      className="flex min-h-[120px] w-full items-center justify-center font-mono text-[10px] uppercase tracking-widest text-zinc-600"
+      style={{ backgroundColor: REPORT_CANVAS_BG }}
+    >
       No preview path
     </div>
   )
@@ -206,17 +203,16 @@ export function ForensicDeliverableGallery({ shots }: Props) {
           )}
         >
           {shots.map((shot, i) => (
-            <article
-              key={`${shot.id}-${i}`}
-              id={slideDomId(i)}
-              className="scroll-mt-24 md:scroll-mt-28"
-            >
-              <div className="space-y-3">
+            <article key={`${shot.id}-${i}`} className="flex flex-col gap-5">
+              <div
+                id={slideDomId(i)}
+                className="scroll-mt-28 md:scroll-mt-32"
+              >
                 <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-amber-400/95">
                   {shot.label}
                 </p>
                 {shot.caption ? (
-                  <p className="max-w-3xl text-sm leading-relaxed text-zinc-400">
+                  <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-400">
                     {shot.caption}
                   </p>
                 ) : null}
@@ -226,23 +222,23 @@ export function ForensicDeliverableGallery({ shots }: Props) {
                 type="button"
                 onClick={() => openAt(i)}
                 className={cn(
-                  'group relative mt-5 w-full max-w-full cursor-zoom-in overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 text-left',
+                  'group relative w-full max-w-full cursor-zoom-in overflow-hidden rounded-lg border border-zinc-800 text-left',
                   'shadow-[0_0_50px_-12px_rgba(16,185,129,0.1)]',
                   'transition-shadow duration-300 hover:shadow-[0_0_60px_-10px_rgba(16,185,129,0.22)]',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50'
                 )}
+                style={{ backgroundColor: REPORT_CANVAS_BG }}
                 aria-label={`Open full size: ${shot.label}`}
               >
                 <span className="pointer-events-none absolute right-3 top-3 z-10 rounded border border-zinc-700/80 bg-zinc-950/90 px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
                   Click to enlarge
                 </span>
-                <div className="relative aspect-[4/3] w-full min-h-[220px] md:aspect-[16/10] md:min-h-[320px] lg:min-h-[380px]">
-                  <div className="absolute inset-0 origin-center transition-transform duration-500 ease-out will-change-transform group-hover:scale-[1.03]">
-                    <DeliverableSlideMedia
-                      shot={shot}
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 900px"
-                      priority={i === 0}
-                    />
+                <div
+                  className="overflow-hidden"
+                  style={{ backgroundColor: REPORT_CANVAS_BG }}
+                >
+                  <div className="origin-top transition-transform duration-500 ease-out will-change-transform group-hover:scale-[1.02]">
+                    <DeliverableSlideMedia shot={shot} priority={i === 0} />
                   </div>
                 </div>
               </button>
@@ -295,10 +291,13 @@ export function ForensicDeliverableGallery({ shots }: Props) {
           </button>
 
           <div
-            className="flex max-h-[90vh] w-full max-w-6xl flex-col items-center justify-center px-10 sm:px-14"
+            className="flex max-h-[92vh] w-full max-w-6xl flex-col items-center justify-center px-10 sm:px-14"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex w-full max-h-[85vh] items-center justify-center overflow-auto rounded-lg border border-zinc-700 bg-zinc-950 p-3 shadow-[0_0_80px_-20px_rgba(16,185,129,0.25)] sm:p-6">
+            <div
+              className="flex w-full items-center justify-center overflow-auto rounded-lg border border-zinc-700 p-2 shadow-[0_0_80px_-20px_rgba(16,185,129,0.25)] sm:p-4"
+              style={{ backgroundColor: REPORT_CANVAS_BG }}
+            >
               <LightboxImage shot={shots[lightbox]} />
             </div>
             <p className="mt-3 max-w-3xl text-center font-mono text-[10px] uppercase leading-relaxed tracking-widest text-zinc-500">
