@@ -26,6 +26,10 @@ import {
 } from '@/lib/solutionData'
 import { cn } from '@/lib/utils'
 
+export const dynamic = 'force-dynamic'
+export const dynamicParams = true
+export const revalidate = 0
+
 const SITE_URL = 'https://valifye.com'
 
 /** Supabase Storage — Two Paths deliverable previews */
@@ -73,9 +77,6 @@ const SAAS_PROOF_PILLARS: SolutionProofPillar[] = [
 ]
 
 type Props = { params: Promise<{ slug: string }> }
-
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 function vibeClasses(vibe: SolutionHeroVibe): {
   chip: string

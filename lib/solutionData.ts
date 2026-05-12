@@ -590,64 +590,70 @@ function pickFirstSchemaJsonFromRoots(
   return null
 }
 
-export function normalizeSolutionRow(row: SolutionRow): SolutionPillar {
-  const slug = asString(row.slug) ?? ''
+export function normalizeSolutionRow(row: SolutionRow): SolutionPillar | null {
+  try {
+    const slug = asString(row.slug) ?? ''
 
-  const title = asString(row.title) ?? 'Solution'
-  const subtitle = asString(row.subtitle) ?? null
+    const title = asString(row.title) ?? 'Solution'
+    const subtitle = asString(row.subtitle) ?? null
 
-  const metaTitle =
-    asString(row.meta_title) ?? asString(row.metaTitle) ?? `${title} | Valifye`
-  const metaDescription =
-    asString(row.meta_description) ??
-    asString(row.metaDescription) ??
-    asString(row.description) ??
-    ''
+    const metaTitle =
+      asString(row.meta_title) ?? asString(row.metaTitle) ?? `${title} | Valifye`
+    const metaDescription =
+      asString(row.meta_description) ??
+      asString(row.metaDescription) ??
+      asString(row.description) ??
+      ''
 
-  const aeoAnswer =
-    asString(row.aeo_answer) ??
-    asString(row.aeoAnswer) ??
-    asString(row.direct_answer) ??
-    ''
+    const aeoAnswer =
+      asString(row.aeo_answer) ??
+      asString(row.aeoAnswer) ??
+      asString(row.direct_answer) ??
+      ''
 
-  const ctaText =
-    asString(row.cta_text) ?? asString(row.ctaText) ?? null
+    const ctaText =
+      asString(row.cta_text) ?? asString(row.ctaText) ?? null
 
-  const evidenceRaw = row.evidence_images ?? row.evidenceImages
-  const reportScreenshotsColumn =
-    row.report_screenshots ?? row.reportScreenshots ?? undefined
+    const evidenceRaw = row.evidence_images ?? row.evidenceImages
+    const reportScreenshotsColumn =
+      row.report_screenshots ?? row.reportScreenshots ?? undefined
 
-  const rawPathBOutcome =
-    asString(row.path_b_outcome_url) ??
-    asString(row.pathBOutcomeUrl) ??
-    pathBOutcomeUrlFromEvidencePayload(evidenceRaw)
-  const pathBResolved = rawPathBOutcome
-    ? resolveReportScreenshotPublicPath(rawPathBOutcome)
-    : ''
-  const pathBOutcomeUrl =
-    pathBResolved.trim().length > 0 ? pathBResolved.trim() : null
+    const rawPathBOutcome =
+      asString(row.path_b_outcome_url) ??
+      asString(row.pathBOutcomeUrl) ??
+      pathBOutcomeUrlFromEvidencePayload(evidenceRaw)
+    const pathBResolved = rawPathBOutcome
+      ? resolveReportScreenshotPublicPath(rawPathBOutcome)
+      : ''
+    const pathBOutcomeUrl =
+      pathBResolved.trim().length > 0 ? pathBResolved.trim() : null
 
-  return {
-    id: asString(row.id) ?? undefined,
-    slug,
-    title,
-    subtitle,
-    heroVibe: normalizeHeroVibe(row.hero_vibe ?? row.heroVibe),
-    metaTitle,
-    metaDescription,
-    aeoAnswer,
-    riskFactors: normalizeRiskFactors(row.risk_factors ?? row.riskFactors),
-    evidenceImages: normalizeEvidenceImages(
-      evidenceRaw,
-      reportScreenshotsColumn
-    ),
-    ctaText,
-    primaryReportType: normalizePrimaryReportType(
-      row.primary_report_type ?? row.primaryReportType
-    ),
-    pathBOutcomeUrl,
-    createdAt: asString(row.created_at) ?? undefined,
-    updatedAt: asString(row.updated_at) ?? undefined
+    return {
+      id: asString(row.id) ?? undefined,
+      slug,
+      title,
+      subtitle,
+      heroVibe: normalizeHeroVibe(row.hero_vibe ?? row.heroVibe),
+      metaTitle,
+      metaDescription,
+      aeoAnswer,
+      riskFactors: normalizeRiskFactors(row.risk_factors ?? row.riskFactors),
+      evidenceImages: normalizeEvidenceImages(
+        evidenceRaw,
+        reportScreenshotsColumn
+      ),
+      ctaText,
+      primaryReportType: normalizePrimaryReportType(
+        row.primary_report_type ?? row.primaryReportType
+      ),
+      pathBOutcomeUrl,
+      createdAt: asString(row.created_at) ?? undefined,
+      updatedAt: asString(row.updated_at) ?? undefined
+    }
+  } catch (error) {
+    const slug = asString(row.slug) ?? '(unknown)'
+    console.error('Normalization failed for slug:', slug, error)
+    return null
   }
 }
 
@@ -669,6 +675,11 @@ export async function getSolutionBySlug(
     .eq('slug', cleanSlug)
     .maybeSingle<SolutionRow>()
 
+  console.log('[solution_pillars] getSolutionBySlug', {
+    slug: cleanSlug,
+    error
+  })
+
   if (error) {
     console.error(
       '[solution_pillars] Fetch failed for slug "%s": %s',
@@ -680,5 +691,5 @@ export async function getSolutionBySlug(
 
   if (!data) return null
 
-  return normalizeSolutionRow(data)
+  return normalizeSolutionRow(data) ?? null
 }
