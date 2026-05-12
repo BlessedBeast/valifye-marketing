@@ -14,9 +14,51 @@ export type SolutionRiskFactor = {
   description: string
 }
 
+export type SolutionProofPillar = {
+  stat: string
+  unit: string
+  label: string
+  context: string
+}
+
+export type SolutionFeatureModule = {
+  module: string
+  description: string
+  outputs: string[]
+}
+
+export type SolutionFaqSchemaItem = {
+  question: string
+  answer: string
+}
+
+export type SolutionSeoBodyBlock = {
+  h2: string
+  copy: string
+}
+
+export type SolutionReportScreenshot = {
+  id: string
+  label: string
+  caption: string
+  path: string
+  placeholder: string | null
+}
+
+/**
+ * Thick `evidence_images` JSONB: legacy screenshot URLs plus enterprise audit
+ * payloads (proof pillars, modules, SEO blocks, FAQs, report captures, JSON-LD).
+ */
 export type SolutionEvidenceImages = {
   competitorUrl: string | null
   valifyeUrl: string | null
+  proofPillars: SolutionProofPillar[]
+  featureModules: SolutionFeatureModule[]
+  faqSchema: SolutionFaqSchemaItem[]
+  seoBody: SolutionSeoBodyBlock[]
+  reportScreenshots: SolutionReportScreenshot[]
+  /** Raw JSON-LD object/array/string from CMS — injected client-safe via JSON.stringify */
+  schemaJson: unknown | null
 }
 
 export type SolutionPillar = {
@@ -53,6 +95,11 @@ function asString(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0
     ? value.trim()
     : null
+}
+
+function asDisplayString(value: unknown): string {
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  return asString(value) ?? ''
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -103,22 +150,191 @@ function normalizeRiskFactors(value: unknown): SolutionRiskFactor[] {
   return out
 }
 
+function readStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  const out: string[] = []
+  for (const item of value) {
+    const s = asDisplayString(item)
+    if (s.length > 0) out.push(s)
+  }
+  return out
+}
+
+function normalizeProofPillars(value: unknown): SolutionProofPillar[] {
+  if (!Array.isArray(value)) return []
+  const out: SolutionProofPillar[] = []
+  for (const entry of value) {
+    if (!isRecord(entry)) continue
+    const stat = asDisplayString(entry.stat ?? entry.value ?? entry.figure)
+    const label =
+      asString(entry.label) ?? asString(entry.title) ?? asString(entry.name) ?? ''
+    if (!stat && !label) continue
+    out.push({
+      stat: stat || '—',
+      unit: asString(entry.unit) ?? asString(entry.units) ?? '',
+      label: label || 'Signal',
+      context:
+        asString(entry.context) ??
+        asString(entry.subtitle) ??
+        asString(entry.note) ??
+        ''
+    })
+  }
+  return out
+}
+
+function normalizeFeatureModules(value: unknown): SolutionFeatureModule[] {
+  if (!Array.isArray(value)) return []
+  const out: SolutionFeatureModule[] = []
+  for (const entry of value) {
+    if (!isRecord(entry)) continue
+    const moduleName =
+      asString(entry.module) ??
+      asString(entry.title) ??
+      asString(entry.name) ??
+      ''
+    const description =
+      asString(entry.description) ??
+      asString(entry.body) ??
+      asString(entry.summary) ??
+      ''
+    if (!moduleName) continue
+    const outputsRaw = entry.outputs ?? entry.deliverables ?? entry.items
+    const outputs = Array.isArray(outputsRaw)
+      ? readStringArray(outputsRaw)
+      : asString(outputsRaw)
+      ? [asString(outputsRaw) as string]
+      : []
+    out.push({ module: moduleName, description, outputs })
+  }
+  return out
+}
+
+function normalizeFaqSchema(value: unknown): SolutionFaqSchemaItem[] {
+  if (!Array.isArray(value)) return []
+  const out: SolutionFaqSchemaItem[] = []
+  for (const entry of value) {
+    if (!isRecord(entry)) continue
+    const question =
+      asString(entry.question) ??
+      asString(entry.q) ??
+      asString(entry.title) ??
+      ''
+    const answer =
+      asString(entry.answer) ??
+      asString(entry.a) ??
+      asString(entry.body) ??
+      ''
+    if (!question || !answer) continue
+    out.push({ question, answer })
+  }
+  return out
+}
+
+function normalizeSeoBody(value: unknown): SolutionSeoBodyBlock[] {
+  if (!Array.isArray(value)) return []
+  const out: SolutionSeoBodyBlock[] = []
+  for (const entry of value) {
+    if (!isRecord(entry)) continue
+    const h2 =
+      asString(entry.h2) ??
+      asString(entry.heading) ??
+      asString(entry.title) ??
+      ''
+    const copy =
+      asString(entry.copy) ??
+      asString(entry.body) ??
+      asString(entry.text) ??
+      ''
+    if (!h2 && !copy) continue
+    out.push({ h2: h2 || 'Section', copy })
+  }
+  return out
+}
+
+function normalizeReportScreenshots(value: unknown): SolutionReportScreenshot[] {
+  if (!Array.isArray(value)) return []
+  const out: SolutionReportScreenshot[] = []
+  let i = 0
+  for (const entry of value) {
+    if (!isRecord(entry)) continue
+    const id = asString(entry.id) ?? `shot-${i}`
+    const label = asString(entry.label) ?? asString(entry.title) ?? 'Capture'
+    const caption =
+      asString(entry.caption) ?? asString(entry.description) ?? ''
+    const path =
+      asString(entry.path) ??
+      asString(entry.src) ??
+      asString(entry.url) ??
+      ''
+    const placeholder = asString(entry.placeholder) ?? null
+    if (!path && !placeholder) continue
+    out.push({ id, label, caption, path, placeholder })
+    i += 1
+  }
+  return out
+}
+
+function normalizeSchemaJson(value: unknown): unknown | null {
+  if (value == null) return null
+  if (typeof value === 'string') {
+    const parsed = safeParseJSON<unknown>(value)
+    return parsed ?? null
+  }
+  if (typeof value === 'object') return value
+  return null
+}
+
 function normalizeEvidenceImages(value: unknown): SolutionEvidenceImages {
   const raw = safeParseJSON<unknown>(value)
   const obj = isRecord(raw) ? raw : {}
 
+  const shots = isRecord(obj.screenshots) ? obj.screenshots : null
+
   const competitorUrl =
     asString(obj.competitor_url) ??
     asString(obj.competitorUrl) ??
-    asString(obj.competitor) ??
+    asString(obj.competitor_screenshot_url) ??
+    asString(obj.competitorScreenshotUrl) ??
+    asString(obj.incumbent_url) ??
+    (shots ? asString(shots.competitor) ?? asString(shots.left) : null) ??
     null
+
   const valifyeUrl =
     asString(obj.valifye_url) ??
     asString(obj.valifyeUrl) ??
+    asString(obj.valifye_screenshot_url) ??
+    asString(obj.valifyeScreenshotUrl) ??
+    asString(obj.product_screenshot_url) ??
     asString(obj.product_url) ??
+    (shots ? asString(shots.valifye) ?? asString(shots.right) : null) ??
     null
 
-  return { competitorUrl, valifyeUrl }
+  const proofPillars = normalizeProofPillars(
+    obj.proof_pillars ?? obj.proofPillars
+  )
+  const featureModules = normalizeFeatureModules(
+    obj.feature_modules ?? obj.featureModules
+  )
+  const faqSchema = normalizeFaqSchema(obj.faq_schema ?? obj.faqSchema)
+  const seoBody = normalizeSeoBody(obj.seo_body ?? obj.seoBody)
+  const reportScreenshots = normalizeReportScreenshots(
+    obj.report_screenshots ?? obj.reportScreenshots
+  )
+  const schemaJson = normalizeSchemaJson(
+    obj.schema_json ?? obj.schemaJson ?? obj.jsonLd
+  )
+
+  return {
+    competitorUrl,
+    valifyeUrl,
+    proofPillars,
+    featureModules,
+    faqSchema,
+    seoBody,
+    reportScreenshots,
+    schemaJson
+  }
 }
 
 export function normalizeSolutionRow(row: SolutionRow): SolutionPillar {

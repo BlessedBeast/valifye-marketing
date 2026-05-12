@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import type { ReactNode } from 'react'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import {
@@ -10,6 +11,11 @@ import {
 } from 'lucide-react'
 
 import { MarketingShell } from '@/components/MarketingShell'
+import {
+  SolutionFaqSection,
+  SolutionSchemaJsonLd,
+  SolutionThickEvidenceSections
+} from '@/components/solutions/SolutionThickEvidence'
 import { VisualEvidenceSplit } from '@/components/compare/VisualEvidenceSplit'
 import {
   ForensicScanEvidence,
@@ -24,6 +30,12 @@ import {
 import { cn } from '@/lib/utils'
 
 const SITE_URL = 'https://valifye.com'
+
+/** Supabase Storage — Execution Arsenal & Pivot Playbook report captures */
+const EXECUTION_ARSENAL_IMAGE =
+  'https://ivjcwulrmxqexytudhtu.supabase.co/storage/v1/object/public/comparison%20screenshot/arsnel.jpg'
+const PIVOT_PLAYBOOK_IMAGE =
+  'https://ivjcwulrmxqexytudhtu.supabase.co/storage/v1/object/public/comparison%20screenshot/pivot.jpg'
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -109,6 +121,7 @@ export default async function SolutionPillarPage({ params }: Props) {
 
   return (
     <MarketingShell className="max-w-[1180px] gap-16">
+      <SolutionSchemaJsonLd schemaJson={solution.evidenceImages.schemaJson} />
       <article className="space-y-20 pb-8 md:space-y-24 md:pb-12">
         <ForensicScanHero>
           <header className="space-y-8">
@@ -219,6 +232,8 @@ export default async function SolutionPillarPage({ params }: Props) {
           </ForensicScanEvidence>
         </section>
 
+        <SolutionThickEvidenceSections evidence={solution.evidenceImages} />
+
         <section
           aria-label="Execution versus pivot outcomes"
           className="space-y-8 border-y border-zinc-800/80 py-12 md:py-16"
@@ -242,7 +257,7 @@ export default async function SolutionPillarPage({ params }: Props) {
               title="The Execution Arsenal"
               icon={Target}
               accent="emerald"
-              imageSrc="/solutions/execution-arsenal.svg"
+              imageSrc={EXECUTION_ARSENAL_IMAGE}
               imageAlt="Execution Arsenal: roadmap, Mom Test scripts, and customer finder artifacts"
               body="If your audit passes, we hand you the 90-Day Roadmap, Mom Test Scripts, and Customer Finder—so you ship with discipline instead of hope."
               previewLines={[
@@ -256,7 +271,7 @@ export default async function SolutionPillarPage({ params }: Props) {
               title="The Pivot Playbook"
               icon={GitBranch}
               accent="cyan"
-              imageSrc="/solutions/pivot-playbook.svg"
+              imageSrc={PIVOT_PLAYBOOK_IMAGE}
               imageAlt="Pivot Playbook: three adjacent Blue Ocean pivot vectors"
               body="If the audit fails, we provide three adjacent Blue Ocean pivots engineered to salvage momentum and protect remaining capital."
               previewLines={[
@@ -268,7 +283,13 @@ export default async function SolutionPillarPage({ params }: Props) {
           </div>
         </section>
 
-        <SolutionGrandSlamCta slug={solution.slug} ctaLabel={ctaLabel} />
+        <SolutionFaqSection items={solution.evidenceImages.faqSchema} />
+
+        <SolutionGrandSlamCta
+          slug={solution.slug}
+          ctaLabel={ctaLabel}
+          ctaLabelContent={ctaLabelWithPricingHighlight(ctaLabel)}
+        />
       </article>
     </MarketingShell>
   )
@@ -293,6 +314,34 @@ function RiskFactorCard({ factor }: { factor: SolutionRiskFactor }) {
   )
 }
 
+/** Wraps dollar amounts in the CTA for a brighter “one-time investment” callout. */
+function ctaLabelWithPricingHighlight(text: string): ReactNode {
+  const re = /\$[\d,]+(?:\.\d{2})?/g
+  const nodes: ReactNode[] = []
+  let last = 0
+  let m: RegExpExecArray | null
+  const r = new RegExp(re.source, 'g')
+  let k = 0
+  while ((m = r.exec(text)) !== null) {
+    if (m.index > last) {
+      nodes.push(<span key={`t-${k++}`}>{text.slice(last, m.index)}</span>)
+    }
+    nodes.push(
+      <span
+        key={`p-${k++}`}
+        className="mx-0.5 inline-block rounded-md border border-emerald-200/45 bg-emerald-400/15 px-2 py-0.5 font-black tabular-nums tracking-tight text-emerald-50 shadow-[0_0_20px_rgba(52,211,153,0.75),0_0_40px_rgba(16,185,129,0.35)]"
+      >
+        {m[0]}
+      </span>
+    )
+    last = m.index + m[0].length
+  }
+  if (last < text.length) {
+    nodes.push(<span key={`t-${k++}`}>{text.slice(last)}</span>)
+  }
+  return nodes.length > 0 ? nodes : text
+}
+
 function OutcomePathPanel({
   path,
   title,
@@ -301,7 +350,8 @@ function OutcomePathPanel({
   imageSrc,
   imageAlt,
   body,
-  previewLines
+  previewLines,
+  imageObjectFit = 'contain'
 }: {
   path: string
   title: string
@@ -311,6 +361,7 @@ function OutcomePathPanel({
   imageAlt: string
   body: string
   previewLines: string[]
+  imageObjectFit?: 'cover' | 'contain'
 }) {
   const isEmerald = accent === 'emerald'
   return (
@@ -358,15 +409,22 @@ function OutcomePathPanel({
 
         <div
           className={cn(
-            'relative aspect-[16/9] w-full overflow-hidden rounded-lg border',
-            isEmerald ? 'border-emerald-500/25' : 'border-cyan-500/25'
+            'relative aspect-[3/4] w-full overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950',
+            'shadow-[0_0_0_1px_rgba(39,39,42,0.95),0_0_36px_-12px_rgba(9,9,11,0.85)]',
+            isEmerald
+              ? 'ring-1 ring-emerald-500/10'
+              : 'ring-1 ring-cyan-500/10'
           )}
         >
           <Image
             src={imageSrc}
             alt={imageAlt}
             fill
-            className="object-cover"
+            className={cn(
+              imageObjectFit === 'contain'
+                ? 'object-contain object-top'
+                : 'object-cover object-top'
+            )}
             sizes="(max-width: 1024px) 100vw, 50vw"
             priority={false}
           />
@@ -437,10 +495,12 @@ function OutcomePreviewMock({
 
 function SolutionGrandSlamCta({
   slug,
-  ctaLabel
+  ctaLabel,
+  ctaLabelContent
 }: {
   slug: string
   ctaLabel: string
+  ctaLabelContent: ReactNode
 }) {
   const ctaRef = `solution_${slug}`
 
@@ -474,14 +534,17 @@ function SolutionGrandSlamCta({
             type="submit"
             size="lg"
             className={cn(
-              'inline-flex gap-3',
-              'min-w-[min(100%,280px)] px-10 uppercase tracking-[0.14em]',
+              'inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1',
+              'min-w-[min(100%,280px)] px-8 uppercase tracking-[0.12em] md:px-10 md:tracking-[0.14em]',
               'bg-emerald-500 text-slate-950 hover:bg-emerald-400',
               'shadow-[0_0_50px_-8px_rgba(16,185,129,0.75)] ring-2 ring-emerald-400/35'
             )}
+            aria-label={ctaLabel}
           >
-            {ctaLabel}
-            <ArrowRight className="h-5 w-5" aria-hidden />
+            <span className="inline-flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center leading-snug">
+              {ctaLabelContent}
+            </span>
+            <ArrowRight className="h-5 w-5 shrink-0" aria-hidden />
           </ValifyeButton>
         </form>
 

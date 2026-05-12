@@ -45,10 +45,10 @@ const VALIFYE_TAGS: InvestigationTagConfig[] = [
  * Side-by-side "Show, don't tell" comparison block.
  *
  * Two render modes:
- * 1. **Real Evidence** — both screenshot URLs provided. Renders manual
- *    screenshots inside browser-style frames with annotation tags.
- * 2. **CSS Mock** — either screenshot missing. Falls back to the original
- *    "incumbent vs forensic" mock UI.
+ * 1. **Real screenshots** — each side uses its URL when present; missing side
+ *    falls back to the CSS mock panel for that column only.
+ * 2. **CSS Mock** — when a URL is absent for that column, the original mock UI
+ *    renders for that side only.
  *
  * Pure server component. No interactivity, no client JS.
  */
@@ -58,29 +58,31 @@ export function VisualEvidenceSplit({
   valifyeScreenshot,
   className
 }: VisualEvidenceSplitProps) {
-  const hasRealEvidence = Boolean(competitorScreenshot && valifyeScreenshot)
+  const competitorSrc = competitorScreenshot?.trim() ?? ''
+  const valifyeSrc = valifyeScreenshot?.trim() ?? ''
+  const showCompetitorShot = competitorSrc.length > 0
+  const showValifyeShot = valifyeSrc.length > 0
 
   return (
     <section
       aria-label="Visual evidence: incumbent intelligence versus Valifye forensic audit"
       className={cn('grid grid-cols-1 gap-4 md:grid-cols-2', className)}
     >
-      {hasRealEvidence ? (
-        <>
-          <IncumbentScreenshotPanel
-            competitorName={competitorName}
-            src={competitorScreenshot as string}
-          />
-          <ValifyeScreenshotPanel
-            competitorName={competitorName}
-            src={valifyeScreenshot as string}
-          />
-        </>
+      {showCompetitorShot ? (
+        <IncumbentScreenshotPanel
+          competitorName={competitorName}
+          src={competitorSrc}
+        />
       ) : (
-        <>
-          <IncumbentMockPanel />
-          <ValifyeMockPanel />
-        </>
+        <IncumbentMockPanel />
+      )}
+      {showValifyeShot ? (
+        <ValifyeScreenshotPanel
+          competitorName={competitorName}
+          src={valifyeSrc}
+        />
+      ) : (
+        <ValifyeMockPanel />
       )}
     </section>
   )
@@ -156,25 +158,20 @@ function ValifyeScreenshotPanel({
       className={cn(
         'relative overflow-hidden rounded-xl bg-slate-900',
         'border border-[rgba(16,185,129,0.5)]',
-        'shadow-[0_0_40px_-15px_rgba(16,185,129,0.6)]',
+        'shadow-[0_0_40px_-15px_rgba(16,185,129,0.55)]',
         'before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:rounded-xl',
-        'before:shadow-[0_0_60px_rgba(16,185,129,0.45)] before:animate-pulse'
+        'before:shadow-[0_0_48px_rgba(16,185,129,0.35)]'
       )}
     >
       <BrowserChrome host="valifye.com/audit" tone="valifye" />
 
-      <div className="group relative overflow-hidden">
+      <div className="group relative overflow-hidden bg-slate-950">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
           alt={`Valifye forensic audit dashboard for ${competitorName} comparison, showing live data signals and cited sources`}
           loading="lazy"
-          className="block h-auto w-full object-cover"
-        />
-
-        <span
-          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent"
-          aria-hidden
+          className="block h-auto w-full object-cover object-top"
         />
 
         {VALIFYE_TAGS.map((tag) => (
