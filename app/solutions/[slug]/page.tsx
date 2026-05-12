@@ -11,16 +11,13 @@ import {
 } from 'lucide-react'
 
 import { MarketingShell } from '@/components/MarketingShell'
+import { ForensicDeliverableGallery } from '@/components/solutions/ForensicDeliverableGallery'
 import {
   SolutionFaqSection,
   SolutionSchemaJsonLd,
   SolutionThickEvidenceSections
 } from '@/components/solutions/SolutionThickEvidence'
-import { VisualEvidenceSplit } from '@/components/compare/VisualEvidenceSplit'
-import {
-  ForensicScanEvidence,
-  ForensicScanHero
-} from '@/components/solutions/ForensicScanMotion'
+import { ForensicScanHero } from '@/components/solutions/ForensicScanMotion'
 import { ValifyeButton } from '@/components/ui/ValifyeButton'
 import {
   getSolutionBySlug,
@@ -205,32 +202,11 @@ export default async function SolutionPillarPage({ params }: Props) {
           </section>
         )}
 
-        <section aria-label="Evidence comparison" className="space-y-6">
-          <div className="space-y-2">
-            <p className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.32em] text-zinc-500">
-              <Crosshair className="h-3.5 w-3.5" aria-hidden />
-              Evidence wall
-            </p>
-            <h2 className="font-serif text-2xl font-black tracking-tight text-zinc-50 md:text-3xl">
-              What you see before the mistake is irreversible.
-            </h2>
-            <p className="max-w-2xl text-sm leading-relaxed text-zinc-500">
-              Legacy / gut feeling on the left (blurred, grayscale signal).
-              Valifye forensic signal on the right (sharp, cited, emerald
-              verified).
-            </p>
-          </div>
-
-          <ForensicScanEvidence>
-            <VisualEvidenceSplit
-              competitorName="Legacy / Gut Feeling"
-              competitorScreenshot={
-                solution.evidenceImages.competitorUrl ?? undefined
-              }
-              valifyeScreenshot={solution.evidenceImages.valifyeUrl ?? undefined}
-            />
-          </ForensicScanEvidence>
-        </section>
+        {solution.evidenceImages.reportScreenshots.length > 0 && (
+          <ForensicDeliverableGallery
+            shots={solution.evidenceImages.reportScreenshots}
+          />
+        )}
 
         <SolutionThickEvidenceSections evidence={solution.evidenceImages} />
 

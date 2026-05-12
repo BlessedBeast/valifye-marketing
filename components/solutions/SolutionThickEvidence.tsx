@@ -1,12 +1,9 @@
-import Image from 'next/image'
-
 import { ValifyeBadge } from '@/components/ui/ValifyeBadge'
 import type {
   SolutionEvidenceImages,
   SolutionFeatureModule,
   SolutionFaqSchemaItem,
   SolutionProofPillar,
-  SolutionReportScreenshot,
   SolutionSeoBodyBlock
 } from '@/lib/solutionData'
 import { cn } from '@/lib/utils'
@@ -68,10 +65,6 @@ export function SolutionThickEvidenceSections({
 
       {evidence.seoBody.length > 0 && (
         <SeoNarrativeSection blocks={evidence.seoBody} />
-      )}
-
-      {evidence.reportScreenshots.length > 0 && (
-        <ReportScreenshotsSection shots={evidence.reportScreenshots} />
       )}
     </div>
   )
@@ -270,88 +263,5 @@ function SeoNarrativeSection({ blocks }: { blocks: SolutionSeoBodyBlock[] }) {
         ))}
       </div>
     </section>
-  )
-}
-
-function ReportScreenshotsSection({
-  shots
-}: {
-  shots: SolutionReportScreenshot[]
-}) {
-  return (
-    <section aria-label="Report captures" className="space-y-6">
-      <div className="space-y-2">
-        <p className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.32em] text-zinc-500">
-          Report captures
-        </p>
-        <h2 className="font-serif text-2xl font-black tracking-tight text-zinc-50 md:text-3xl">
-          What the deliverable actually looks like.
-        </h2>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {shots.map((shot) => (
-          <figure
-            key={shot.id}
-            className="overflow-hidden rounded-xl border border-zinc-800 bg-slate-950/60 shadow-[0_0_45px_-28px_rgba(16,185,129,0.35)]"
-          >
-            <figcaption className="border-b border-zinc-800/80 px-4 py-3 md:px-5">
-              <span className="block font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-400/90">
-                {shot.label}
-              </span>
-              {shot.caption ? (
-                <span className="mt-1 block text-xs leading-relaxed text-zinc-500">
-                  {shot.caption}
-                </span>
-              ) : null}
-            </figcaption>
-            <div className="relative aspect-[16/10] w-full bg-zinc-950">
-              <ScreenshotMedia shot={shot} />
-            </div>
-          </figure>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-function ScreenshotMedia({ shot }: { shot: SolutionReportScreenshot }) {
-  const src = shot.path?.trim() ?? ''
-  if (src) {
-    const isLocal = src.startsWith('/')
-    if (isLocal) {
-      return (
-        <Image
-          src={src}
-          alt={shot.caption || shot.label}
-          fill
-          className="object-cover object-top"
-          sizes="(max-width: 768px) 100vw, 50vw"
-        />
-      )
-    }
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt={shot.caption || shot.label}
-        className="h-full w-full object-cover object-top"
-        loading="lazy"
-      />
-    )
-  }
-
-  if (shot.placeholder?.trim()) {
-    return (
-      <div className="flex h-full min-h-[200px] items-center justify-center p-6 text-center font-mono text-xs leading-relaxed text-zinc-500">
-        {shot.placeholder}
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex h-full min-h-[160px] items-center justify-center font-mono text-[10px] uppercase tracking-widest text-zinc-600">
-      No preview path
-    </div>
   )
 }
