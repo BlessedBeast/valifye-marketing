@@ -33,9 +33,6 @@ const PATH_A_BLUEPRINT_IMAGE =
   'https://ivjcwulrmxqexytudhtu.supabase.co/storage/v1/object/public/comparison%20screenshot/90-day-roadmap.png'
 const PATH_B_RECOVERY_IMAGE =
   'https://ivjcwulrmxqexytudhtu.supabase.co/storage/v1/object/public/comparison%20screenshot/local-market-scout-pivot.png'
-/** Pre-Burn SaaS / Digital Battlefield — single-path pivot preview */
-const PATH_B_SAAS_PIVOT_IMAGE =
-  'https://ivjcwulrmxqexytudhtu.supabase.co/storage/v1/object/public/comparison%20screenshot/digi%20pivot.jpg'
 
 const PRE_BURN_SAAS_SLUG = 'pre-burn-saas-audit' as const
 
@@ -71,7 +68,7 @@ const SAAS_PROOF_PILLARS: SolutionProofPillar[] = [
     unit: 'hours',
     label: 'Report Turnaround',
     context:
-      'From intake lock to cited Digital Battlefield appendix—tight loop, no roadmap theater.'
+      'From intake lock to cited Digital Battlefield appendix—fixed turnaround, no filler slides.'
   }
 ]
 
@@ -264,7 +261,11 @@ export default async function SolutionPillarPage({ params }: Props) {
         <SolutionThickEvidenceSections evidence={thickEvidence} />
 
         <section
-          aria-label="Execution versus pivot outcomes"
+          aria-label={
+            isPreBurnSaas
+              ? 'Strategic pivot and capital recovery'
+              : 'Execution versus pivot outcomes'
+          }
           className="space-y-8 border-y border-zinc-800/80 py-12 md:py-16"
         >
           <div className="space-y-2">
@@ -278,7 +279,7 @@ export default async function SolutionPillarPage({ params }: Props) {
             </h2>
             <p className="max-w-2xl text-sm leading-relaxed text-zinc-500">
               {isPreBurnSaas
-                ? 'When the wedge thesis fails intent and SERP tests, the Digital Battlefield Report hands you three ranked pivot vectors—capital preserved without 90-day roadmap theater.'
+                ? 'When the wedge thesis fails intent and SERP tests, the Digital Battlefield Report hands you three ranked pivot vectors so you preserve capital and re-aim quickly.'
                 : 'Valifye does not stop at a verdict—we hand you the next artifact your situation demands.'}
             </p>
           </div>
@@ -315,11 +316,13 @@ export default async function SolutionPillarPage({ params }: Props) {
               accent="cyan"
               evidenceTone="recovery"
               imageSrc={
-                isPreBurnSaas ? PATH_B_SAAS_PIVOT_IMAGE : PATH_B_RECOVERY_IMAGE
+                isPreBurnSaas
+                  ? solution.pathBOutcomeUrl
+                  : PATH_B_RECOVERY_IMAGE
               }
               imageAlt={
                 isPreBurnSaas
-                  ? 'Digital Battlefield pivot vectors and capital recovery plan'
+                  ? 'Digital Battlefield pivot outcome and capital recovery plan'
                   : 'Local market scout pivot playbook for capital recovery'
               }
               body={
@@ -411,13 +414,14 @@ function OutcomePathPanel({
   icon: typeof Target
   accent: 'emerald' | 'cyan'
   evidenceTone: 'blueprint' | 'recovery'
-  imageSrc: string
+  imageSrc?: string | null
   imageAlt: string
   body: string
   previewLines: string[]
 }) {
   const isEmerald = accent === 'emerald'
   const isBlueprint = evidenceTone === 'blueprint'
+  const resolvedSrc = imageSrc?.trim() ?? ''
 
   return (
     <div
@@ -472,24 +476,26 @@ function OutcomePathPanel({
       <div className="space-y-4 px-5 py-5 md:px-6">
         <p className="text-sm leading-relaxed text-zinc-400">{body}</p>
 
-        <div
-          className={cn(
-            'w-full overflow-hidden rounded-lg border border-zinc-800 bg-[#09090b]',
-            isBlueprint &&
-              'shadow-[0_0_40px_-12px_rgba(16,185,129,0.35)] ring-1 ring-emerald-500/20',
-            !isBlueprint &&
-              'shadow-[0_0_40px_-12px_rgba(34,211,238,0.22),0_0_36px_-14px_rgba(245,158,11,0.1)] ring-1 ring-cyan-400/20'
-          )}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageSrc}
-            alt={imageAlt}
-            className="block h-auto w-full max-w-full object-contain object-top"
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
+        {resolvedSrc ? (
+          <div
+            className={cn(
+              'w-full overflow-hidden rounded-lg border border-zinc-800 bg-[#09090b]',
+              isBlueprint &&
+                'shadow-[0_0_40px_-12px_rgba(16,185,129,0.35)] ring-1 ring-emerald-500/20',
+              !isBlueprint &&
+                'shadow-[0_0_40px_-12px_rgba(34,211,238,0.22),0_0_36px_-14px_rgba(245,158,11,0.1)] ring-1 ring-cyan-400/20'
+            )}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={resolvedSrc}
+              alt={imageAlt}
+              className="block h-auto w-full max-w-full object-contain object-top"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        ) : null}
 
         <OutcomePreviewMock lines={previewLines} accent={accent} />
       </div>

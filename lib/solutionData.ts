@@ -74,6 +74,8 @@ export type SolutionPillar = {
   evidenceImages: SolutionEvidenceImages
   ctaText: string | null
   primaryReportType: SolutionPrimaryReportType
+  /** Pivot-path hero image (e.g. Digital Battlefield); column or nested in `evidence_images`. */
+  pathBOutcomeUrl: string | null
   createdAt?: string
   updatedAt?: string
 }
@@ -252,6 +254,21 @@ function normalizeSeoBody(value: unknown): SolutionSeoBodyBlock[] {
   return out
 }
 
+/** Public bucket root for deliverable captures referenced as bare filenames (e.g. `cpc.png`). */
+const COMPARISON_SCREENSHOT_PUBLIC_BASE =
+  'https://ivjcwulrmxqexytudhtu.supabase.co/storage/v1/object/public/comparison%20screenshot/'
+
+function resolveReportScreenshotPublicPath(path: string): string {
+  const raw = path.trim()
+  if (!raw) return ''
+  if (/^https?:\/\//i.test(raw)) return raw
+  if (raw.startsWith('/')) return raw
+  const segments = raw.split('/').filter(Boolean)
+  if (segments.length === 0) return raw
+  const encodedPath = segments.map((s) => encodeURIComponent(s)).join('/')
+  return `${COMPARISON_SCREENSHOT_PUBLIC_BASE}${encodedPath}`
+}
+
 function normalizeReportScreenshots(value: unknown): SolutionReportScreenshot[] {
   if (!Array.isArray(value)) return []
   const out: SolutionReportScreenshot[] = []
@@ -259,14 +276,26 @@ function normalizeReportScreenshots(value: unknown): SolutionReportScreenshot[] 
   for (const entry of value) {
     if (!isRecord(entry)) continue
     const id = asString(entry.id) ?? `shot-${i}`
-    const label = asString(entry.label) ?? asString(entry.title) ?? 'Capture'
+    const label =
+      asString(entry.label) ??
+      asString(entry.title) ??
+      asString(entry.module) ??
+      'Capture'
     const caption =
-      asString(entry.caption) ?? asString(entry.description) ?? ''
-    const path =
+      asString(entry.caption) ??
+      asString(entry.description) ??
+      asString(entry.body) ??
+      asString(entry.summary) ??
+      ''
+    const rawPath =
       asString(entry.path) ??
       asString(entry.src) ??
       asString(entry.url) ??
+      asString(entry.image) ??
+      asString(entry.primary_visual) ??
+      asString(entry.file) ??
       ''
+    const path = rawPath ? resolveReportScreenshotPublicPath(rawPath) : ''
     const placeholder = asString(entry.placeholder) ?? null
     if (!path && !placeholder) continue
     out.push({ id, label, caption, path, placeholder })
@@ -283,6 +312,21 @@ function normalizeSchemaJson(value: unknown): unknown | null {
   }
   if (typeof value === 'object') return value
   return null
+}
+
+function pathBOutcomeUrlFromEvidencePayload(value: unknown): string | null {
+  const parsed = safeParseJSON<unknown>(value)
+  const obj = isRecord(parsed)
+    ? parsed
+    : isRecord(value)
+      ? (value as Record<string, unknown>)
+      : null
+  if (!obj) return null
+  return (
+    asString(obj.path_b_outcome_url) ??
+    asString(obj.pathBOutcomeUrl) ??
+    null
+  )
 }
 
 function normalizeEvidenceImages(value: unknown): SolutionEvidenceImages {
@@ -360,6 +404,17 @@ export function normalizeSolutionRow(row: SolutionRow): SolutionPillar {
   const ctaText =
     asString(row.cta_text) ?? asString(row.ctaText) ?? null
 
+  const evidenceRaw = row.evidence_images ?? row.evidenceImages
+  const rawPathBOutcome =
+    asString(row.path_b_outcome_url) ??
+    asString(row.pathBOutcomeUrl) ??
+    pathBOutcomeUrlFromEvidencePayload(evidenceRaw)
+  const pathBResolved = rawPathBOutcome
+    ? resolveReportScreenshotPublicPath(rawPathBOutcome)
+    : ''
+  const pathBOutcomeUrl =
+    pathBResolved.trim().length > 0 ? pathBResolved.trim() : null
+
   return {
     id: asString(row.id) ?? undefined,
     slug,
@@ -370,13 +425,12 @@ export function normalizeSolutionRow(row: SolutionRow): SolutionPillar {
     metaDescription,
     aeoAnswer,
     riskFactors: normalizeRiskFactors(row.risk_factors ?? row.riskFactors),
-    evidenceImages: normalizeEvidenceImages(
-      row.evidence_images ?? row.evidenceImages
-    ),
+    evidenceImages: normalizeEvidenceImages(evidenceRaw),
     ctaText,
     primaryReportType: normalizePrimaryReportType(
       row.primary_report_type ?? row.primaryReportType
     ),
+    pathBOutcomeUrl,
     createdAt: asString(row.created_at) ?? undefined,
     updatedAt: asString(row.updated_at) ?? undefined
   }
