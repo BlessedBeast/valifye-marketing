@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450" role="img" aria-label="Execution Arsenal preview placeholder">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#020617"/>
+      <stop offset="100%" style="stop-color:#064e3b"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#g)"/>
+  <rect x="24" y="24" width="752" height="402" fill="none" stroke="#34d399" stroke-opacity="0.35" stroke-width="2" rx="8"/>
+  <text x="400" y="200" fill="#a7f3d0" font-family="ui-monospace, monospace" font-size="14" text-anchor="middle" letter-spacing="0.2em">EXECUTION ARSENAL</text>
+  <text x="400" y="240" fill="#6ee7b7" font-family="ui-serif, Georgia, serif" font-size="28" font-weight="700" text-anchor="middle">90-Day Roadmap · Mom Test · Finder</text>
+  <text x="400" y="290" fill="#64748b" font-family="ui-monospace, monospace" font-size="11" text-anchor="middle">Replace with branded screenshot when ready</text>
+</svg>
