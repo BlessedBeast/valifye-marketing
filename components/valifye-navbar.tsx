@@ -4,11 +4,14 @@ import Link from 'next/link'
 import Image from 'next/image'
 import {
   ChevronDown,
+  ClipboardCheck,
   Crosshair,
   FileSignature,
   Flame,
   Library,
+  Link2,
   MapPin,
+  Package,
   Shield
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
@@ -28,6 +31,30 @@ const solutionLinks = [
     description: 'Kill the runway fantasy before you ship the wrong wedge.',
     Icon: Flame,
     accent: 'text-rose-300'
+  },
+  {
+    href: '/solutions/franchise-due-diligence-audit',
+    label: 'Franchise Due Diligence Audit',
+    description:
+      'Territory economics, FDD gaps, and unit-level risk before you sign the franchise agreement.',
+    Icon: ClipboardCheck,
+    accent: 'text-violet-300'
+  },
+  {
+    href: '/solutions/acquire-com-asset-audit',
+    label: 'Acquire .com Asset Audit',
+    description:
+      'Traffic, trademark, and monetization forensics before you wire on a domain or web property.',
+    Icon: Link2,
+    accent: 'text-sky-300'
+  },
+  {
+    href: '/solutions/dtc-inventory-burn-test',
+    label: 'DTC Inventory Burn Test',
+    description:
+      'Sell-through and margin stress test before capital locks up in dead SKU depth.',
+    Icon: Package,
+    accent: 'text-orange-300'
   }
 ]
 
@@ -122,7 +149,7 @@ export function ValifyeNavbar() {
             <ChevronDown className="h-3 w-3 transition-transform group-hover:rotate-180 group-focus-within:rotate-180" />
           </button>
 
-          <div className="invisible absolute right-0 top-full z-50 mt-3 w-[340px] translate-y-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+          <div className="invisible absolute right-0 top-full z-50 mt-3 w-[min(100vw-2rem,380px)] translate-y-2 opacity-0 transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
             <div className="overflow-hidden rounded-lg border border-zinc-800/90 bg-slate-950/90 p-2 shadow-[0_20px_80px_-24px_rgba(0,0,0,0.9),0_0_40px_-18px_rgba(245,158,11,0.35)] backdrop-blur-xl">
               <div className="border-b border-zinc-800/80 px-3 py-2">
                 <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-amber-300">

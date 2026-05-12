@@ -3,12 +3,53 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import type { LucideIcon } from 'lucide-react'
+import {
+  ClipboardCheck,
+  FileSignature,
+  Flame,
+  Link2,
+  Package
+} from 'lucide-react'
 import { useTheme } from 'next-themes'
 
-const solutionFooterLinks = [
-  { href: '/solutions/before-signing-lease', label: 'Before Signing a Lease' },
-  { href: '/solutions/pre-burn-saas-audit', label: 'Pre-Burn SaaS Audit' }
-] as const
+const solutionFooterLinks: {
+  href: string
+  label: string
+  Icon: LucideIcon
+  accent: string
+}[] = [
+  {
+    href: '/solutions/before-signing-lease',
+    label: 'Before Signing a Lease',
+    Icon: FileSignature,
+    accent: 'text-amber-400/90'
+  },
+  {
+    href: '/solutions/pre-burn-saas-audit',
+    label: 'Pre-Burn SaaS Audit',
+    Icon: Flame,
+    accent: 'text-rose-400/90'
+  },
+  {
+    href: '/solutions/franchise-due-diligence-audit',
+    label: 'Franchise Due Diligence Audit',
+    Icon: ClipboardCheck,
+    accent: 'text-violet-400/90'
+  },
+  {
+    href: '/solutions/acquire-com-asset-audit',
+    label: 'Acquire .com Asset Audit',
+    Icon: Link2,
+    accent: 'text-sky-400/90'
+  },
+  {
+    href: '/solutions/dtc-inventory-burn-test',
+    label: 'DTC Inventory Burn Test',
+    Icon: Package,
+    accent: 'text-orange-400/90'
+  }
+]
 
 export function ValifyeFooter() {
   const { resolvedTheme } = useTheme()
@@ -47,12 +88,13 @@ export function ValifyeFooter() {
               Solutions
             </p>
             <ul className="flex flex-col gap-3">
-              {solutionFooterLinks.map(({ href, label }) => (
+              {solutionFooterLinks.map(({ href, label, Icon, accent }) => (
                 <li key={href}>
                   <Link
                     href={href}
-                    className="text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
+                    className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
                   >
+                    <Icon className={`h-3.5 w-3.5 shrink-0 ${accent}`} aria-hidden />
                     {label}
                   </Link>
                 </li>

@@ -269,11 +269,102 @@ function resolveReportScreenshotPublicPath(path: string): string {
   return `${COMPARISON_SCREENSHOT_PUBLIC_BASE}${encodedPath}`
 }
 
+/** Coerce DB / CMS shapes into a list of row objects for `normalizeReportScreenshots`. */
+function unwrapReportScreenshotList(value: unknown): unknown[] {
+  if (value == null) return []
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return []
+    const parsed = safeParseJSON<unknown>(trimmed)
+    if (Array.isArray(parsed)) return parsed
+    return []
+  }
+  if (isRecord(value)) {
+    const inner =
+      value.items ??
+      value.shots ??
+      value.slides ??
+      value.captures ??
+      value.data
+    if (Array.isArray(inner)) return inner
+    if (typeof inner === 'string') return unwrapReportScreenshotList(inner)
+  }
+  return []
+}
+
+const REPORT_SCREENSHOT_KEYS = [
+  'report_screenshots',
+  'reportScreenshots',
+  'report_screenshot',
+  'deliverable_gallery',
+  'deliverableGallery',
+  'report_captures',
+  'reportCaptures',
+  'slides',
+  'gallery'
+] as const
+
+const EVIDENCE_NESTED_ROOT_KEYS = [
+  'evidence',
+  'evidence_images',
+  'evidenceImages',
+  'cms',
+  'data',
+  'payload',
+  'content',
+  'attributes'
+] as const
+
+type EvidenceShape =
+  | { kind: 'rows'; roots: Record<string, unknown>[] }
+  | { kind: 'array'; items: unknown[] }
+
+/**
+ * Classify `evidence_images` JSON: object (possibly with nested CMS wrappers) or
+ * a legacy top-level array of slides.
+ */
+function classifyEvidencePayload(value: unknown): EvidenceShape {
+  const parsed = safeParseJSON<unknown>(value)
+  const primary = parsed ?? value
+
+  if (Array.isArray(primary)) {
+    return { kind: 'array', items: primary }
+  }
+  if (!isRecord(primary)) {
+    return { kind: 'rows', roots: [{}] }
+  }
+
+  const roots: Record<string, unknown>[] = [primary]
+  const seen = new Set<unknown>([primary])
+  for (const key of EVIDENCE_NESTED_ROOT_KEYS) {
+    const child = primary[key]
+    if (!isRecord(child) || seen.has(child)) continue
+    seen.add(child)
+    roots.push(child)
+  }
+  return { kind: 'rows', roots }
+}
+
+/** First non-empty normalized gallery found across roots and common key names. */
+function pickReportScreenshotsFromRoots(
+  roots: Record<string, unknown>[]
+): SolutionReportScreenshot[] {
+  for (const root of roots) {
+    for (const key of REPORT_SCREENSHOT_KEYS) {
+      if (!(key in root)) continue
+      const normalized = normalizeReportScreenshots(root[key])
+      if (normalized.length > 0) return normalized
+    }
+  }
+  return []
+}
+
 function normalizeReportScreenshots(value: unknown): SolutionReportScreenshot[] {
-  if (!Array.isArray(value)) return []
+  const list = unwrapReportScreenshotList(value)
   const out: SolutionReportScreenshot[] = []
   let i = 0
-  for (const entry of value) {
+  for (const entry of list) {
     if (!isRecord(entry)) continue
     const id = asString(entry.id) ?? `shot-${i}`
     const label =
@@ -287,14 +378,12 @@ function normalizeReportScreenshots(value: unknown): SolutionReportScreenshot[] 
       asString(entry.body) ??
       asString(entry.summary) ??
       ''
+    const rawPathCandidate =
+      entry.path ?? entry.src ?? entry.url ?? entry.image ?? entry.primary_visual ?? entry.file
     const rawPath =
-      asString(entry.path) ??
-      asString(entry.src) ??
-      asString(entry.url) ??
-      asString(entry.image) ??
-      asString(entry.primary_visual) ??
-      asString(entry.file) ??
-      ''
+      typeof rawPathCandidate === 'number' && Number.isFinite(rawPathCandidate)
+        ? String(rawPathCandidate)
+        : asString(rawPathCandidate) ?? ''
     const path = rawPath ? resolveReportScreenshotPublicPath(rawPath) : ''
     const placeholder = asString(entry.placeholder) ?? null
     if (!path && !placeholder) continue
@@ -314,60 +403,154 @@ function normalizeSchemaJson(value: unknown): unknown | null {
   return null
 }
 
-function pathBOutcomeUrlFromEvidencePayload(value: unknown): string | null {
-  const parsed = safeParseJSON<unknown>(value)
-  const obj = isRecord(parsed)
-    ? parsed
-    : isRecord(value)
-      ? (value as Record<string, unknown>)
-      : null
-  if (!obj) return null
-  return (
-    asString(obj.path_b_outcome_url) ??
-    asString(obj.pathBOutcomeUrl) ??
-    null
-  )
+const PATH_B_URL_KEYS = [
+  'path_b_outcome_url',
+  'pathBOutcomeUrl',
+  'path_b_outcome_image',
+  'pathBOutcomeImage',
+  'path_b_image',
+  'pathBImage'
+] as const
+
+const PATH_B_NESTED_OBJECT_KEYS = [
+  'deliverables',
+  'outcome',
+  'outcomes',
+  'pivot',
+  'dynamic_outcome',
+  'dynamicOutcome',
+  'two_paths',
+  'twoPaths',
+  'path_b',
+  'pathB'
+] as const
+
+function readPathBUrlFromRecord(root: Record<string, unknown>): string | null {
+  for (const key of PATH_B_URL_KEYS) {
+    const hit = asString(root[key])
+    if (hit) return hit
+  }
+  for (const nestKey of PATH_B_NESTED_OBJECT_KEYS) {
+    const child = root[nestKey]
+    if (!isRecord(child)) continue
+    for (const key of PATH_B_URL_KEYS) {
+      const hit = asString(child[key])
+      if (hit) return hit
+    }
+    const deep = asString(child.url) ?? asString(child.src) ?? asString(child.image)
+    if (deep) return deep
+  }
+  return null
 }
 
-function normalizeEvidenceImages(value: unknown): SolutionEvidenceImages {
-  const raw = safeParseJSON<unknown>(value)
-  const obj = isRecord(raw) ? raw : {}
+function pathBOutcomeUrlFromEvidencePayload(value: unknown): string | null {
+  const shape = classifyEvidencePayload(value)
+  if (shape.kind === 'array') {
+    return null
+  }
+  for (const root of shape.roots) {
+    const hit = readPathBUrlFromRecord(root)
+    if (hit) return hit
+  }
+  return null
+}
 
-  const shots = isRecord(obj.screenshots) ? obj.screenshots : null
+function pickCompetitorUrlFromRoots(
+  roots: Record<string, unknown>[]
+): string | null {
+  for (const obj of roots) {
+    const block = isRecord(obj.screenshots) ? obj.screenshots : null
+    const hit =
+      asString(obj.competitor_url) ??
+      asString(obj.competitorUrl) ??
+      asString(obj.competitor_screenshot_url) ??
+      asString(obj.competitorScreenshotUrl) ??
+      asString(obj.incumbent_url) ??
+      (block ? asString(block.competitor) ?? asString(block.left) : null) ??
+      null
+    if (hit) return hit
+  }
+  return null
+}
 
-  const competitorUrl =
-    asString(obj.competitor_url) ??
-    asString(obj.competitorUrl) ??
-    asString(obj.competitor_screenshot_url) ??
-    asString(obj.competitorScreenshotUrl) ??
-    asString(obj.incumbent_url) ??
-    (shots ? asString(shots.competitor) ?? asString(shots.left) : null) ??
-    null
+function pickValifyeUrlFromRoots(
+  roots: Record<string, unknown>[]
+): string | null {
+  for (const obj of roots) {
+    const block = isRecord(obj.screenshots) ? obj.screenshots : null
+    const hit =
+      asString(obj.valifye_url) ??
+      asString(obj.valifyeUrl) ??
+      asString(obj.valifye_screenshot_url) ??
+      asString(obj.valifyeScreenshotUrl) ??
+      asString(obj.product_screenshot_url) ??
+      asString(obj.product_url) ??
+      (block ? asString(block.valifye) ?? asString(block.right) : null) ??
+      null
+    if (hit) return hit
+  }
+  return null
+}
 
-  const valifyeUrl =
-    asString(obj.valifye_url) ??
-    asString(obj.valifyeUrl) ??
-    asString(obj.valifye_screenshot_url) ??
-    asString(obj.valifyeScreenshotUrl) ??
-    asString(obj.product_screenshot_url) ??
-    asString(obj.product_url) ??
-    (shots ? asString(shots.valifye) ?? asString(shots.right) : null) ??
-    null
+function readScalarFieldsFromRoots(
+  roots: Record<string, unknown>[]
+): Record<string, unknown> {
+  for (const root of roots) {
+    if (Object.keys(root).length > 0) return root
+  }
+  return {}
+}
 
-  const proofPillars = normalizeProofPillars(
-    obj.proof_pillars ?? obj.proofPillars
+function normalizeEvidenceImages(
+  value: unknown,
+  reportScreenshotsColumn?: unknown
+): SolutionEvidenceImages {
+  const shape = classifyEvidencePayload(value)
+  const columnShots = normalizeReportScreenshots(reportScreenshotsColumn)
+
+  if (shape.kind === 'array') {
+    const fromArray = normalizeReportScreenshots(shape.items)
+    const reportScreenshots =
+      columnShots.length > 0 ? columnShots : fromArray
+    return {
+      competitorUrl: null,
+      valifyeUrl: null,
+      proofPillars: [],
+      featureModules: [],
+      faqSchema: [],
+      seoBody: [],
+      reportScreenshots,
+      schemaJson: null
+    }
+  }
+
+  const roots = shape.roots
+  const obj = readScalarFieldsFromRoots(roots)
+
+  const competitorUrl = pickCompetitorUrlFromRoots(roots)
+
+  const valifyeUrl = pickValifyeUrlFromRoots(roots)
+
+  const proofPillars = mergeNormalizeAcrossRoots(roots, (r) =>
+    normalizeProofPillars(r.proof_pillars ?? r.proofPillars)
   )
-  const featureModules = normalizeFeatureModules(
-    obj.feature_modules ?? obj.featureModules
+  const featureModules = mergeNormalizeAcrossRoots(roots, (r) =>
+    normalizeFeatureModules(r.feature_modules ?? r.featureModules)
   )
-  const faqSchema = normalizeFaqSchema(obj.faq_schema ?? obj.faqSchema)
-  const seoBody = normalizeSeoBody(obj.seo_body ?? obj.seoBody)
-  const reportScreenshots = normalizeReportScreenshots(
-    obj.report_screenshots ?? obj.reportScreenshots
+  const faqSchema = mergeNormalizeAcrossRoots(roots, (r) =>
+    normalizeFaqSchema(r.faq_schema ?? r.faqSchema)
   )
-  const schemaJson = normalizeSchemaJson(
-    obj.schema_json ?? obj.schemaJson ?? obj.jsonLd
+  const seoBody = mergeNormalizeAcrossRoots(roots, (r) =>
+    normalizeSeoBody(r.seo_body ?? r.seoBody)
   )
+
+  const embeddedShots = pickReportScreenshotsFromRoots(roots)
+  const reportScreenshots =
+    columnShots.length > 0 ? columnShots : embeddedShots
+
+  const schemaJson =
+    normalizeSchemaJson(obj.schema_json ?? obj.schemaJson ?? obj.jsonLd) ??
+    pickFirstSchemaJsonFromRoots(roots)
 
   return {
     competitorUrl,
@@ -379,6 +562,32 @@ function normalizeEvidenceImages(value: unknown): SolutionEvidenceImages {
     reportScreenshots,
     schemaJson
   }
+}
+
+/** Prefer first root that yields a non-empty array; else last normalization (usually []). */
+function mergeNormalizeAcrossRoots<T>(
+  roots: Record<string, unknown>[],
+  normalize: (r: Record<string, unknown>) => T[]
+): T[] {
+  let last: T[] = []
+  for (const root of roots) {
+    const n = normalize(root)
+    last = n
+    if (n.length > 0) return n
+  }
+  return last
+}
+
+function pickFirstSchemaJsonFromRoots(
+  roots: Record<string, unknown>[]
+): unknown | null {
+  for (const root of roots) {
+    const j = normalizeSchemaJson(
+      root.schema_json ?? root.schemaJson ?? root.jsonLd
+    )
+    if (j != null) return j
+  }
+  return null
 }
 
 export function normalizeSolutionRow(row: SolutionRow): SolutionPillar {
@@ -405,6 +614,9 @@ export function normalizeSolutionRow(row: SolutionRow): SolutionPillar {
     asString(row.cta_text) ?? asString(row.ctaText) ?? null
 
   const evidenceRaw = row.evidence_images ?? row.evidenceImages
+  const reportScreenshotsColumn =
+    row.report_screenshots ?? row.reportScreenshots ?? undefined
+
   const rawPathBOutcome =
     asString(row.path_b_outcome_url) ??
     asString(row.pathBOutcomeUrl) ??
@@ -425,7 +637,10 @@ export function normalizeSolutionRow(row: SolutionRow): SolutionPillar {
     metaDescription,
     aeoAnswer,
     riskFactors: normalizeRiskFactors(row.risk_factors ?? row.riskFactors),
-    evidenceImages: normalizeEvidenceImages(evidenceRaw),
+    evidenceImages: normalizeEvidenceImages(
+      evidenceRaw,
+      reportScreenshotsColumn
+    ),
     ctaText,
     primaryReportType: normalizePrimaryReportType(
       row.primary_report_type ?? row.primaryReportType

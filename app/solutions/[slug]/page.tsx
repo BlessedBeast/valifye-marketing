@@ -163,9 +163,11 @@ export default async function SolutionPillarPage({ params }: Props) {
     ? { ...solution.evidenceImages, proofPillars: SAAS_PROOF_PILLARS }
     : solution.evidenceImages
 
+  const evidence = solution.evidenceImages
+
   return (
     <MarketingShell className="max-w-[1180px] gap-16">
-      <SolutionSchemaJsonLd schemaJson={solution.evidenceImages.schemaJson} />
+      <SolutionSchemaJsonLd schemaJson={evidence.schemaJson ?? null} />
       <article className="space-y-20 pb-8 md:space-y-24 md:pb-12">
         <ForensicScanHero>
           <header className="space-y-8">
@@ -249,9 +251,9 @@ export default async function SolutionPillarPage({ params }: Props) {
           </section>
         )}
 
-        {solution.evidenceImages.reportScreenshots.length > 0 && (
+        {evidence.reportScreenshots.length > 0 && (
           <ForensicDeliverableGallery
-            shots={solution.evidenceImages.reportScreenshots}
+            shots={evidence.reportScreenshots}
             canvasBg={
               isPreBurnSaas ? DIGITAL_BATTLEFIELD_CANVAS_BG : undefined
             }
@@ -339,7 +341,7 @@ export default async function SolutionPillarPage({ params }: Props) {
           </div>
         </section>
 
-        <SolutionFaqSection items={solution.evidenceImages.faqSchema} />
+        <SolutionFaqSection items={evidence.faqSchema} />
 
         <SolutionGrandSlamCta
           slug={solution.slug}
