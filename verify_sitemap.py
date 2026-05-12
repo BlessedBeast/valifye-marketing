@@ -35,6 +35,15 @@ def run_master_audit():
     e3_reports = supabase.table("public_seo_reports").select("slug, report_data").eq("is_published", True).execute().data or []
     e3_hubs = supabase.table("local_city_hubs").select("all_slugs").execute().data or []
 
+    e4_blueprints = (
+        supabase.table("local_business_blueprints")
+        .select("slug")
+        .eq("status", "published")
+        .execute()
+        .data
+        or []
+    )
+
     # --- 2. ORPHAN CHECKING ---
     def get_orphans(reports, hubs):
         housed = set()
@@ -65,6 +74,9 @@ def run_master_audit():
 
     print(f"\n🤖 [AEO QUALITY (Engine 3)]")
     print(f"   • High Confidence     : {high_aeo} / {len(e3_reports)}")
+
+    print(f"\n🗺️  [MARKET BLUEPRINTS (Engine 4)]")
+    print(f"   • Published rows      : {len(e4_blueprints)}")
 
     print("\n" + "="*60)
     print("✅ AUDIT COMPLETE. System is Hardened and Production Ready.")

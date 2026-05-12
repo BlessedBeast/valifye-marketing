@@ -14,6 +14,7 @@ import {
 import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
 import { ComparisonCard } from '@/components/compare/ComparisonCard'
+import { MarketIntelligencePreview } from '@/components/home/MarketIntelligencePreview'
 import { createClient } from '@/utils/supabase/server'
 import { getComparisonList } from '@/lib/comparisonData'
 
@@ -179,6 +180,8 @@ export default async function HomePage() {
             </article>
           </div>
         </section>
+
+        <MarketIntelligencePreview />
 
         {/* FREE FORENSIC CALCULATORS */}
         <section className="space-y-6">
