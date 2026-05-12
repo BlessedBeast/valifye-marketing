@@ -7,11 +7,13 @@ import { X } from 'lucide-react'
 import type { SolutionReportScreenshot } from '@/lib/solutionData'
 import { cn } from '@/lib/utils'
 
-/** Matches typical report canvas / slate export background */
+/** Default: typical report canvas / slate export; override per product (e.g. Digital Battlefield) */
 const REPORT_CANVAS_BG = '#09090b'
 
 type Props = {
   shots: SolutionReportScreenshot[]
+  /** When set, letterbox / empty areas match this hex (e.g. align with digi.jpg edges). */
+  canvasBg?: string
 }
 
 function slideDomId(index: number): string {
@@ -47,10 +49,12 @@ function LightboxImage({ shot }: { shot: SolutionReportScreenshot }) {
 
 function DeliverableSlideMedia({
   shot,
-  priority
+  priority,
+  canvasBg = REPORT_CANVAS_BG
 }: {
   shot: SolutionReportScreenshot
   priority?: boolean
+  canvasBg?: string
 }) {
   const src = resolveSrc(shot)
   if (src) {
@@ -83,7 +87,7 @@ function DeliverableSlideMedia({
     return (
       <div
         className="flex w-full items-center justify-center px-6 py-12 text-center font-mono text-xs leading-relaxed text-zinc-500"
-        style={{ backgroundColor: REPORT_CANVAS_BG }}
+        style={{ backgroundColor: canvasBg }}
       >
         {shot.placeholder}
       </div>
@@ -93,14 +97,15 @@ function DeliverableSlideMedia({
   return (
     <div
       className="flex min-h-[120px] w-full items-center justify-center font-mono text-[10px] uppercase tracking-widest text-zinc-600"
-      style={{ backgroundColor: REPORT_CANVAS_BG }}
+      style={{ backgroundColor: canvasBg }}
     >
       No preview path
     </div>
   )
 }
 
-export function ForensicDeliverableGallery({ shots }: Props) {
+export function ForensicDeliverableGallery({ shots, canvasBg }: Props) {
+  const canvas = canvasBg ?? REPORT_CANVAS_BG
   const [lightbox, setLightbox] = useState<number | null>(null)
   const galleryTitleId = useId()
   const useSideNav = shots.length >= 5
@@ -227,7 +232,7 @@ export function ForensicDeliverableGallery({ shots }: Props) {
                   'transition-shadow duration-300 hover:shadow-[0_0_60px_-10px_rgba(16,185,129,0.22)]',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50'
                 )}
-                style={{ backgroundColor: REPORT_CANVAS_BG }}
+                style={{ backgroundColor: canvas }}
                 aria-label={`Open full size: ${shot.label}`}
               >
                 <span className="pointer-events-none absolute right-3 top-3 z-10 rounded border border-zinc-700/80 bg-zinc-950/90 px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
@@ -235,10 +240,14 @@ export function ForensicDeliverableGallery({ shots }: Props) {
                 </span>
                 <div
                   className="overflow-hidden"
-                  style={{ backgroundColor: REPORT_CANVAS_BG }}
+                  style={{ backgroundColor: canvas }}
                 >
                   <div className="origin-top transition-transform duration-500 ease-out will-change-transform group-hover:scale-[1.02]">
-                    <DeliverableSlideMedia shot={shot} priority={i === 0} />
+                    <DeliverableSlideMedia
+                      shot={shot}
+                      priority={i === 0}
+                      canvasBg={canvas}
+                    />
                   </div>
                 </div>
               </button>
@@ -296,7 +305,7 @@ export function ForensicDeliverableGallery({ shots }: Props) {
           >
             <div
               className="flex w-full items-center justify-center overflow-auto rounded-lg border border-zinc-700 p-2 shadow-[0_0_80px_-20px_rgba(16,185,129,0.25)] sm:p-4"
-              style={{ backgroundColor: REPORT_CANVAS_BG }}
+              style={{ backgroundColor: canvas }}
             >
               <LightboxImage shot={shots[lightbox]} />
             </div>

@@ -21,6 +21,7 @@ import { ValifyeButton } from '@/components/ui/ValifyeButton'
 import {
   getSolutionBySlug,
   type SolutionHeroVibe,
+  type SolutionProofPillar,
   type SolutionRiskFactor
 } from '@/lib/solutionData'
 import { cn } from '@/lib/utils'
@@ -32,6 +33,47 @@ const PATH_A_BLUEPRINT_IMAGE =
   'https://ivjcwulrmxqexytudhtu.supabase.co/storage/v1/object/public/comparison%20screenshot/90-day-roadmap.png'
 const PATH_B_RECOVERY_IMAGE =
   'https://ivjcwulrmxqexytudhtu.supabase.co/storage/v1/object/public/comparison%20screenshot/local-market-scout-pivot.png'
+/** Pre-Burn SaaS / Digital Battlefield — single-path pivot preview */
+const PATH_B_SAAS_PIVOT_IMAGE =
+  'https://ivjcwulrmxqexytudhtu.supabase.co/storage/v1/object/public/comparison%20screenshot/digi%20pivot.jpg'
+
+const PRE_BURN_SAAS_SLUG = 'pre-burn-saas-audit' as const
+
+const SAAS_FALLBACK_CTA = 'Run Digital Battlefield Audit — $18'
+
+/** Letterbox for report frames; keep in sync with Digital Battlefield exports (digi.jpg). */
+const DIGITAL_BATTLEFIELD_CANVAS_BG = '#09090b'
+
+const SAAS_PROOF_PILLARS: SolutionProofPillar[] = [
+  {
+    stat: '6.0',
+    unit: '/ 10',
+    label: 'Build With Caution Threshold',
+    context:
+      'Scores below 7.0 route capital through staged mitigation before scaling wedge exposure.'
+  },
+  {
+    stat: '3',
+    unit: '',
+    label: 'Pivot Vectors Generated',
+    context:
+      'Adjacent wedges ranked by defensibility, intent fit, and speed-to-learn.'
+  },
+  {
+    stat: '1,600',
+    unit: '',
+    label: 'Searches/mo analyzed',
+    context:
+      'Normalized clusters across primary and long-tail SERPs for the battlefield map.'
+  },
+  {
+    stat: '48',
+    unit: 'hours',
+    label: 'Report Turnaround',
+    context:
+      'From intake lock to cited Digital Battlefield appendix—tight loop, no roadmap theater.'
+  }
+]
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -108,12 +150,21 @@ export default async function SolutionPillarPage({ params }: Props) {
   if (!solution) notFound()
 
   const vibe = vibeClasses(solution.heroVibe)
+  const isPreBurnSaas = solution.slug === PRE_BURN_SAAS_SLUG
   const trimmedCta =
     solution.ctaText != null && solution.ctaText.trim().length > 0
       ? solution.ctaText.trim()
       : ''
   const ctaLabel =
-    trimmedCta.length > 0 ? trimmedCta : 'Run Forensic Audit — $49'
+    trimmedCta.length > 0
+      ? trimmedCta
+      : isPreBurnSaas
+        ? SAAS_FALLBACK_CTA
+        : 'Run Forensic Audit — $49'
+
+  const thickEvidence = isPreBurnSaas
+    ? { ...solution.evidenceImages, proofPillars: SAAS_PROOF_PILLARS }
+    : solution.evidenceImages
 
   return (
     <MarketingShell className="max-w-[1180px] gap-16">
@@ -204,10 +255,13 @@ export default async function SolutionPillarPage({ params }: Props) {
         {solution.evidenceImages.reportScreenshots.length > 0 && (
           <ForensicDeliverableGallery
             shots={solution.evidenceImages.reportScreenshots}
+            canvasBg={
+              isPreBurnSaas ? DIGITAL_BATTLEFIELD_CANVAS_BG : undefined
+            }
           />
         )}
 
-        <SolutionThickEvidenceSections evidence={solution.evidenceImages} />
+        <SolutionThickEvidenceSections evidence={thickEvidence} />
 
         <section
           aria-label="Execution versus pivot outcomes"
@@ -218,39 +272,61 @@ export default async function SolutionPillarPage({ params }: Props) {
               Dynamic outcome
             </p>
             <h2 className="font-serif text-2xl font-black tracking-tight text-zinc-50 md:text-3xl">
-              Two paths. One audit. Capital preserved either way.
+              {isPreBurnSaas
+                ? 'The Strategic Pivot: Your Capital Recovery Plan.'
+                : 'Two paths. One audit. Capital preserved either way.'}
             </h2>
             <p className="max-w-2xl text-sm leading-relaxed text-zinc-500">
-              Valifye does not stop at a verdict—we hand you the next artifact
-              your situation demands.
+              {isPreBurnSaas
+                ? 'When the wedge thesis fails intent and SERP tests, the Digital Battlefield Report hands you three ranked pivot vectors—capital preserved without 90-day roadmap theater.'
+                : 'Valifye does not stop at a verdict—we hand you the next artifact your situation demands.'}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10">
-            <OutcomePathPanel
-              path="A"
-              title="The Execution Arsenal"
-              icon={Target}
-              accent="emerald"
-              evidenceTone="blueprint"
-              imageSrc={PATH_A_BLUEPRINT_IMAGE}
-              imageAlt="90-day execution roadmap and success blueprint deliverable"
-              body="If your audit passes, we hand you the 90-Day Roadmap, Mom Test Scripts, and Customer Finder—so you ship with discipline instead of hope."
-              previewLines={[
-                '90-DAY ROADMAP · v2',
-                'MOM TEST · interview scripts',
-                'CUSTOMER FINDER · signal map'
-              ]}
-            />
+          <div
+            className={cn(
+              'grid gap-6 lg:gap-10',
+              isPreBurnSaas
+                ? 'mx-auto w-full max-w-4xl grid-cols-1 justify-items-stretch'
+                : 'grid-cols-1 lg:grid-cols-2'
+            )}
+          >
+            {!isPreBurnSaas && (
+              <OutcomePathPanel
+                path="A"
+                title="The Execution Arsenal"
+                icon={Target}
+                accent="emerald"
+                evidenceTone="blueprint"
+                imageSrc={PATH_A_BLUEPRINT_IMAGE}
+                imageAlt="90-day execution roadmap and success blueprint deliverable"
+                body="If your audit passes, we hand you the 90-Day Roadmap, Mom Test Scripts, and Customer Finder—so you ship with discipline instead of hope."
+                previewLines={[
+                  '90-DAY ROADMAP · v2',
+                  'MOM TEST · interview scripts',
+                  'CUSTOMER FINDER · signal map'
+                ]}
+              />
+            )}
             <OutcomePathPanel
               path="B"
               title="The Pivot Playbook"
               icon={GitBranch}
               accent="cyan"
               evidenceTone="recovery"
-              imageSrc={PATH_B_RECOVERY_IMAGE}
-              imageAlt="Local market scout pivot playbook for capital recovery"
-              body="If the audit fails, we provide three adjacent Blue Ocean pivots engineered to salvage momentum and protect remaining capital."
+              imageSrc={
+                isPreBurnSaas ? PATH_B_SAAS_PIVOT_IMAGE : PATH_B_RECOVERY_IMAGE
+              }
+              imageAlt={
+                isPreBurnSaas
+                  ? 'Digital Battlefield pivot vectors and capital recovery plan'
+                  : 'Local market scout pivot playbook for capital recovery'
+              }
+              body={
+                isPreBurnSaas
+                  ? 'If the audit fails against your wedge thesis, you receive three adjacent pivot vectors backed by search-demand proof—so you re-aim before burn accelerates.'
+                  : 'If the audit fails, we provide three adjacent Blue Ocean pivots engineered to salvage momentum and protect remaining capital.'
+              }
               previewLines={[
                 'PIVOT VECTOR 01 · adjacency',
                 'PIVOT VECTOR 02 · wedge',
