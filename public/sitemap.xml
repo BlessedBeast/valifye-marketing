@@ -14411,7 +14411,7 @@
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
-<!-- Engine 4c: Static marketing -> /local-market-scout, /compare, /tools/delivery-calculator -->
+<!-- Engine 4c: Static marketing -> /local-market-scout, /compare -->
   <url>
     <loc>https://valifye.com/local-market-scout</loc>
     <changefreq>weekly</changefreq>
@@ -14422,10 +14422,41 @@
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
+<!-- Engine 4c2: Hub indexes + tool routes -> /solutions, /showcase, /tools/* -->
+  <url>
+    <loc>https://valifye.com/solutions</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/showcase</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/tools</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
   <url>
     <loc>https://valifye.com/tools/delivery-calculator</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/tools/sba-loan-scanner</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/tools/franchise-profit-simulator</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/tools/uk-vat-cliff-scanner</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
 <!-- Engine 4d: Comparison engine -> /compare/{slug} (priority 0.8) -->
   <url>
