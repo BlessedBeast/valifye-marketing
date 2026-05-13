@@ -87,26 +87,27 @@ function scorePresentation(score: number | null): {
       text: 'text-zinc-500'
     }
   }
-  if (score >= 70) {
+  // >80 emerald · 60–80 amber · <60 rose
+  if (score > 80) {
     return {
       display: String(score),
-      ring: 'border-emerald-500/70',
-      fill: 'bg-emerald-500/[0.08]',
+      ring: 'border-emerald-500/75',
+      fill: 'bg-emerald-500/[0.1]',
       text: 'text-emerald-200'
     }
   }
-  if (score >= 40) {
+  if (score >= 60) {
     return {
       display: String(score),
-      ring: 'border-amber-500/65',
-      fill: 'bg-amber-500/[0.07]',
+      ring: 'border-amber-500/70',
+      fill: 'bg-amber-500/[0.08]',
       text: 'text-amber-100'
     }
   }
   return {
     display: String(score),
-    ring: 'border-rose-500/60',
-    fill: 'bg-rose-500/[0.07]',
+    ring: 'border-rose-500/65',
+    fill: 'bg-rose-500/[0.08]',
     text: 'text-rose-100'
   }
 }
@@ -190,44 +191,63 @@ export async function MarketIntelligencePreview() {
                 <li key={`${row.region_key}|${row.sector}|${row.business_model}`}>
                   <article
                     className={cn(
-                      'flex h-full flex-col gap-4 rounded-lg border border-zinc-800/90 bg-zinc-950/60 p-5',
-                      'shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]'
+                      'flex h-[440px] flex-col rounded-lg border-[0.5px] border-emerald-500/45 bg-zinc-950/60 p-6',
+                      'shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_0_40px_-16px_rgba(16,185,129,0.12)]'
                     )}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 space-y-1">
-                        <p className="flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-widest text-zinc-500">
-                          <MapPin className="h-3 w-3 shrink-0 text-amber-500/80" aria-hidden />
-                          <span className="truncate">{row.region_key}</span>
-                        </p>
-                        <p className="font-mono text-[10px] text-zinc-600">
-                          <span className="text-zinc-500">{row.sector}</span>
-                          <span className="text-zinc-700"> · </span>
-                          <span className="text-zinc-500">{row.business_model}</span>
-                        </p>
+                    <div className="flex shrink-0 items-start gap-4">
+                      <div className="min-w-0 flex-1 space-y-3 pr-1">
+                        <div>
+                          <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
+                            Location
+                          </p>
+                          <p className="mt-1 flex items-center gap-1.5 font-mono text-[11px] font-medium leading-snug text-zinc-200">
+                            <MapPin className="h-3 w-3 shrink-0 text-amber-500/85" aria-hidden />
+                            <span className="truncate" title={row.region_key}>
+                              {row.region_key}
+                            </span>
+                          </p>
+                        </div>
+                        <div>
+                          <p className="font-mono text-[9px] font-medium uppercase tracking-[0.2em] text-zinc-500">
+                            Business model
+                          </p>
+                          <p className="mt-1 font-mono text-[11px] leading-snug text-zinc-400">
+                            <span className="font-normal text-zinc-500">{row.sector}</span>
+                            <span className="text-zinc-700"> · </span>
+                            <span className="text-zinc-300">{row.business_model.replace(/_/g, ' ')}</span>
+                          </p>
+                        </div>
                       </div>
                       <div
                         className={cn(
-                          'flex h-28 w-28 shrink-0 flex-col items-center justify-center rounded-full border-[3px] font-mono',
+                          'flex h-[7.25rem] w-[7.25rem] shrink-0 items-center justify-center rounded-full border-[3px] font-mono',
                           tone.ring,
                           tone.fill
                         )}
                         aria-label={score != null ? `Verdict score ${score} out of 100` : 'Verdict score unavailable'}
                       >
-                        <span className={cn('text-3xl font-black tabular-nums leading-none', tone.text)}>
-                          {tone.display}
-                        </span>
-                        <span className="mt-0.5 font-mono text-[8px] font-bold uppercase tracking-widest text-zinc-500">
-                          /100
-                        </span>
+                        <div className="flex flex-col items-center justify-center gap-0.5 px-2 text-center">
+                          <span
+                            className={cn(
+                              'text-3xl font-black tabular-nums leading-none tracking-tight',
+                              tone.text
+                            )}
+                          >
+                            {tone.display}
+                          </span>
+                          <span className="font-mono text-[8px] font-bold uppercase tracking-widest text-zinc-500">
+                            /100
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    <h3 className="line-clamp-2 font-serif text-sm font-semibold leading-snug text-zinc-100">
+                    <h3 className="mt-5 line-clamp-2 shrink-0 font-serif text-sm font-semibold leading-snug text-zinc-100">
                       {row.meta_title}
                     </h3>
                     <p
-                      className="min-h-[4.5rem] flex-1 font-serif text-[13px] leading-relaxed text-zinc-400"
+                      className="mt-3 min-h-0 flex-1 overflow-hidden font-serif text-[13px] leading-relaxed text-zinc-400 line-clamp-5"
                       title={aeo.truncated ? aeoRaw : undefined}
                     >
                       {aeo.text}
@@ -236,7 +256,7 @@ export async function MarketIntelligencePreview() {
                     <Link
                       href={href}
                       className={cn(
-                        'inline-flex w-full items-center justify-center gap-2 border border-zinc-700 bg-zinc-900/80 py-2.5',
+                        'mt-auto inline-flex w-full shrink-0 items-center justify-center gap-2 border border-zinc-700 bg-zinc-900/80 py-2.5',
                         'font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-200 transition-colors',
                         'hover:border-amber-500/40 hover:bg-zinc-900 hover:text-amber-100',
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50'

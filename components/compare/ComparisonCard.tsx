@@ -62,13 +62,14 @@ export function ComparisonCard({ report, className }: ComparisonCardProps) {
   const tier = TIER_META[report.tier]
   const TierIcon = tier.Icon
   const hasEvidence = Boolean(report.competitorScreenshot)
+  const alternativeTags = [tier.label, ...report.categories.slice(0, 2)]
 
   return (
     <Link
       href={`/compare/${report.slug}`}
       aria-label={`View the Valifye vs. ${report.competitorName} forensic takedown`}
       className={cn(
-        'group relative flex h-full flex-col overflow-hidden rounded-lg border border-zinc-800 bg-slate-900/40 p-6 transition-all duration-200',
+        'group relative flex h-full flex-col overflow-hidden rounded-lg border border-zinc-800 bg-slate-900/40 p-6 pt-7 transition-all duration-200',
         'hover:-translate-y-0.5 hover:border-zinc-700',
         'hover:shadow-[0_0_40px_-18px_rgba(16,185,129,0.45)]',
         className
@@ -79,7 +80,7 @@ export function ComparisonCard({ report, className }: ComparisonCardProps) {
         aria-hidden
       />
 
-      <header className="relative flex items-start justify-between gap-3">
+      <header className="relative flex min-h-[6.5rem] flex-col justify-start gap-3">
         <div className="flex flex-col gap-1.5">
           <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-zinc-500">
             Valifye vs.
@@ -88,15 +89,22 @@ export function ComparisonCard({ report, className }: ComparisonCardProps) {
             {report.competitorName}
           </h3>
         </div>
-        <span
-          className={cn(
-            'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.22em]',
-            tier.badge
-          )}
-        >
-          <TierIcon className="h-3 w-3" />
-          {tier.label}
-        </span>
+        <div className="flex flex-wrap gap-2">
+          {alternativeTags.map((tag, idx) => (
+            <span
+              key={`${tag}-${idx}`}
+              className={cn(
+                'inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.18em]',
+                idx === 0
+                  ? 'border-emerald-500/40 bg-zinc-900 text-emerald-300'
+                  : 'border-emerald-500/25 bg-zinc-900 text-zinc-300'
+              )}
+            >
+              {idx === 0 ? <TierIcon className="h-3 w-3" /> : null}
+              {tag}
+            </span>
+          ))}
+        </div>
       </header>
 
       <div className="relative mt-5 flex flex-1 flex-col">

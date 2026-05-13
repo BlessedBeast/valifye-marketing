@@ -114,5 +114,32 @@
     pointer-events: none;
     animation: scan 4s linear infinite;
   }
+
+  /* Emerald scanline sweep for hero CTAs (hover-only; driven by Tailwind group-hover) */
+  @keyframes forensic-hero-scan {
+    0% {
+      transform: translateY(-120%);
+      opacity: 0;
+    }
+    12% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(520%);
+      opacity: 0;
+    }
+  }
+
+  .animate-forensic-hero-scan {
+    animation: forensic-hero-scan 1.15s linear infinite;
+  }
+
+  /* Subtle forensic grid (equivalent to bg-grid-white/[0.02]) */
+  .bg-grid-white-02 {
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.02) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.02) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
 }
 /* stylelint-enable at-rule-no-unknown */
