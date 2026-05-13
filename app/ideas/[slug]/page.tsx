@@ -1,5 +1,6 @@
 export const revalidate = 86400
 
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, MapPin } from 'lucide-react'
@@ -12,9 +13,28 @@ import { CityHubSidebar } from '@/components/market/CityHubSidebar'
 import { AppConversionBridge } from '@/components/market/AppConversionBridge'
 import { CityIntelligenceBridge } from '@/components/CityIntelligenceBridge'
 import { getIdeaBySlug } from '@/lib/marketData'
+import { buildEngineMetadata } from '@/lib/seo'
 import { createClient } from '@/utils/supabase/server'
 
 type Props = { params: Promise<{ slug: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params
+  const idea = await getIdeaBySlug(slug)
+  if (!idea) {
+    return { title: 'Market ideas | Valifye' }
+  }
+  const title = `${idea.niche} in ${idea.city} — Market Blueprint | Valifye`
+  const description = idea.market_narrative
+    ? idea.market_narrative.substring(0, 160)
+    : `Forensic market analysis for ${idea.niche} in ${idea.city}.`
+  return buildEngineMetadata({
+    title,
+    description,
+    slug: idea.slug,
+    routePrefix: '/ideas'
+  })
+}
 
 const LOCAL_INTELLIGENCE_CITIES = ['Austin', 'Miami', 'London', 'Denver', 'Seattle', 'Nashville'] as const
 

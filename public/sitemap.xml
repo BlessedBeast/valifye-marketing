@@ -1,17 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://valifye.com</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://valifye.com/ideas</loc>
-    <lastmod>2026-04-13</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
+<!-- === Valifye sitemap: namespaces are disjoint by path prefix === -->
+<!-- Engine 1: Idea blueprints -> /ideas/{slug} -->
   <url>
     <loc>https://valifye.com/ideas/ai-procurement-for-singapore-f-b-supply-chains-in-singapore</loc>
     <changefreq>weekly</changefreq>
@@ -2424,6 +2414,11 @@
   </url>
   <url>
     <loc>https://valifye.com/ideas/d2c-bc-origin-sustainable-yoga-apparel-in-vancouver</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/ideas/dubai-verify-ai-in-dubai</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -5578,7 +5573,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://valifye.com/ideas/legal-contract-agency-to-automated-nda-generator-in-cincinnati</loc>
+    <loc>https://valifye.com/ideas/legal-contract-agency-to-automated-nda-generator-in-clinicinnati</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -5748,7 +5743,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://valifye.com/ideas/hot-air-balloon-tandem-passenger-weight-calculator-in-cincinnati</loc>
+    <loc>https://valifye.com/ideas/hot-air-balloon-tandem-passenger-weight-calculator-in-clinicinnati</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -7867,6 +7862,7 @@
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+<!-- Engine 2: Forensic verdicts -> /reports/{slug} -->
   <url>
     <loc>https://valifye.com/reports/mayura---ai-bhagavad-gita-guide-forensic-report</loc>
     <changefreq>weekly</changefreq>
@@ -9982,6 +9978,7 @@
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+<!-- Engine 3: Local SEO dossiers -> /local-reports/report/{slug} -->
   <url>
     <loc>https://valifye.com/local-reports/report/market-audit-boutique-coffee-shop-in-berlin-de</loc>
     <changefreq>weekly</changefreq>
@@ -13862,544 +13859,660 @@
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
+<!-- Engine 4: Market blueprints -> /markets/{region}/{sector}/{model} -->
   <url>
-    <loc>https://valifye.com/reports/industry/fintech-b2b-saas</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-fl-miami/fitness/boutique-pilates-studio</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/reports/industry/sustainability-energy</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-co-denver/real-estate-services/modular-adu-builder-consultancy</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/reports/industry/iot-hardware</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ut-provo/real-estate-services/modular-adu-builder-consultancy</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/reports/industry/artificial-intelligence</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ut-provo/health-wellness/medical-weight-loss-aesthetic-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/reports/industry/emerging-tech</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tx-austin/health-wellness/med-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/reports/industry/healthtech-bio</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tx-austin/health-wellness/iv-therapy-lounge</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/stuttgart</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tx-austin/home-services/hvac-dispatch-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/cape-town</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tx-austin/fitness/boutique-pilates-studio</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/buenos-aires</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tx-austin/food-beverage/specialty-coffee-roaster</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/perth</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-fl-miami/health-wellness/med-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/san-jose</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-fl-miami/health-wellness/iv-therapy-lounge</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/rome</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-fl-miami/home-services/hvac-dispatch-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/basel</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-fl-miami/food-beverage/specialty-coffee-roaster</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/krakow</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-co-denver/health-wellness/med-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/jaipur</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-co-denver/health-wellness/iv-therapy-lounge</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/austin</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-co-denver/home-services/hvac-dispatch-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/cebu-city</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-co-denver/fitness/boutique-pilates-studio</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/cairo</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-co-denver/food-beverage/specialty-coffee-roaster</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/palo-alto</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ut-provo/health-wellness/med-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/auckland</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ut-provo/health-wellness/iv-therapy-lounge</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/casablanca</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ut-provo/home-services/hvac-dispatch-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/antalya</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ut-provo/fitness/boutique-pilates-studio</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/tokyo</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ut-provo/food-beverage/specialty-coffee-roaster</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/nagpur</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/food-beverage/specialty-coffee-roaster</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/dublin</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/health-wellness/med-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/reykjavik</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/health-wellness/iv-therapy-lounge</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/pune</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/home-services/hvac-dispatch-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/hong-kong</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/fitness/boutique-pilates-studio</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/istanbul</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tn-nashville/health-wellness/med-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/ahmedabad</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tn-nashville/health-wellness/iv-therapy-lounge</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/chandigarh</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tn-nashville/home-services/hvac-dispatch-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/montreal</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tn-nashville/fitness/boutique-pilates-studio</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/hyderabad</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tn-nashville/food-beverage/specialty-coffee-roaster</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/varanasi</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/health-wellness/med-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/rotterdam</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/health-wellness/iv-therapy-lounge</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/chennai</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/home-services/hvac-dispatch-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/mexico-city</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/fitness/boutique-pilates-studio</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/marseille</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/food-beverage/specialty-coffee-roaster</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/mumbai</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/health-wellness/med-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/delhi</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/health-wellness/iv-therapy-lounge</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/tulum</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/home-services/hvac-dispatch-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/lagos</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/fitness/boutique-pilates-studio</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/hanoi</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/food-beverage/specialty-coffee-roaster</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/melbourne</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/health-wellness/med-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/patna</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/health-wellness/iv-therapy-lounge</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/des-moines</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/home-services/hvac-dispatch-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/seattle</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/food-beverage/specialty-coffee-roaster</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/surat</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/fitness/boutique-pilates-studio</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/nairobi</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-oh-columbus/health-wellness/med-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/singapore</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-oh-columbus/health-wellness/iv-therapy-lounge</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/london</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-oh-columbus/home-services/hvac-dispatch-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/indore</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-oh-columbus/fitness/boutique-pilates-studio</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/medellin</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-oh-columbus/food-beverage/specialty-coffee-roaster</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/porto</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tx-austin/real-estate-services/modular-adu-builder-consultancy</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/manchester</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tx-austin/services/automated-express-car-wash-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/coimbatore</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-fl-miami/real-estate-services/modular-adu-builder-consultancy</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/chiang-mai</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-fl-miami/home-services/commercial-hvac-refrigeration-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/sydney</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-co-denver/health-wellness/longevity-center-biohacking-lab</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/lucknow</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-co-denver/home-services/commercial-hvac-refrigeration-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/stockholm</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ut-provo/health-wellness/longevity-center-biohacking-lab</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/lima</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ut-provo/services/automated-express-car-wash-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/athens</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/health-wellness/longevity-center-biohacking-lab</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/portland</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/real-estate-services/modular-adu-builder-consultancy</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/barcelona</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tn-nashville/health-wellness/longevity-center-biohacking-lab</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/brooklyn</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/home-services/commercial-hvac-refrigeration-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/guwahati</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tn-nashville/health-wellness/medical-weight-loss-aesthetic-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/lisbon</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tn-nashville/services/automated-express-car-wash-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/monterrey</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/real-estate-services/modular-adu-builder-consultancy</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/houston</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/health-wellness/medical-weight-loss-aesthetic-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/nashik</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/home-services/commercial-hvac-refrigeration-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/denver</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/health-wellness/longevity-center-biohacking-lab</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/riyadh</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/real-estate-services/modular-adu-builder-consultancy</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/amsterdam</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/health-wellness/medical-weight-loss-aesthetic-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/ho-chi-minh-city</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/health-wellness/longevity-center-biohacking-lab</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/nashville</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/real-estate-services/modular-adu-builder-consultancy</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/vancouver</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-oh-columbus/home-services/commercial-hvac-refrigeration-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/chicago</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/services/automated-express-car-wash-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/san-antonio</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-oh-columbus/health-wellness/longevity-center-biohacking-lab</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/phoenix</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tx-austin/health-wellness/longevity-center-biohacking-lab</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/bengaluru</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tx-austin/health-wellness/medical-weight-loss-aesthetic-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/bangkok</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tx-austin/home-services/commercial-hvac-refrigeration-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/los-angeles</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-fl-miami/health-wellness/longevity-center-biohacking-lab</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/fukuoka</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-fl-miami/health-wellness/medical-weight-loss-aesthetic-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/accra</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-fl-miami/services/automated-express-car-wash-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/cleveland</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-co-denver/health-wellness/medical-weight-loss-aesthetic-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/guadalajara</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-oh-columbus/real-estate-services/modular-adu-builder-consultancy</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/berlin</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-co-denver/services/automated-express-car-wash-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/kochi</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ut-provo/home-services/commercial-hvac-refrigeration-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/dubai</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/health-wellness/medical-weight-loss-aesthetic-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/bhopal</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/services/automated-express-car-wash-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/gurugram</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tn-nashville/real-estate-services/modular-adu-builder-consultancy</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/bogota</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-tn-nashville/home-services/commercial-hvac-refrigeration-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/sao-paulo</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/health-wellness/longevity-center-biohacking-lab</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/seoul</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/services/automated-express-car-wash-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/bali</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/home-services/commercial-hvac-refrigeration-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/birmingham</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/services/automated-express-car-wash-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/glasgow</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/health-wellness/medical-weight-loss-aesthetic-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/toronto</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/home-services/commercial-hvac-refrigeration-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/new-york-city</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-oh-columbus/health-wellness/medical-weight-loss-aesthetic-spa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/bhubaneswar</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/usa-oh-columbus/services/automated-express-car-wash-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
+<!-- Engine 4b: Market state hubs -> /markets/state/{state_code} (priority 0.95) -->
   <url>
-    <loc>https://valifye.com/local-reports/city/paris</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/state/az</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/miami</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/state/co</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/las-vegas</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://valifye.com/markets/state/fl</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/state/ga</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/state/nc</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/state/nv</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/state/oh</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/state/tn</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/state/tx</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/state/ut</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+<!-- Engine 4c: Static marketing -> /local-market-scout, /compare, /tools/delivery-calculator -->
+  <url>
+    <loc>https://valifye.com/local-market-scout</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/edinburgh</loc>
-    <changefreq>daily</changefreq>
+    <loc>https://valifye.com/compare</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/tools/delivery-calculator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+<!-- Engine 4d: Comparison engine -> /compare/{slug} (priority 0.8) -->
+  <url>
+    <loc>https://valifye.com/compare/valifye-vs-validatorai</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+<!-- Engine 5: Solution pillars -> /solutions/{slug} (priority 0.9) -->
+<!-- Engine 6: Marketing showcase -> /showcase/{slug} (priority 0.85) -->
+  <url>
+    <loc>https://valifye.com/solutions/pre-burn-saas-audit</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/belo-horizonte</loc>
-    <changefreq>daily</changefreq>
+    <loc>https://valifye.com/solutions/before-signing-lease</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/copenhagen</loc>
-    <changefreq>daily</changefreq>
+    <loc>https://valifye.com/solutions/franchise-due-diligence-audit</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/san-francisco</loc>
-    <changefreq>daily</changefreq>
+    <loc>https://valifye.com/solutions/acquire-com-asset-audit</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://valifye.com/local-reports/city/kolhapur</loc>
-    <changefreq>daily</changefreq>
+    <loc>https://valifye.com/solutions/dtc-inventory-burn-test</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/showcase/denver-capitol-hill-coffee-shop-forensic-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/showcase/los-angeles-healthy-meal-prep-viability-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/showcase/tampa-senior-wellness-companionship-market-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/showcase/mumbai-surrogacy-ivf-agency-market-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/showcase/scottsdale-mobile-iv-hydration-forensic-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/showcase/miami-brickell-glp1-longevity-clinic-execution-roadmap</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/showcase/phoenix-commercial-solar-cleaning-drone-inspection-playbook</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/showcase/shoreditch-cloud-kitchen-pivot-recovery-plan</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/showcase/seattle-automated-car-wash-pivot-strategy</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/showcase/auditflow-ai-saas-spend-management-forensic-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/showcase/aws-cost-guardian-saas-pivot-playbook</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
   </url>
 </urlset>

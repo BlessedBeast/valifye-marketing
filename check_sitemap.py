@@ -1,7 +1,6 @@
 import os
 import re
 import sys
-from urllib.parse import quote
 
 from dotenv import load_dotenv
 from supabase import create_client
@@ -22,14 +21,10 @@ def slugify_part(value: str) -> str:
     return s or "unknown"
 
 
-def encode_market_path_segment(raw: str) -> str:
-    return quote(slugify_part(raw), safe="")
-
-
 def markets_loc(region_key: str, sector: str, business_model: str) -> str:
-    r = encode_market_path_segment(region_key)
-    s = encode_market_path_segment(sector)
-    m = encode_market_path_segment(business_model)
+    r = slugify_part(str(region_key))
+    s = slugify_part(str(sector))
+    m = slugify_part(str(business_model))
     return f"{BASE}/markets/{r}/{s}/{m}"
 
 
@@ -60,6 +55,8 @@ def db_expected_urls() -> dict[str, set[str]]:
         .data
         or []
     )
+    e5 = supabase.table("solution_pillars").select("slug").execute().data or []
+    e6 = supabase.table("marketing_showcase").select("slug").execute().data or []
 
     ideas: set[str] = set()
     for r in e1:
@@ -85,11 +82,25 @@ def db_expected_urls() -> dict[str, set[str]]:
         if rk and sec and bm:
             markets.add(markets_loc(str(rk), str(sec), str(bm)))
 
+    solutions: set[str] = set()
+    for r in e5:
+        slug = r.get("slug")
+        if slug and "/" not in str(slug):
+            solutions.add(f"{BASE}/solutions/{slug}")
+
+    showcase: set[str] = set()
+    for r in e6:
+        slug = r.get("slug")
+        if slug and "/" not in str(slug):
+            showcase.add(f"{BASE}/showcase/{slug}")
+
     return {
         "ideas": ideas,
         "reports": reports,
         "local_reports": local_reports,
         "markets": markets,
+        "solutions": solutions,
+        "showcase": showcase,
     }
 
 
@@ -109,7 +120,7 @@ def run_sitemap_file_audit():
     print("📡 VALIFYE SITEMAP VALIDATOR (multi-namespace)")
     print("=" * 60)
 
-    sitemap_path = "new_sitemap.txt"
+    sitemap_path = os.path.join("public", "sitemap.xml")
     if not os.path.exists(sitemap_path):
         print(f"❌ ERROR: '{sitemap_path}' not found.")
         print("💡 Run `python scripts/generate_master_sitemap.py` first.")

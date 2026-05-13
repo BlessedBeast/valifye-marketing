@@ -10,14 +10,18 @@ import {
 } from 'lucide-react'
 
 import { MarketingShell } from '@/components/MarketingShell'
+import {
+  formatSectorLabel,
+  parseUsaRegionKeyForBreadcrumb
+} from '@/lib/marketsStateHub'
+import { buildCanonical } from '@/lib/seo'
+import { buildMarketPath } from '@/lib/slugify'
 import { createClient } from '@/utils/supabase/server'
 import { cn } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 export const dynamicParams = true
 export const revalidate = 0
-
-const SITE_URL = 'https://valifye.com'
 
 type ExecutiveVerdict = {
   score: number
@@ -105,43 +109,28 @@ function segmentDecode(s: string): string {
   return decodeURIComponent(s ?? '').trim()
 }
 
-function buildSlugFromParams(region: string, sector: string, model: string): string {
-  return [region, sector, model]
-    .map(segmentDecode)
-    .map((p) => p.toLowerCase())
-    .join('-')
-}
-
 async function fetchPublishedBlueprint(
   region: string,
   sector: string,
   model: string
 ): Promise<LocalBusinessBlueprintRow | null> {
   const supabase = createClient()
-  const slug = buildSlugFromParams(region, sector, model)
-  const rk = segmentDecode(region)
-  const sec = segmentDecode(sector)
-  const mod = segmentDecode(model)
 
-  const bySlug = await supabase
+  // Reconstruct the full dashed slug from the URL parameters
+  // This matches the format stored in our 'slug' column
+  const fullSlug = [region, sector, model]
+    .map((seg) => segmentDecode(seg).toLowerCase())
+    .join('-')
+
+  const { data, error } = await supabase
     .from('local_business_blueprints')
     .select('*')
+    .eq('slug', fullSlug)
     .eq('status', 'published')
-    .eq('slug', slug)
-    .maybeSingle<LocalBusinessBlueprintRow>()
-  if (bySlug.data && !bySlug.error) return bySlug.data
-
-  const byKeys = await supabase
-    .from('local_business_blueprints')
-    .select('*')
-    .eq('status', 'published')
-    .ilike('region_key', rk)
-    .ilike('sector', sec)
-    .ilike('business_model', mod)
     .maybeSingle<LocalBusinessBlueprintRow>()
 
-  if (byKeys.data && !byKeys.error) return byKeys.data
-  return null
+  if (error || !data) return null
+  return data
 }
 
 function scoreTone(score: number): {
@@ -176,7 +165,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!row) {
     return { title: 'Market blueprint | Valifye' }
   }
-  const canonical = `${SITE_URL}/markets/${encodeURIComponent(segmentDecode(region))}/${encodeURIComponent(segmentDecode(sector))}/${encodeURIComponent(segmentDecode(model))}`
+  const canonical = buildCanonical(
+    buildMarketPath(row.region_key, row.sector, row.business_model)
+  )
   return {
     title: row.meta_title,
     description: row.meta_description ?? row.meta_title,
@@ -212,10 +203,43 @@ export default async function MarketBlueprintPage({ params }: Props) {
     ? Math.max(0, Math.min(100, Math.round(verdict.score)))
     : 0
   const tone = scoreTone(score)
+  const regionCrumb = parseUsaRegionKeyForBreadcrumb(row.region_key)
 
   return (
     <MarketingShell className="max-w-4xl gap-12 px-4 py-10 pb-28 md:px-8 md:py-14 md:pb-32">
       <article className="mx-auto w-full max-w-4xl space-y-12 rounded-xl border border-zinc-800/90 bg-[#09090b] p-6 shadow-[0_0_80px_-30px_rgba(245,158,11,0.12)] md:p-10">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500"
+        >
+          <Link href="/markets" className="text-zinc-400 hover:text-amber-500/90">
+            Markets
+          </Link>
+          <span className="text-zinc-700">/</span>
+          {regionCrumb ? (
+            <>
+              <Link
+                href={`/markets/state/${regionCrumb.stateSlug}`}
+                className="text-zinc-400 hover:text-amber-500/90"
+              >
+                {regionCrumb.stateName}
+              </Link>
+              <span className="text-zinc-700">/</span>
+              <span className="text-zinc-400">{regionCrumb.cityLabel}</span>
+              <span className="text-zinc-700">/</span>
+              <span className="text-zinc-300">{formatSectorLabel(row.sector)}</span>
+            </>
+          ) : (
+            <>
+              <span className="max-w-[14rem] truncate text-zinc-400" title={row.region_key}>
+                {row.region_key}
+              </span>
+              <span className="text-zinc-700">/</span>
+              <span className="text-zinc-300">{formatSectorLabel(row.sector)}</span>
+            </>
+          )}
+        </nav>
+
         <header className="space-y-8 border-b border-zinc-800/80 pb-10">
           <p className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-zinc-500">
             <Crosshair className="h-3.5 w-3.5 text-amber-500/90" aria-hidden />

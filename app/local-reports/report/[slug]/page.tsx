@@ -12,6 +12,7 @@ import {
 import { createClient } from '@/utils/supabase/server'
 import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
+import { buildCanonical, buildEngineMetadata } from '@/lib/seo'
 
 const DeliveryMarginCalculator = NextDynamic(
   () =>
@@ -64,34 +65,39 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-
   const cleanSlug = decodeURIComponent(slug)
-
-  // Debug logging for slug resolution in metadata
-  console.log('DEBUG[metadata]: Fetching slug for local-report page:', slug, 'clean:', cleanSlug)
-
   const supabase = createClient()
 
   const { data } = await supabase
     .from('public_seo_reports')
-    .select('idea_title, location_label')
+    .select('idea_title, location_label, slug, meta_description')
     .eq('slug', cleanSlug)
-    .maybeSingle<{ idea_title: string | null; location_label: string | null }>()
+    .maybeSingle<{
+      slug: string
+      idea_title: string | null
+      location_label: string | null
+      meta_description: string | null
+    }>()
 
-  const idea = data?.idea_title || 'Local Market Audit'
-  const location = data?.location_label || ''
-
-  const titleLocation =
-    location && location.trim().length > 0 ? ` in ${location.trim()}` : ''
-
-  const title = `${idea}${titleLocation} — Forensic Market Audit | Valifye`
-
-  const description = `Detailed 10-page market intelligence report for ${idea}${titleLocation}. Analysis of competitors, unit economics, and local 2026 regulations.`
-
-  return {
-    title,
-    description
+  if (!data) {
+    return { title: 'Local market audit | Valifye' }
   }
+
+  const ideaTitle = data.idea_title?.trim() || 'Local market'
+  const locationLabel = data.location_label?.trim() || ''
+  const title = locationLabel
+    ? `${ideaTitle} in ${locationLabel} | Valifye Local Intelligence`
+    : `${ideaTitle} | Valifye Local Intelligence`
+  const description =
+    data.meta_description?.trim() ||
+    `Local market analysis for ${ideaTitle}${locationLabel ? ` in ${locationLabel}` : ''}.`
+
+  return buildEngineMetadata({
+    title,
+    description,
+    slug: data.slug,
+    routePrefix: '/local-reports/report'
+  })
 }
 
 // --- FORENSIC PARSER COMPONENT ---
@@ -192,9 +198,6 @@ export default async function LocalSeoReportPage({ params }: Props) {
   const { slug } = await params
   const cleanSlug = decodeURIComponent(slug)
   const supabase = createClient()
-
-  // Debug logging to trace incoming slug
-  console.log('DEBUG[page]: Fetching slug for local-report page:', slug, 'clean:', cleanSlug)
 
   const { data, error } = await supabase
     .from('public_seo_reports')
@@ -329,7 +332,7 @@ export default async function LocalSeoReportPage({ params }: Props) {
             ? 'FranchiseBleedSimulator'
             : null
 
-  const canonicalUrl = `https://valifye.com/local-reports/report/${report.slug}`
+  const canonicalUrl = buildCanonical(`/local-reports/report/${report.slug}`)
 
   return (
     <div className="flex min-h-screen flex-col bg-[#050505] font-sans text-zinc-100">
@@ -339,6 +342,7 @@ export default async function LocalSeoReportPage({ params }: Props) {
           {JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'CalculateAction',
+            '@id': canonicalUrl,
             name: primaryTool,
             target: {
               '@type': 'EntryPoint',

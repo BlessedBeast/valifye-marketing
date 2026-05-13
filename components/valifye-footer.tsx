@@ -117,6 +117,14 @@ export function ValifyeFooter() {
               </li>
               <li>
                 <Link
+                  href="/markets"
+                  className="text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
+                >
+                  Markets
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/ideas"
                   className="text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
                 >

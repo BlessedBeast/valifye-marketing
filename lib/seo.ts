@@ -1,7 +1,32 @@
 import type { Metadata } from 'next'
 import type { MarketingShowcaseReport } from '@/lib/marketingShowcase'
 
-const SITE_URL = 'https://valifye.com'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://valifye.com'
+
+export function buildCanonical(path: string): string {
+  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  return `${SITE_URL}${cleanPath}`
+}
+
+export function buildEngineMetadata({
+  title,
+  description,
+  slug,
+  routePrefix
+}: {
+  title: string
+  description: string
+  slug: string
+  routePrefix: string
+}): Metadata {
+  const canonical = buildCanonical(`${routePrefix}/${slug}`)
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: { title, description, type: 'article', url: canonical }
+  }
+}
 
 export function buildShowcaseMetadata(report: MarketingShowcaseReport): Metadata {
   const title = `${report.title} | Valifye Forensic Showcase`

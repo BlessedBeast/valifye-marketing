@@ -43,11 +43,11 @@ TARGET_CITIES = [
 ]
 
 TARGET_NICHES = [
-    {"sector": "health_wellness", "model": "med_spa"},
-    {"sector": "health_wellness", "model": "iv_therapy_lounge"},
-    {"sector": "home_services", "model": "hvac_dispatch_hub"},
-    {"sector": "fitness", "model": "boutique_pilates_studio"},
-    {"sector": "food_beverage", "model": "specialty_coffee_roaster"},
+    {"sector": "health_wellness", "model": "longevity_center_biohacking_lab"},
+    {"sector": "real_estate_services", "model": "modular_adu_builder_consultancy"},
+    {"sector": "health_wellness", "model": "medical_weight_loss_aesthetic_spa"},
+    {"sector": "home_services", "model": "commercial_hvac_refrigeration_dispatch"},
+    {"sector": "services", "model": "automated_express_car_wash_hub"}
 ]
 
 

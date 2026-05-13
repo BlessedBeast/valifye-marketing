@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import {
   ArrowLeft,
   Scale,
@@ -12,6 +13,7 @@ import {
 import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
 import { getReportBySlug, getIndustryHubBySectorSlug, getReportsBySlugs } from '@/lib/reportData'
+import { buildEngineMetadata } from '@/lib/seo'
 import type { ExperimentData, LogicAudit, UnitEconomics } from '@/lib/reportData'
 import { IndustryIntelligenceBridge } from '@/components/IndustryIntelligenceBridge'
 
@@ -19,6 +21,24 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 type Props = { params: Promise<{ slug: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params
+  const report = await getReportBySlug(slug)
+  if (!report) {
+    return { title: 'Forensic reports | Valifye' }
+  }
+  const title = `${report.idea_title} | Valifye Forensic Verdict`
+  const description = report.forensic_narrative
+    ? report.forensic_narrative.substring(0, 160)
+    : `Forensic verdict and market validation for ${report.idea_title}.`
+  return buildEngineMetadata({
+    title,
+    description,
+    slug: report.slug,
+    routePrefix: '/reports'
+  })
+}
 
 function clampScore(raw: unknown): number {
   const n = typeof raw === 'number' ? raw : Number(raw)
