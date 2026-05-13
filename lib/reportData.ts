@@ -195,6 +195,37 @@ export async function getIndustryHubBySectorSlug(sectorSlug: string): Promise<Ve
   }
 }
 
+export type LatestHomeReport = {
+  slug: string
+  idea_title: string
+  verdict: VerdictType
+  meta_title: string | null
+  meta_description: string | null
+}
+
+/** Latest published verdict reports for homepage surfacing. */
+export async function getLatestReports(limit: number): Promise<LatestHomeReport[]> {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select('slug, idea_title, final_verdict')
+    .eq('is_published', true)
+    .order('published_at', { ascending: false })
+    .limit(limit)
+
+  if (error || !Array.isArray(data)) {
+    if (error) console.error('getLatestReports:', error.message)
+    return []
+  }
+
+  return (data as { slug: string; idea_title: string | null; final_verdict: string | null }[]).map((row) => ({
+    slug: row.slug,
+    idea_title: row.idea_title ?? '',
+    verdict: normalizeVerdict(row.final_verdict),
+    meta_title: null,
+    meta_description: null,
+  }))
+}
+
 /**
  * Fetch multiple reports by an array of slugs.
  */

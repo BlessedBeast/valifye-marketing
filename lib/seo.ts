@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import type { MarketingShowcaseReport } from '@/lib/marketingShowcase'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://valifye.com'
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://valifye.com'
 
 export function buildCanonical(path: string): string {
   const cleanPath = path.startsWith('/') ? path : `/${path}`

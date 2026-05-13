@@ -244,3 +244,42 @@ export async function getPublishedByNicheSlug(
   const rows = data as { slug: string; city: string; niche: string }[]
   return rows.filter((row) => slugifyNiche(row.niche) === nicheSlug)
 }
+
+/** Homepage “Latest ideas” row — opportunity_score is 0–100; whitespace_score is a derived 0–10 display scale. */
+export type LatestHomeIdea = {
+  slug: string
+  niche: string
+  city: string | null
+  meta_title: string | null
+  whitespace_score: number | null
+}
+
+export async function getLatestIdeas(limit: number): Promise<LatestHomeIdea[]> {
+  const { data, error } = await supabase
+    .from('market_data')
+    .select('slug, niche, city, opportunity_score')
+    .eq('status', 'published')
+    .order('published_at', { ascending: false })
+    .limit(limit)
+
+  if (error || !Array.isArray(data)) {
+    if (error) console.error('getLatestIdeas:', error.message)
+    return []
+  }
+
+  return (data as { slug: string; niche: string; city: string | null; opportunity_score: number | null }[]).map(
+    (row) => {
+      const opp = row.opportunity_score != null ? Number(row.opportunity_score) : NaN
+      const whitespace_score = Number.isFinite(opp)
+        ? Math.min(10, Math.max(0, Math.round(opp / 10)))
+        : null
+      return {
+        slug: row.slug,
+        niche: row.niche,
+        city: row.city,
+        meta_title: null,
+        whitespace_score,
+      }
+    }
+  )
+}

@@ -1,174 +1,97 @@
-'use client'
-
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
-import type { LucideIcon } from 'lucide-react'
-import {
-  ClipboardCheck,
-  FileSignature,
-  Flame,
-  Link2,
-  Package
-} from 'lucide-react'
-import { useTheme } from 'next-themes'
 
-const solutionFooterLinks: {
-  href: string
-  label: string
-  Icon: LucideIcon
-  accent: string
-}[] = [
+const FOOTER_COLS = [
   {
-    href: '/solutions/before-signing-lease',
-    label: 'Before Signing a Lease',
-    Icon: FileSignature,
-    accent: 'text-amber-400/90'
+    heading: 'Intelligence',
+    links: [
+      { label: 'Ideas Database', href: '/ideas' },
+      { label: 'Verdict Reports', href: '/reports' },
+      { label: 'Local Reports', href: '/local-reports' },
+      { label: 'Market Blueprints', href: '/markets' },
+      { label: 'Compare Markets', href: '/compare' },
+    ],
   },
   {
-    href: '/solutions/pre-burn-saas-audit',
-    label: 'Pre-Burn SaaS Audit',
-    Icon: Flame,
-    accent: 'text-rose-400/90'
+    heading: 'Tools',
+    links: [
+      { label: 'All Free Tools', href: '/tools' },
+      { label: 'Delivery Margin Calculator', href: '/tools/delivery-calculator' },
+      { label: 'SBA Loan Scanner', href: '/tools/sba-loan-scanner' },
+      { label: 'Franchise Profit Simulator', href: '/tools/franchise-profit-simulator' },
+      { label: 'UK VAT Cliff Scanner', href: '/tools/uk-vat-cliff-scanner' },
+    ],
   },
   {
-    href: '/solutions/franchise-due-diligence-audit',
-    label: 'Franchise Due Diligence Audit',
-    Icon: ClipboardCheck,
-    accent: 'text-violet-400/90'
+    heading: 'Resources',
+    links: [
+      { label: 'Showcase Reports', href: '/showcase' },
+      { label: 'Solutions', href: '/solutions' },
+      { label: 'Market Database', href: '/ideas' },
+    ],
   },
   {
-    href: '/solutions/acquire-com-asset-audit',
-    label: 'Acquire .com Asset Audit',
-    Icon: Link2,
-    accent: 'text-sky-400/90'
+    heading: 'Legal',
+    links: [
+      { label: 'Privacy Policy', href: '/privacy' },
+      { label: 'Terms of Service', href: '/terms' },
+      { label: 'Contact', href: 'mailto:hello@valifye.com' },
+    ],
   },
-  {
-    href: '/solutions/dtc-inventory-burn-test',
-    label: 'DTC Inventory Burn Test',
-    Icon: Package,
-    accent: 'text-orange-400/90'
-  }
-]
+] as const
 
 export function ValifyeFooter() {
-  const { resolvedTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  const isDark = !mounted || resolvedTheme !== 'light'
-  const logoSrc = isDark ? '/logo-dark.png' : '/logo-light.png'
-
   return (
-    <footer className="border-t border-border bg-card py-12 font-mono">
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-10 px-6 py-8">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="flex items-center gap-3 font-black uppercase tracking-widest text-muted-foreground">
-            <span className="flex h-10 w-10 items-center justify-center overflow-hidden">
-              <Image
-                src={logoSrc}
-                alt="Valifye logo"
-                width={48}
-                height={48}
-                className={`h-10 w-10 object-cover object-center translate-y-[-1px] ${
-                  isDark ? 'mix-blend-screen' : 'mix-blend-multiply'
-                }`}
-              />
-            </span>
-            Valifye Intelligence
-          </div>
+    <footer className="border-t border-[#1f2937] bg-[#0a0a0a]">
+      <div className="px-6 py-16 md:px-12 lg:px-24">
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
+          {FOOTER_COLS.map((col) => (
+            <div key={col.heading}>
+              <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.2em] text-[#f5a623]">
+                {col.heading}
+              </p>
+              <ul className="space-y-2.5">
+                {col.links.map((link) => (
+                  <li key={link.href}>
+                    {link.href.startsWith('mailto:') ? (
+                      <a
+                        href={link.href}
+                        className="text-sm text-[#6b7280] transition-colors hover:text-white"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-sm text-[#6b7280] transition-colors hover:text-white"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center justify-between gap-3 border-t border-[#1f2937] px-6 py-5 sm:flex-row md:px-12 lg:px-24">
+        <div className="flex items-center gap-3">
+          <span className="font-black tracking-tight text-white">VALIFYE</span>
+          <span className="text-[#1f2937]">·</span>
+          <span className="font-mono text-[11px] uppercase tracking-wide text-[#4b5563]">
+            Forensic Intelligence
+          </span>
         </div>
 
-        <div className="grid w-full grid-cols-1 gap-10 border-t border-zinc-800/50 pt-10 sm:grid-cols-2 md:grid-cols-3 md:gap-12">
-          <div className="flex flex-col items-center gap-4 text-center md:items-start md:text-left">
-            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-amber-400/90">
-              Solutions
-            </p>
-            <ul className="flex flex-col gap-3">
-              {solutionFooterLinks.map(({ href, label, Icon, accent }) => (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
-                  >
-                    <Icon className={`h-3.5 w-3.5 shrink-0 ${accent}`} aria-hidden />
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="flex flex-col items-center gap-4 text-center md:items-start md:text-left">
-            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-400/90">
-              Explore
-            </p>
-            <ul className="flex flex-col gap-3">
-              <li>
-                <Link
-                  href="/local-reports"
-                  className="text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
-                >
-                  Local Reports
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/markets"
-                  className="text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
-                >
-                  Markets
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/ideas"
-                  className="text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
-                >
-                  Market Database
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div className="flex flex-col items-center gap-4 text-center md:items-start md:text-left">
-            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-zinc-500">
-              Legal
-            </p>
-            <ul className="flex flex-col gap-3">
-              <li>
-                <Link
-                  href="/privacy"
-                  className="text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
-                >
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/terms"
-                  className="text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
-                >
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <a
-                  href="mailto:hello@valifye.com"
-                  className="text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
-                >
-                  Contact
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="border-t border-zinc-800/50 pt-8 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
-          © {new Date().getFullYear()} Valifye. All systems operational.
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          <span className="font-mono text-[11px] text-[#4b5563]">
+            © {new Date().getFullYear()} Valifye · All systems operational
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#22c55e]" />
+            <span className="font-mono text-[10px] uppercase tracking-wider text-[#22c55e]">Live</span>
+          </span>
         </div>
       </div>
     </footer>
