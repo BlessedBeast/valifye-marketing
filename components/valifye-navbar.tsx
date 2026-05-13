@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { useTheme } from 'next-themes'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowRight, ChevronDown, Menu, X } from 'lucide-react'
 
@@ -14,7 +13,6 @@ import {
   RESOURCES_NAV_ITEMS,
   type NavDropdownItem
 } from '@/components/navbar-dropdown'
-import { ThemeToggle } from '@/components/theme-toggle'
 import { cn } from '@/lib/utils'
 
 /** Tools hub + calculators */
@@ -49,14 +47,10 @@ function MobileAccordionLink({ item, onNavigate }: { item: NavDropdownItem; onNa
 
 export function ValifyeNavbar() {
   const pathname = usePathname()
-  const { resolvedTheme } = useTheme()
   const [scrolled, setScrolled] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [intelOpen, setIntelOpen] = useState(false)
   const [resOpen, setResOpen] = useState(false)
-
-  const isDark = resolvedTheme !== 'light'
-  const logoSrc = isDark ? '/logo-dark.png' : '/logo-light.png'
 
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false)
@@ -100,14 +94,11 @@ export function ValifyeNavbar() {
           >
             <span className="flex h-9 w-9 items-center justify-center overflow-hidden md:h-10 md:w-10">
               <Image
-                src={logoSrc}
+                src="/logo-dark.png"
                 alt="Valifye"
                 width={40}
                 height={40}
-                className={cn(
-                  'h-9 w-9 object-cover object-center md:h-10 md:w-10',
-                  isDark ? 'mix-blend-screen' : 'mix-blend-multiply'
-                )}
+                className="h-9 w-9 object-cover object-center mix-blend-screen md:h-10 md:w-10"
                 priority
               />
             </span>
@@ -115,7 +106,7 @@ export function ValifyeNavbar() {
           </Link>
 
           {/* Desktop */}
-          <nav className="hidden h-full items-center gap-1 md:flex">
+          <nav className="hidden h-full shrink-0 items-center gap-1 md:flex">
             <div className="relative">
               <NavbarDropdown
                 label="Intelligence"
@@ -161,14 +152,11 @@ export function ValifyeNavbar() {
               href="https://app.valifye.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-2 inline-flex h-10 items-center gap-2 rounded-full bg-[#22c55e] px-5 font-mono text-xs font-extrabold uppercase tracking-[0.14em] text-black transition hover:bg-[#22c55e]/90"
+              className="ml-2 inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[#22c55e] px-5 font-mono text-xs font-extrabold uppercase tracking-[0.14em] text-black transition hover:bg-[#22c55e]/90"
             >
-              Start Free
+              Access Terminal
               <ArrowRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
             </a>
-            <div className="ml-1 pl-2">
-              <ThemeToggle />
-            </div>
           </nav>
 
           {/* Mobile toggle */}
@@ -279,23 +267,18 @@ export function ValifyeNavbar() {
                 Tools
               </Link>
 
-              <div className="mt-4 flex items-center justify-between border-b border-[#1f2937] py-3">
-                <span className="font-mono text-[10px] uppercase tracking-widest text-[#6b7280]">
-                  Theme
-                </span>
-                <ThemeToggle />
+              <div className="mt-auto w-full shrink-0 border-t border-[#1f2937] pt-4">
+                <a
+                  href="https://app.valifye.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={closeDrawer}
+                  className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#22c55e] py-3.5 text-center font-mono text-sm font-extrabold uppercase tracking-[0.14em] text-black"
+                >
+                  Access Terminal
+                  <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+                </a>
               </div>
-
-              <a
-                href="https://app.valifye.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={closeDrawer}
-                className="mt-auto flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#22c55e] py-3.5 text-center font-mono text-sm font-extrabold uppercase tracking-[0.14em] text-black"
-              >
-                Start Free
-                <ArrowRight className="h-4 w-4" aria-hidden />
-              </a>
             </motion.div>
           </>
         ) : null}

@@ -1,5 +1,4 @@
 import { Inter } from 'next/font/google'
-import { ThemeProvider } from '@/components/theme-provider'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
@@ -39,21 +38,19 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      className="dark"
+      style={{ colorScheme: 'dark' }}
+      suppressHydrationWarning
+    >
       <body
         className={`${inter.variable} bg-background text-foreground antialiased`}
         suppressHydrationWarning
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <main className="mx-auto max-w-[1280px] px-4 py-8 pt-24 sm:px-6 sm:pt-24 lg:px-8">
-            {children}
-          </main>
-        </ThemeProvider>
+        <main className="mx-auto max-w-[1280px] px-4 py-8 pt-24 sm:px-6 sm:pt-24 lg:px-8">
+          {children}
+        </main>
       </body>
     </html>
   )
