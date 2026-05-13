@@ -58,9 +58,9 @@ def _bucket_path(path: str) -> str | None:
         return "reports"
     if p.startswith("/markets/"):
         return "markets"
-    if p.startswith("/solutions/"):
+    if p.startswith("/solutions/") or p.rstrip("/") == "/solutions":
         return "solutions"
-    if p.startswith("/showcase/"):
+    if p.startswith("/showcase/") or p.rstrip("/") == "/showcase":
         return "showcase"
     return None
 

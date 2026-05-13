@@ -241,14 +241,14 @@ export default async function MarketBlueprintPage({ params }: Props) {
         </nav>
 
         <header className="space-y-8 border-b border-zinc-800/80 pb-10">
-          <p className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-zinc-500">
-            <Crosshair className="h-3.5 w-3.5 text-amber-500/90" aria-hidden />
-            Forensic market blueprint
-          </p>
-
-          <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
+          {/* Header section — title + verdict score */}
+          <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
             <div className="min-w-0 flex-1 space-y-4">
-              <h1 className="font-serif text-3xl font-black leading-tight tracking-tight text-zinc-50 md:text-4xl">
+              <p className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-zinc-500">
+                <Crosshair className="h-3.5 w-3.5 text-amber-500/90" aria-hidden />
+                Forensic market blueprint
+              </p>
+              <h1 className="hyphens-auto break-words font-serif text-3xl font-black leading-tight tracking-tight text-zinc-50 md:text-4xl">
                 {row.meta_title}
               </h1>
               {row.meta_description ? (
@@ -261,34 +261,36 @@ export default async function MarketBlueprintPage({ params }: Props) {
               </p>
             </div>
 
-            <div
-              className={cn(
-                'flex shrink-0 flex-col items-center justify-center rounded-xl border px-6 py-5 md:min-w-[180px]',
-                tone.chip
-              )}
-              aria-label={`Executive verdict score ${score} of 100`}
-            >
-              <span
-                className={cn(
-                  'font-mono text-[10px] font-bold uppercase tracking-[0.2em]',
-                  tone.ring
-                )}
-              >
-                Verdict score
-              </span>
-              <span className="mt-2 font-mono text-5xl font-black tabular-nums tracking-tight text-zinc-50 md:text-6xl">
-                {score}
-              </span>
-              <span className="mt-2 text-center font-mono text-xs font-bold uppercase tracking-wide text-zinc-200">
-                {verdict.label}
-              </span>
+            <div className="w-full shrink-0 lg:w-[220px]">
               <div
                 className={cn(
-                  'mt-4 h-1.5 w-full max-w-[140px] rounded-full bg-gradient-to-r to-transparent',
-                  tone.bar
+                  'flex shrink-0 flex-col items-center justify-center rounded-xl border px-6 py-5 md:min-w-[180px]',
+                  tone.chip
                 )}
-                aria-hidden
-              />
+                aria-label={`Executive verdict score ${score} of 100`}
+              >
+                <span
+                  className={cn(
+                    'font-mono text-[10px] font-bold uppercase tracking-[0.2em]',
+                    tone.ring
+                  )}
+                >
+                  Verdict score
+                </span>
+                <span className="mt-2 font-mono text-5xl font-black tabular-nums tracking-tight text-zinc-50 md:text-6xl">
+                  {score}
+                </span>
+                <span className="mt-2 text-center font-mono text-xs font-bold uppercase tracking-wide text-zinc-200">
+                  {verdict.label}
+                </span>
+                <div
+                  className={cn(
+                    'mt-4 h-1.5 w-full max-w-[140px] rounded-full bg-gradient-to-r to-transparent',
+                    tone.bar
+                  )}
+                  aria-hidden
+                />
+              </div>
             </div>
           </div>
 

@@ -257,6 +257,33 @@ export async function getMarketingShowcaseBySlug(
   return normalizeMarketingShowcaseRow(data)
 }
 
+const SHOWCASE_LIST_LIMIT = 500
+
+/**
+ * All marketing_showcase rows for hub / directory pages (newest first).
+ */
+export async function getAllShowcaseReports(): Promise<MarketingShowcaseReport[]> {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(SHOWCASE_LIST_LIMIT)
+
+  if (error) {
+    console.error('[marketing_showcase] getAllShowcaseReports:', error.message)
+    return []
+  }
+
+  const rows = Array.isArray(data) ? (data as MarketingShowcaseRow[]) : []
+  const out: MarketingShowcaseReport[] = []
+  for (const row of rows) {
+    const slug = asString(row.slug)
+    if (!slug || slug.includes('/')) continue
+    out.push(normalizeMarketingShowcaseRow(row))
+  }
+  return out
+}
+
 /**
  * Fetch a list of marketing_showcase rows and return only those whose
  * (normalized) template matches the requested set.

@@ -1,81 +1,305 @@
 'use client'
 
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { ThemeToggle } from '@/components/theme-toggle'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowRight, ChevronDown, Menu, X } from 'lucide-react'
 
-const navLinks = [
-  { href: '/ideas', label: 'Ideas' },
-  { href: '/reports', label: 'Reports' },
-  { href: '/markets', label: 'Markets' },
-  { href: '/tools/delivery-calculator', label: 'Tools' }
-]
+import {
+  INTELLIGENCE_NAV_ITEMS,
+  NavbarDropdown,
+  RESOURCES_NAV_ITEMS,
+  type NavDropdownItem
+} from '@/components/navbar-dropdown'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { cn } from '@/lib/utils'
+
+/** Tools hub + calculators */
+const TOOLS_HREF = '/tools'
+
+function pathActive(pathname: string | null, href: string): boolean {
+  if (!pathname) return false
+  if (pathname === href) return true
+  if (href !== '/' && pathname.startsWith(`${href}/`)) return true
+  return false
+}
+
+function MobileAccordionLink({ item, onNavigate }: { item: NavDropdownItem; onNavigate: () => void }) {
+  return (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      className="flex min-h-[48px] items-start gap-3 border-l-2 border-transparent py-3 pl-3 transition-colors hover:border-[#f5a623] hover:bg-[#1a1a1a]"
+    >
+      <span className="text-lg leading-none" aria-hidden>
+        {item.icon}
+      </span>
+      <span className="min-w-0">
+        <span className="block font-mono text-sm font-bold uppercase tracking-wide text-white">
+          {item.label}
+        </span>
+        <span className="mt-0.5 block font-mono text-xs leading-snug text-[#6b7280]">{item.description}</span>
+      </span>
+    </Link>
+  )
+}
 
 export function ValifyeNavbar() {
-  const { resolvedTheme } = useTheme()
   const pathname = usePathname()
+  const { resolvedTheme } = useTheme()
+  const [scrolled, setScrolled] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [intelOpen, setIntelOpen] = useState(false)
+  const [resOpen, setResOpen] = useState(false)
 
   const isDark = resolvedTheme !== 'light'
   const logoSrc = isDark ? '/logo-dark.png' : '/logo-light.png'
 
+  const closeDrawer = useCallback(() => {
+    setDrawerOpen(false)
+    setIntelOpen(false)
+    setResOpen(false)
+  }, [])
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    closeDrawer()
+  }, [pathname, closeDrawer])
+
+  useEffect(() => {
+    if (!drawerOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [drawerOpen])
+
   return (
-    <header className="relative z-40 border-b border-zinc-800/95 bg-background/95 backdrop-blur-sm">
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 md:px-8">
-        <Link
-          href="/"
-          className="flex items-center gap-3 font-black uppercase tracking-tighter text-foreground"
-        >
-          <span className="flex h-10 w-10 items-center justify-center overflow-hidden">
-            <Image
-              src={logoSrc}
-              alt="Valifye logo"
-              width={48}
-              height={48}
-              className={`h-10 w-10 object-cover object-center translate-y-[-1px] ${
-                isDark ? 'mix-blend-screen' : 'mix-blend-multiply'
-              }`}
-              priority
-            />
-          </span>
-          <span className="text-xl font-black uppercase tracking-tighter text-foreground">
-            Valifye
-          </span>
-        </Link>
-
-        <nav className="hidden items-center gap-3 md:flex">
-          {navLinks.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== '/' && pathname.startsWith(`${item.href}/`))
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`rounded-md px-3 py-2 font-mono text-xs font-bold uppercase tracking-[0.22em] transition-colors ${
-                  isActive
-                    ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 shadow-[0_0_18px_-6px_rgba(16,185,129,0.85)]'
-                    : 'text-zinc-400 hover:text-zinc-100'
-                }`}
-              >
-                {item.label}
-              </Link>
-            )
-          })}
-
+    <>
+      <header
+        className={cn(
+          'fixed left-0 right-0 top-0 z-50 h-16 border-b border-[#1f2937] bg-[#0a0a0a]/90 backdrop-blur-md',
+          scrolled && 'shadow-lg shadow-black/40'
+        )}
+      >
+        <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between px-4 md:px-8">
           <Link
-            href="/audit"
-            className="ml-1 inline-flex items-center gap-2 rounded-md border border-emerald-400/70 bg-emerald-400 px-4 py-2 font-mono text-xs font-extrabold uppercase tracking-[0.18em] text-zinc-950 shadow-[0_0_28px_-6px_rgba(16,185,129,0.8)] transition-colors hover:bg-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+            href="/"
+            className="flex items-center gap-2.5 font-black uppercase tracking-tighter text-white"
+            onClick={closeDrawer}
           >
-            Audit Your Idea
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            <span className="flex h-9 w-9 items-center justify-center overflow-hidden md:h-10 md:w-10">
+              <Image
+                src={logoSrc}
+                alt="Valifye"
+                width={40}
+                height={40}
+                className={cn(
+                  'h-9 w-9 object-cover object-center md:h-10 md:w-10',
+                  isDark ? 'mix-blend-screen' : 'mix-blend-multiply'
+                )}
+                priority
+              />
+            </span>
+            <span className="text-lg font-black md:text-xl">Valifye</span>
           </Link>
-          <ThemeToggle />
-        </nav>
-      </div>
-    </header>
+
+          {/* Desktop */}
+          <nav className="hidden h-full items-center gap-1 md:flex">
+            <div className="relative">
+              <NavbarDropdown
+                label="Intelligence"
+                variant="mega"
+                items={INTELLIGENCE_NAV_ITEMS}
+                pathname={pathname}
+              />
+            </div>
+            <div className="relative">
+              <NavbarDropdown
+                label="Resources"
+                variant="simple"
+                items={RESOURCES_NAV_ITEMS}
+                pathname={pathname}
+                align="right"
+              />
+            </div>
+
+            <Link
+              href="/markets"
+              className={cn(
+                'inline-flex h-11 items-center rounded-lg px-3 font-mono text-xs font-bold uppercase tracking-[0.18em] transition-colors',
+                pathActive(pathname, '/markets')
+                  ? 'text-[#f5a623]'
+                  : 'text-white hover:text-[#f5a623]'
+              )}
+            >
+              Markets
+            </Link>
+            <Link
+              href={TOOLS_HREF}
+              className={cn(
+                'inline-flex h-11 items-center rounded-lg px-3 font-mono text-xs font-bold uppercase tracking-[0.18em] transition-colors',
+                pathname?.startsWith('/tools')
+                  ? 'text-[#f5a623]'
+                  : 'text-white hover:text-[#f5a623]'
+              )}
+            >
+              Tools
+            </Link>
+
+            <a
+              href="https://app.valifye.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-2 inline-flex h-10 items-center gap-2 rounded-full bg-[#22c55e] px-5 font-mono text-xs font-extrabold uppercase tracking-[0.14em] text-black transition hover:bg-[#22c55e]/90"
+            >
+              Start Free
+              <ArrowRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            </a>
+            <div className="ml-1 pl-2">
+              <ThemeToggle />
+            </div>
+          </nav>
+
+          {/* Mobile toggle */}
+          <button
+            type="button"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-white md:hidden"
+            aria-expanded={drawerOpen}
+            aria-label={drawerOpen ? 'Close menu' : 'Open menu'}
+            onClick={() => setDrawerOpen((o) => !o)}
+          >
+            {drawerOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
+      </header>
+
+      {/* Mobile drawer */}
+      <AnimatePresence>
+        {drawerOpen ? (
+          <>
+            <motion.button
+              type="button"
+              aria-label="Close menu"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 top-16 z-[55] bg-black/70 md:hidden"
+              onClick={closeDrawer}
+            />
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="fixed inset-x-0 top-16 z-[60] flex max-h-[calc(100dvh-4rem)] flex-col overflow-y-auto bg-[#0a0a0a] px-4 pb-6 pt-2 md:hidden"
+            >
+              <div className="flex flex-col border-b border-[#1f2937] py-2">
+                <button
+                  type="button"
+                  className="flex min-h-[48px] w-full items-center justify-between py-3 text-left font-mono text-xs font-bold uppercase tracking-[0.2em] text-white"
+                  onClick={() => setIntelOpen((v) => !v)}
+                  aria-expanded={intelOpen}
+                >
+                  Intelligence
+                  <ChevronDown className={cn('h-4 w-4 transition-transform', intelOpen && 'rotate-180')} />
+                </button>
+                <AnimatePresence initial={false}>
+                  {intelOpen ? (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="overflow-hidden border-t border-[#1f2937]/80"
+                    >
+                      <div className="flex flex-col py-1">
+                        {INTELLIGENCE_NAV_ITEMS.map((item) => (
+                          <MobileAccordionLink key={item.href} item={item} onNavigate={closeDrawer} />
+                        ))}
+                      </div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
+
+              <div className="flex flex-col border-b border-[#1f2937] py-2">
+                <button
+                  type="button"
+                  className="flex min-h-[48px] w-full items-center justify-between py-3 text-left font-mono text-xs font-bold uppercase tracking-[0.2em] text-white"
+                  onClick={() => setResOpen((v) => !v)}
+                  aria-expanded={resOpen}
+                >
+                  Resources
+                  <ChevronDown className={cn('h-4 w-4 transition-transform', resOpen && 'rotate-180')} />
+                </button>
+                <AnimatePresence initial={false}>
+                  {resOpen ? (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="overflow-hidden border-t border-[#1f2937]/80"
+                    >
+                      <div className="flex flex-col py-1">
+                        {RESOURCES_NAV_ITEMS.map((item) => (
+                          <MobileAccordionLink key={item.href} item={item} onNavigate={closeDrawer} />
+                        ))}
+                      </div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
+
+              <Link
+                href="/markets"
+                onClick={closeDrawer}
+                className="min-h-[48px] border-b border-[#1f2937] py-4 font-mono text-xs font-bold uppercase tracking-[0.2em] text-white"
+              >
+                Markets
+              </Link>
+              <Link
+                href={TOOLS_HREF}
+                onClick={closeDrawer}
+                className="min-h-[48px] border-b border-[#1f2937] py-4 font-mono text-xs font-bold uppercase tracking-[0.2em] text-white"
+              >
+                Tools
+              </Link>
+
+              <div className="mt-4 flex items-center justify-between border-b border-[#1f2937] py-3">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[#6b7280]">
+                  Theme
+                </span>
+                <ThemeToggle />
+              </div>
+
+              <a
+                href="https://app.valifye.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={closeDrawer}
+                className="mt-auto flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#22c55e] py-3.5 text-center font-mono text-sm font-extrabold uppercase tracking-[0.14em] text-black"
+              >
+                Start Free
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </a>
+            </motion.div>
+          </>
+        ) : null}
+      </AnimatePresence>
+    </>
   )
 }

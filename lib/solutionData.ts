@@ -693,3 +693,32 @@ export async function getSolutionBySlug(
 
   return normalizeSolutionRow(data) ?? null
 }
+
+const LIST_FETCH_LIMIT = 500
+
+/**
+ * All published solution pillars for directory / hub pages.
+ * Same table and normalizer as `getSolutionBySlug`.
+ */
+export async function getAllSolutions(): Promise<SolutionPillar[]> {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select('*')
+    .order('title', { ascending: true })
+    .limit(LIST_FETCH_LIMIT)
+
+  if (error) {
+    console.error('[solution_pillars] getAllSolutions:', error.message)
+    return []
+  }
+
+  const rows = Array.isArray(data) ? (data as SolutionRow[]) : []
+  const out: SolutionPillar[] = []
+  for (const row of rows) {
+    const slug = asString(row.slug)
+    if (!slug || slug.includes('/')) continue
+    const normalized = normalizeSolutionRow(row)
+    if (normalized) out.push(normalized)
+  }
+  return out
+}

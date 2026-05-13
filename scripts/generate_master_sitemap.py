@@ -172,7 +172,22 @@ def fetch_static_marketing_urls() -> list[tuple[str, str]]:
     return [
         (f"{SITE_URL}/local-market-scout", "0.8"),
         (f"{SITE_URL}/compare", "0.7"),
-        (f"{SITE_URL}/tools/delivery-calculator", "0.7"),
+    ]
+
+
+def fetch_static_hub_and_tool_urls() -> list[tuple[str, str, str]]:
+    """
+    Index hubs plus tool routes (loc, priority, changefreq).
+    /tools/* entries complement the /tools hub; avoid duplicating these in other static lists.
+    """
+    return [
+        (f"{SITE_URL}/solutions", "0.8", "weekly"),
+        (f"{SITE_URL}/showcase", "0.8", "weekly"),
+        (f"{SITE_URL}/tools", "0.7", "monthly"),
+        (f"{SITE_URL}/tools/delivery-calculator", "0.6", "monthly"),
+        (f"{SITE_URL}/tools/sba-loan-scanner", "0.6", "monthly"),
+        (f"{SITE_URL}/tools/franchise-profit-simulator", "0.6", "monthly"),
+        (f"{SITE_URL}/tools/uk-vat-cliff-scanner", "0.6", "monthly"),
     ]
 
 
@@ -248,6 +263,7 @@ def generate_xml_sitemap() -> None:
     solutions_urls = fetch_solutions_urls()
     showcase_urls = fetch_showcase_urls()
     static_pages = fetch_static_marketing_urls()
+    hub_tool_urls = fetch_static_hub_and_tool_urls()
     comparison_urls = fetch_comparison_urls()
 
     # (absolute URL, priority) — appended before writing solutions/showcase XML
@@ -304,10 +320,16 @@ def generate_xml_sitemap() -> None:
 
     # --- Static marketing + comparison hub/detail ---
     chunks.append(
-        "<!-- Engine 4c: Static marketing -> /local-market-scout, /compare, /tools/delivery-calculator -->\n"
+        "<!-- Engine 4c: Static marketing -> /local-market-scout, /compare -->\n"
     )
     for loc, priority in static_pages:
         chunks.append(url_entry(loc, priority=priority))
+
+    chunks.append(
+        "<!-- Engine 4c2: Hub indexes + tool routes -> /solutions, /showcase, /tools/* -->\n"
+    )
+    for loc, priority, changefreq in hub_tool_urls:
+        chunks.append(url_entry(loc, changefreq=changefreq, priority=priority))
 
     chunks.append("<!-- Engine 4d: Comparison engine -> /compare/{slug} (priority 0.8) -->\n")
     for loc in comparison_urls:
@@ -347,6 +369,7 @@ def generate_xml_sitemap() -> None:
     n_solutions = len(solutions_urls)
     n_showcase = len(showcase_urls)
     n_static = len(static_pages)
+    n_hub_tools = len(hub_tool_urls)
     n_comparisons = len(comparison_urls)
 
     grand_total = (
@@ -356,6 +379,7 @@ def generate_xml_sitemap() -> None:
         + n_markets
         + n_market_state_hubs
         + n_static
+        + n_hub_tools
         + n_comparisons
         + n_solutions
         + n_showcase
@@ -369,6 +393,7 @@ def generate_xml_sitemap() -> None:
     print(f"      Markets:             {n_markets}")
     print(f"      Market State Hubs:   {n_market_state_hubs}")
     print(f"      Static Pages:        {n_static}")
+    print(f"      Hub + Tool URLs:     {n_hub_tools}")
     print(f"      Comparisons:         {n_comparisons}")
     print(f"      Solutions:           {n_solutions}")
     print(f"      Showcase:            {n_showcase}")

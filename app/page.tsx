@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { ValifyeNavbar } from '@/components/valifye-navbar'
 import { ValifyeFooter } from '@/components/valifye-footer'
+import HeroSection from '@/components/hero-section'
 import { ComparisonCard } from '@/components/compare/ComparisonCard'
 import { MarketIntelligencePreview } from '@/components/home/MarketIntelligencePreview'
 import { createClient } from '@/utils/supabase/server'
@@ -53,66 +54,8 @@ export default async function HomePage() {
     <div className="min-h-screen bg-background font-mono text-foreground">
       <ValifyeNavbar />
 
-      <main className="mx-auto flex max-w-[1280px] flex-col gap-20 px-4 py-10 md:px-10 md:py-16 lg:py-20">
-        {/* HERO — Forensic Command Center */}
-        <section className="relative overflow-hidden border border-zinc-800/90 bg-zinc-950/80 p-8 text-left shadow-[0_0_80px_-28px_rgba(16,185,129,0.35)] md:p-12 dark:bg-zinc-950/90">
-          <div className="pointer-events-none absolute inset-0 bg-grid-white-02" aria-hidden />
-          <div
-            className="pointer-events-none absolute -right-24 -top-32 h-[min(420px,70vw)] w-[min(420px,70vw)] rounded-full bg-emerald-500/[0.07] blur-3xl dark:bg-emerald-500/[0.09]"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-zinc-950/20 to-background/80 dark:from-zinc-950/40 dark:to-zinc-950/95"
-            aria-hidden
-          />
-
-          <div className="relative z-10 space-y-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="max-w-3xl space-y-5">
-                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-emerald-500/90">
-                  Forensic command center
-                </p>
-                <h1 className="font-serif text-4xl font-black uppercase leading-[1.05] tracking-tighter text-zinc-50 md:text-6xl lg:text-7xl">
-                  Stop building in the dark.
-                </h1>
-                <p className="max-w-2xl text-base leading-relaxed text-zinc-400 md:text-lg">
-                  Open intelligence you can execute: static market blueprints, live verdicts, and
-                  unit-economics forensics—indexed for operators and answer engines, not slide decks.
-                </p>
-              </div>
-              <div
-                className="shrink-0 rounded-md border border-zinc-800 bg-black/50 px-3 py-2.5 font-mono text-[10px] font-bold leading-snug tracking-wide text-emerald-400/95 shadow-[0_0_24px_-8px_rgba(16,185,129,0.45)] sm:max-w-[min(100%,22rem)] sm:text-right"
-                role="status"
-                aria-label="SYSTEM: ACTIVE. DATA_SOURCE: GLOBAL_VERDICT_ENGINE"
-              >
-                SYSTEM: ACTIVE // DATA_SOURCE: GLOBAL_VERDICT_ENGINE
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-              <Link
-                href="/audit"
-                className="group relative inline-flex min-h-[52px] items-center justify-center gap-2 overflow-hidden rounded-md border border-emerald-400/80 bg-emerald-500 px-8 py-4 text-sm font-extrabold uppercase tracking-[0.16em] text-zinc-950 shadow-[0_0_36px_-6px_rgba(16,185,129,0.75)] transition-colors hover:border-emerald-300 hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/80 md:min-h-[56px] md:px-10 md:text-base"
-              >
-                <span
-                  className="pointer-events-none absolute inset-0 overflow-hidden opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                  aria-hidden
-                >
-                  <span className="animate-forensic-hero-scan absolute left-0 right-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-200/90 to-transparent shadow-[0_0_18px_rgba(16,185,129,0.9)]" />
-                </span>
-                <span className="relative z-10">Audit idea</span>
-                <ArrowRight className="relative z-10 h-5 w-5 shrink-0" aria-hidden />
-              </Link>
-              <a
-                href="#markets"
-                className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-md border border-zinc-700 bg-zinc-950/60 px-8 py-4 text-sm font-bold uppercase tracking-[0.16em] text-zinc-200 transition-colors hover:border-zinc-500 hover:bg-zinc-900/80 hover:text-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/50 md:min-h-[56px] md:px-10 md:text-base"
-              >
-                View market blueprints
-                <ArrowRight className="h-5 w-5 shrink-0" aria-hidden />
-              </a>
-            </div>
-          </div>
-        </section>
+      <main className="mx-auto flex max-w-[1280px] flex-col gap-20 px-4 pb-10 pt-20 md:px-10 md:pb-16 md:pt-24 lg:pb-20 lg:pt-28">
+        <HeroSection />
 
         {/* INTELLIGENCE HUB – TRIPLE ENGINE */}
         <section className="space-y-6">
