@@ -26,20 +26,38 @@ function pathActive(pathname: string | null, href: string): boolean {
 }
 
 function MobileAccordionLink({ item, onNavigate }: { item: NavDropdownItem; onNavigate: () => void }) {
+  const emerald = item.accent === 'emerald'
   return (
     <Link
       href={item.href}
       onClick={onNavigate}
-      className="flex min-h-[48px] items-start gap-3 border-l-2 border-transparent py-3 pl-3 transition-colors hover:border-[#f5a623] hover:bg-[#1a1a1a]"
+      className={cn(
+        'group flex min-h-[48px] items-start gap-3 border-l-2 border-transparent py-3 pl-3 transition-colors hover:bg-[#1a1a1a]',
+        emerald
+          ? 'hover:border-emerald-500/50'
+          : 'hover:border-[#f5a623]'
+      )}
     >
       <span className="text-lg leading-none" aria-hidden>
         {item.icon}
       </span>
       <span className="min-w-0">
-        <span className="block font-mono text-sm font-bold uppercase tracking-wide text-white">
+        <span
+          className={cn(
+            'block font-mono text-sm font-bold uppercase tracking-wide text-white transition-colors',
+            emerald ? 'group-hover:text-emerald-400' : 'group-hover:text-[#f5a623]'
+          )}
+        >
           {item.label}
         </span>
-        <span className="mt-0.5 block font-mono text-xs leading-snug text-[#6b7280]">{item.description}</span>
+        <span
+          className={cn(
+            'mt-0.5 block font-mono text-xs leading-snug text-zinc-500 transition-colors',
+            emerald && 'group-hover:text-zinc-400'
+          )}
+        >
+          {item.description}
+        </span>
       </span>
     </Link>
   )

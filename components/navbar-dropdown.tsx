@@ -12,6 +12,8 @@ export type NavDropdownItem = {
   href: string
   description: string
   icon: string
+  /** Forensic Noir: emerald hover/active instead of default amber. */
+  accent?: 'emerald'
 }
 
 export const INTELLIGENCE_NAV_ITEMS: NavDropdownItem[] = [
@@ -42,6 +44,13 @@ export const INTELLIGENCE_NAV_ITEMS: NavDropdownItem[] = [
 ]
 
 export const RESOURCES_NAV_ITEMS: NavDropdownItem[] = [
+  {
+    label: 'Forensic Blueprints',
+    href: '/blueprints',
+    description: 'A repository of scanned market signals and startup audits.',
+    icon: '📐',
+    accent: 'emerald'
+  },
   {
     label: 'Showcase',
     href: '/showcase',
@@ -77,12 +86,16 @@ function DropdownItemLink({
   pathname: string | null
 }) {
   const active = isActivePath(pathname, item.href)
+  const emerald = item.accent === 'emerald'
   return (
     <Link
       href={item.href}
       className={cn(
         'group flex gap-3 border-l-2 border-transparent px-3 py-3 transition-colors',
-        'hover:bg-[#1a1a1a] hover:border-[#f5a623]'
+        'hover:bg-[#1a1a1a]',
+        emerald
+          ? 'hover:border-emerald-500/50'
+          : 'hover:border-[#f5a623]'
       )}
     >
       <span className="shrink-0 text-base leading-none" aria-hidden>
@@ -91,13 +104,20 @@ function DropdownItemLink({
       <span className="min-w-0">
         <span
           className={cn(
-            'block font-mono text-xs font-bold uppercase tracking-wide text-white',
-            active && 'text-[#f5a623]'
+            'block font-mono text-xs font-bold uppercase tracking-wide transition-colors',
+            active
+              ? emerald
+                ? 'text-emerald-400'
+                : 'text-[#f5a623]'
+              : cn(
+                  'text-white',
+                  emerald ? 'group-hover:text-emerald-400' : 'group-hover:text-[#f5a623]'
+                )
           )}
         >
           {item.label}
         </span>
-        <span className="mt-0.5 block font-mono text-[11px] leading-snug text-[#6b7280]">
+        <span className="mt-0.5 block font-mono text-[11px] leading-snug text-zinc-500 transition-colors group-hover:text-zinc-400">
           {item.description}
         </span>
       </span>
