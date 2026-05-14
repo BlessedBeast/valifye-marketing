@@ -10,7 +10,8 @@ import {
   Crosshair,
   BarChart3,
   ListChecks,
-  Sparkles
+  Sparkles,
+  FileText
 } from 'lucide-react'
 
 import { supabase } from '@/lib/supabase'
@@ -36,15 +37,20 @@ const SCORE_ALIASES: Record<ScoreKey, string[]> = {
   speed: ['speed', 'velocity', 'time_to_value', 'timeToValue']
 }
 
+/** Badge value: canonical verdict or any string the edge function emitted. */
+export type BpkVerdictDisplay = Verdict | string
+
 export type BpkAnalystPayload = {
-  verdict: Verdict
-  scores: Partial<Record<ScoreKey, number | null>>
+  verdict: BpkVerdictDisplay
+  scores: Record<ScoreKey, number>
   demand_problem: string
   market_competitors: string
   key_assumptions: string
   fatal_risks: string
   monetization_reality: string
   if_this_works: string
+  /** Top-level keys not mapped to fixed dossier cards — still shown when they carry text. */
+  extraSections: { slug: string; label: string; body: string }[]
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -84,56 +90,232 @@ function pickScore(obj: Record<string, unknown>, keys: string[]): number | null 
 }
 
 function unwrapFunctionBody(body: unknown): Record<string, unknown> {
+  if (typeof body === 'string') {
+    const t = body.trim()
+    if (!t) return {}
+    try {
+      return unwrapFunctionBody(JSON.parse(t) as unknown)
+    } catch {
+      return {}
+    }
+  }
   if (!isRecord(body)) return {}
-  const nested = body.data ?? body.result ?? body.payload
+  const nested = body.data ?? body.result ?? body.payload ?? body.body
   if (isRecord(nested)) return nested
   return body
 }
 
-function parseBpkResponse(raw: unknown): BpkAnalystPayload | null {
+/** Normalize any value to a list of lines (missing → [], string → one item, array → coerced items). */
+function coerceToTextArray(value: unknown): string[] {
+  if (value == null) return []
+  if (typeof value === 'string') {
+    const t = value.trim()
+    return t ? [t] : []
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) return [String(value)]
+  if (typeof value === 'boolean') return [value ? 'true' : 'false']
+  if (Array.isArray(value)) {
+    const out: string[] = []
+    for (const item of value) {
+      if (typeof item === 'string' && item.trim()) {
+        out.push(item.trim())
+        continue
+      }
+      if (typeof item === 'number' && Number.isFinite(item)) {
+        out.push(String(item))
+        continue
+      }
+      if (isRecord(item)) {
+        const line = [
+          asString(item.title),
+          asString(item.headline),
+          asString(item.name),
+          asString(item.risk),
+          asString(item.finding),
+          asString(item.body),
+          asString(item.description),
+          asString(item.text),
+          asString(item.summary)
+        ]
+          .filter(Boolean)
+          .join(' — ')
+        if (line) out.push(line)
+        else {
+          try {
+            out.push(JSON.stringify(item))
+          } catch {
+            /* ignore */
+          }
+        }
+        continue
+      }
+      if (item != null && typeof item !== 'object') out.push(String(item))
+    }
+    return out
+  }
+  if (isRecord(value)) {
+    const line = [
+      asString(value.text),
+      asString(value.body),
+      asString(value.summary),
+      asString(value.content),
+      asString(value.message)
+    ]
+      .filter(Boolean)
+      .join('\n\n')
+    if (line) return [line]
+    try {
+      return [JSON.stringify(value, null, 2)]
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
+function fieldToDossierString(value: unknown): string {
+  return coerceToTextArray(value).join('\n\n')
+}
+
+function humanizeSlugKey(key: string): string {
+  const spaced = key
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .trim()
+  if (!spaced) return key
+  return spaced
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ')
+}
+
+const PAYLOAD_KEYS_USED = new Set([
+  'verdict_status',
+  'verdictStatus',
+  'verdict',
+  'status',
+  'decision',
+  'call',
+  'summary',
+  'scores',
+  'scoring',
+  'demand_problem',
+  'demandProblem',
+  'problem_demand',
+  'market_competitors',
+  'marketCompetitors',
+  'competition',
+  'key_assumptions',
+  'keyAssumptions',
+  'assumptions',
+  'fatal_risks',
+  'fatalRisks',
+  'risks',
+  'risk_summary',
+  'monetization_reality',
+  'monetizationReality',
+  'monetization',
+  'if_this_works',
+  'ifThisWorks',
+  'success_path',
+  'path_to_win',
+  'startup_idea',
+  'startupIdea',
+  'target_audience',
+  'targetAudience',
+  'monetization_strategy',
+  'monetizationStrategy',
+  'data',
+  'result',
+  'payload',
+  'body',
+  'error',
+  'message',
+  'success'
+])
+
+function isRenderableUnknownValue(value: unknown): boolean {
+  if (value == null) return false
+  if (typeof value === 'string') return value.trim().length > 0
+  if (typeof value === 'number' || typeof value === 'boolean') return true
+  if (Array.isArray(value)) return value.length > 0
+  if (isRecord(value)) return Object.keys(value).length > 0
+  return false
+}
+
+function collectExtraSections(bag: Record<string, unknown>): BpkAnalystPayload['extraSections'] {
+  const out: BpkAnalystPayload['extraSections'] = []
+  for (const key of Object.keys(bag)) {
+    if (PAYLOAD_KEYS_USED.has(key)) continue
+    const val = bag[key]
+    if (!isRenderableUnknownValue(val)) continue
+    const body = fieldToDossierString(val)
+    if (!body.trim()) continue
+    out.push({ slug: key, label: humanizeSlugKey(key), body })
+  }
+  return out
+}
+
+/**
+ * Always returns a renderable payload. Unknown / partial edge responses degrade
+ * with defaults instead of failing the UI.
+ */
+function parseBpkResponse(raw: unknown): BpkAnalystPayload {
   const root = unwrapFunctionBody(raw)
-  if (!isRecord(root)) return null
+  const bag: Record<string, unknown> = isRecord(root) ? root : {}
 
-  const verdict =
-    parseVerdict(root.verdict ?? root.status ?? root.decision ?? root.call) ??
-    parseVerdict(
-      isRecord(root.summary) ? root.summary.headline : root.summary
-    )
+  const verdictRaw =
+    bag.verdict_status ??
+    bag.verdictStatus ??
+    bag.verdict ??
+    bag.status ??
+    bag.decision ??
+    bag.call ??
+    (isRecord(bag.summary) ? bag.summary.headline : bag.summary)
 
-  const scoresBlock = isRecord(root.scores)
-    ? root.scores
-    : isRecord(root.scoring)
-      ? root.scoring
-      : root
+  const canonical = parseVerdict(verdictRaw)
+  const verdict: BpkVerdictDisplay =
+    canonical ??
+    (asString(verdictRaw) ? asString(verdictRaw).toUpperCase() : 'PENDING')
 
-  const scores: Partial<Record<ScoreKey, number | null>> = {}
+  const scoresBlock: Record<string, unknown> = isRecord(bag.scores)
+    ? bag.scores
+    : isRecord(bag.scoring)
+      ? bag.scoring
+      : bag
+
+  const scores = {} as Record<ScoreKey, number>
   for (const { key } of SCORE_LABELS) {
     const aliases = SCORE_ALIASES[key]
-    scores[key] = pickScore(scoresBlock as Record<string, unknown>, aliases)
+    const picked = pickScore(scoresBlock, aliases)
+    scores[key] = picked ?? 0
   }
 
-  const demand_problem = asString(
-    root.demand_problem ?? root.demandProblem ?? root.problem_demand
+  const demand_problem = fieldToDossierString(
+    bag.demand_problem ?? bag.demandProblem ?? bag.problem_demand
   )
-  const market_competitors = asString(
-    root.market_competitors ?? root.marketCompetitors ?? root.competition
+  const market_competitors = fieldToDossierString(
+    bag.market_competitors ?? bag.marketCompetitors ?? bag.competition
   )
-  const key_assumptions = asString(
-    root.key_assumptions ?? root.keyAssumptions ?? root.assumptions
+  const key_assumptions = fieldToDossierString(
+    bag.key_assumptions ?? bag.keyAssumptions ?? bag.assumptions
   )
-  const fatal_risks = asString(
-    root.fatal_risks ?? root.fatalRisks ?? root.risks ?? root.risk_summary
+  const fatal_risks = fieldToDossierString(
+    bag.fatal_risks ?? bag.fatalRisks ?? bag.risks ?? bag.risk_summary
   )
-  const monetization_reality = asString(
-    root.monetization_reality ??
-      root.monetizationReality ??
-      root.monetization
+  const monetization_reality = fieldToDossierString(
+    bag.monetization_reality ??
+      bag.monetizationReality ??
+      bag.monetization
   )
-  const if_this_works = asString(
-    root.if_this_works ?? root.ifThisWorks ?? root.success_path ?? root.path_to_win
+  const if_this_works = fieldToDossierString(
+    bag.if_this_works ??
+      bag.ifThisWorks ??
+      bag.success_path ??
+      bag.path_to_win
   )
 
-  if (!verdict) return null
+  const extraSections = collectExtraSections(bag)
 
   return {
     verdict,
@@ -143,17 +325,23 @@ function parseBpkResponse(raw: unknown): BpkAnalystPayload | null {
     key_assumptions,
     fatal_risks,
     monetization_reality,
-    if_this_works
+    if_this_works,
+    extraSections
   }
 }
 
-function VerdictBadge({ verdict }: { verdict: Verdict }) {
+function VerdictBadge({ verdict }: { verdict: BpkVerdictDisplay }) {
   const styles =
     verdict === 'BUILD'
       ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-200 shadow-[0_0_60px_-12px_rgba(16,185,129,0.55)]'
       : verdict === 'PIVOT'
         ? 'border-orange-500/50 bg-orange-500/10 text-orange-200 shadow-[0_0_56px_-12px_rgba(249,115,22,0.45)]'
-        : 'border-rose-500/50 bg-rose-500/10 text-rose-200 shadow-[0_0_56px_-12px_rgba(244,63,94,0.45)]'
+        : verdict === 'KILL'
+          ? 'border-rose-500/50 bg-rose-500/10 text-rose-200 shadow-[0_0_56px_-12px_rgba(244,63,94,0.45)]'
+          : 'border-zinc-600/50 bg-zinc-900/40 text-zinc-200 shadow-[0_0_40px_-16px_rgba(255,255,255,0.06)]'
+
+  const label =
+    typeof verdict === 'string' ? verdict.toUpperCase() : verdict
 
   return (
     <div className="flex flex-col items-center gap-3 py-2">
@@ -168,13 +356,13 @@ function VerdictBadge({ verdict }: { verdict: Verdict }) {
         role="status"
         aria-live="polite"
       >
-        [ {verdict} ]
+        [ {label} ]
       </div>
     </div>
   )
 }
 
-function ScoreStrip({ scores }: { scores: Partial<Record<ScoreKey, number | null>> }) {
+function ScoreStrip({ scores }: { scores: Record<ScoreKey, number> }) {
   return (
     <section
       aria-label="Validation scores"
@@ -186,8 +374,7 @@ function ScoreStrip({ scores }: { scores: Partial<Record<ScoreKey, number | null
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 md:gap-2">
         {SCORE_LABELS.map(({ key, label }) => {
           const v = scores[key]
-          const display =
-            typeof v === 'number' && Number.isFinite(v) ? v.toFixed(1) : '—'
+          const display = Number.isFinite(v) ? v.toFixed(1) : '0.0'
           return (
             <div
               key={key}
@@ -277,12 +464,6 @@ export function BuildPivotKillAnalyst() {
       }
 
       const parsed = parseBpkResponse(data)
-      if (!parsed) {
-        setError(
-          'Unexpected response shape from analyst. Check function payload (verdict + dossier fields).'
-        )
-        return
-      }
       setResult(parsed)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Network error.')
@@ -456,6 +637,15 @@ export function BuildPivotKillAnalyst() {
               icon={Sparkles}
               iconClass="text-orange-300/90"
             />
+            {result.extraSections.map((ex) => (
+              <DossierCard
+                key={ex.slug}
+                title={ex.label}
+                body={ex.body}
+                icon={FileText}
+                iconClass="text-zinc-400"
+              />
+            ))}
           </section>
         </section>
       ) : null}
