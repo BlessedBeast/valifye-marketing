@@ -1,5 +1,7 @@
-import { getRecentBpkAudits } from '@/lib/bpkAudits'
+import { unstable_noStore } from 'next/cache'
+
 import { getRecentAeoScans } from '@/lib/aeoScans'
+import { getRecentBpkAudits } from '@/lib/bpkAudits'
 
 export type BlueprintFeedItem = {
   kind: 'bpk' | 'aeo'
@@ -18,6 +20,8 @@ function parseCreatedMs(iso: string): number {
  * Merge the latest rows from `bpk_audits` and `aeo_scans`, newest first (cap `limit`).
  */
 export async function getBlueprintFeed(limit = 50): Promise<BlueprintFeedItem[]> {
+  unstable_noStore()
+
   const [bpkRows, aeoRows] = await Promise.all([
     getRecentBpkAudits(50),
     getRecentAeoScans(50)

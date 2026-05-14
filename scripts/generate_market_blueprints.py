@@ -43,20 +43,20 @@ TARGET_CITIES = [
 ]
 
 TARGET_NICHES = [
-    # High-intent medical/longevity searches (driven by GLP-1/semaglutide surge)
-    {"sector": "health_wellness", "model": "glp1_weight_loss_longevity_clinic"},
+    # Climate Adaptation (Driven by homeowners seeking to retain property insurance)
+    {"sector": "home_services", "model": "wildfire_flood_resilience_auditing_retrofitting"},
     
-    # Regulatory-driven (Fortune 500 compliance mandates trickle down to SMBs)
-    {"sector": "professional_services", "model": "smb_esg_compliance_reporting_saas"},
+    # Demographic Shift (Addressing 'Silver Tsunami' demand for tech-enabled aging in place)
+    {"sector": "health_construction", "model": "smart_home_elderly_safety_automation_integrator"},
     
-    # Infrastructure growth (high search volume for station uptime/service)
-    {"sector": "infrastructure", "model": "ev_charging_station_maintenance_dispatch"},
+    # AI Governance (Trickle-down liability protection for SMBs using unmanaged AI tools)
+    {"sector": "professional_services", "model": "smb_ai_usage_governance_liability_insurance_audit"},
     
-    # High-ticket pet care (recession-proof and constantly searched in major hubs)
-    {"sector": "pet_services", "model": "luxury_pet_resort_medical_boarding"},
+    # Energy Infrastructure (Capitalizing on residential battery exports and grid independence)
+    {"sector": "utilities", "model": "residential_vpp_virtual_power_plant_management_service"},
     
-    # Eco-functional (rapidly growing 'near me' search intent for efficiency audits)
-    {"sector": "home_services", "model": "automated_solar_panel_cleaning_hub"}
+    # Circular Economy (Driven by hardware costs and right-to-repair regulatory shifts)
+    {"sector": "logistics_sustainability", "model": "luxury_electronics_remanufacturing_circular_logistics"}
 ]
 
 

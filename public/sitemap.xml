@@ -13881,6 +13881,11 @@
     <priority>0.75</priority>
   </url>
   <url>
+    <loc>https://valifye.com/markets/usa-fl-miami/professional-services/smb-esg-compliance-reporting-saas</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
     <loc>https://valifye.com/markets/usa-tx-austin/health-wellness/med-spa</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
@@ -14211,6 +14216,16 @@
     <priority>0.75</priority>
   </url>
   <url>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/professional-services/smb-esg-compliance-reporting-saas</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/pet-services/luxury-pet-resort-medical-boarding</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
     <loc>https://valifye.com/markets/usa-ga-atlanta/health-wellness/longevity-center-biohacking-lab</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
@@ -14237,6 +14252,11 @@
   </url>
   <url>
     <loc>https://valifye.com/markets/usa-oh-columbus/home-services/commercial-hvac-refrigeration-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/infrastructure/ev-charging-station-maintenance-dispatch</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
@@ -14360,6 +14380,481 @@
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tx-austin/health-wellness/glp1-weight-loss-longevity-clinic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tx-austin/professional-services/smb-esg-compliance-reporting-saas</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tx-austin/infrastructure/ev-charging-station-maintenance-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tx-austin/pet-services/luxury-pet-resort-medical-boarding</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tx-austin/home-services/automated-solar-panel-cleaning-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-fl-miami/health-wellness/glp1-weight-loss-longevity-clinic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-fl-miami/infrastructure/ev-charging-station-maintenance-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-fl-miami/pet-services/luxury-pet-resort-medical-boarding</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-fl-miami/home-services/automated-solar-panel-cleaning-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-co-denver/health-wellness/glp1-weight-loss-longevity-clinic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/pet-services/luxury-pet-resort-medical-boarding</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-co-denver/professional-services/smb-esg-compliance-reporting-saas</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-co-denver/infrastructure/ev-charging-station-maintenance-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-co-denver/pet-services/luxury-pet-resort-medical-boarding</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-co-denver/home-services/automated-solar-panel-cleaning-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ut-provo/health-wellness/glp1-weight-loss-longevity-clinic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ut-provo/professional-services/smb-esg-compliance-reporting-saas</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ut-provo/infrastructure/ev-charging-station-maintenance-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ut-provo/pet-services/luxury-pet-resort-medical-boarding</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ut-provo/home-services/automated-solar-panel-cleaning-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/health-wellness/glp1-weight-loss-longevity-clinic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/professional-services/smb-esg-compliance-reporting-saas</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/infrastructure/ev-charging-station-maintenance-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/home-services/automated-solar-panel-cleaning-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tn-nashville/health-wellness/glp1-weight-loss-longevity-clinic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tn-nashville/professional-services/smb-esg-compliance-reporting-saas</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tn-nashville/infrastructure/ev-charging-station-maintenance-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tn-nashville/pet-services/luxury-pet-resort-medical-boarding</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tn-nashville/home-services/automated-solar-panel-cleaning-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/health-wellness/glp1-weight-loss-longevity-clinic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/professional-services/smb-esg-compliance-reporting-saas</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/infrastructure/ev-charging-station-maintenance-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/pet-services/luxury-pet-resort-medical-boarding</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/home-services/automated-solar-panel-cleaning-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/health-wellness/glp1-weight-loss-longevity-clinic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/home-services/automated-solar-panel-cleaning-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/health-wellness/glp1-weight-loss-longevity-clinic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/professional-services/smb-esg-compliance-reporting-saas</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/infrastructure/ev-charging-station-maintenance-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/pet-services/luxury-pet-resort-medical-boarding</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/home-services/automated-solar-panel-cleaning-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-oh-columbus/health-wellness/glp1-weight-loss-longevity-clinic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-oh-columbus/professional-services/smb-esg-compliance-reporting-saas</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-oh-columbus/infrastructure/ev-charging-station-maintenance-dispatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-oh-columbus/pet-services/luxury-pet-resort-medical-boarding</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-oh-columbus/home-services/automated-solar-panel-cleaning-hub</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tx-austin/home-services/wildfire-flood-resilience-auditing-retrofitting</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tx-austin/health-construction/smart-home-elderly-safety-automation-integrator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tx-austin/professional-services/smb-ai-usage-governance-liability-insurance-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tx-austin/utilities/residential-vpp-virtual-power-plant-management-service</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tx-austin/logistics-sustainability/luxury-electronics-remanufacturing-circular-logistics</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-fl-miami/home-services/wildfire-flood-resilience-auditing-retrofitting</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-fl-miami/health-construction/smart-home-elderly-safety-automation-integrator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-fl-miami/professional-services/smb-ai-usage-governance-liability-insurance-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-fl-miami/logistics-sustainability/luxury-electronics-remanufacturing-circular-logistics</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-co-denver/home-services/wildfire-flood-resilience-auditing-retrofitting</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-co-denver/health-construction/smart-home-elderly-safety-automation-integrator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-oh-columbus/home-services/wildfire-flood-resilience-auditing-retrofitting</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-co-denver/professional-services/smb-ai-usage-governance-liability-insurance-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-co-denver/utilities/residential-vpp-virtual-power-plant-management-service</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-co-denver/logistics-sustainability/luxury-electronics-remanufacturing-circular-logistics</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ut-provo/home-services/wildfire-flood-resilience-auditing-retrofitting</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ut-provo/health-construction/smart-home-elderly-safety-automation-integrator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ut-provo/professional-services/smb-ai-usage-governance-liability-insurance-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ut-provo/utilities/residential-vpp-virtual-power-plant-management-service</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ut-provo/logistics-sustainability/luxury-electronics-remanufacturing-circular-logistics</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/home-services/wildfire-flood-resilience-auditing-retrofitting</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/health-construction/smart-home-elderly-safety-automation-integrator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/professional-services/smb-ai-usage-governance-liability-insurance-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/utilities/residential-vpp-virtual-power-plant-management-service</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-az-scottsdale/logistics-sustainability/luxury-electronics-remanufacturing-circular-logistics</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tn-nashville/home-services/wildfire-flood-resilience-auditing-retrofitting</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tn-nashville/health-construction/smart-home-elderly-safety-automation-integrator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tn-nashville/professional-services/smb-ai-usage-governance-liability-insurance-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tn-nashville/utilities/residential-vpp-virtual-power-plant-management-service</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-tn-nashville/logistics-sustainability/luxury-electronics-remanufacturing-circular-logistics</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/home-services/wildfire-flood-resilience-auditing-retrofitting</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/health-construction/smart-home-elderly-safety-automation-integrator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/professional-services/smb-ai-usage-governance-liability-insurance-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/utilities/residential-vpp-virtual-power-plant-management-service</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nc-raleigh/logistics-sustainability/luxury-electronics-remanufacturing-circular-logistics</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/home-services/wildfire-flood-resilience-auditing-retrofitting</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/health-construction/smart-home-elderly-safety-automation-integrator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-oh-columbus/health-construction/smart-home-elderly-safety-automation-integrator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/professional-services/smb-ai-usage-governance-liability-insurance-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/utilities/residential-vpp-virtual-power-plant-management-service</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-ga-atlanta/logistics-sustainability/luxury-electronics-remanufacturing-circular-logistics</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/home-services/wildfire-flood-resilience-auditing-retrofitting</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/health-construction/smart-home-elderly-safety-automation-integrator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/professional-services/smb-ai-usage-governance-liability-insurance-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/utilities/residential-vpp-virtual-power-plant-management-service</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-nv-las-vegas/logistics-sustainability/luxury-electronics-remanufacturing-circular-logistics</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-oh-columbus/professional-services/smb-ai-usage-governance-liability-insurance-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-oh-columbus/utilities/residential-vpp-virtual-power-plant-management-service</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/markets/usa-oh-columbus/logistics-sustainability/luxury-electronics-remanufacturing-circular-logistics</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
 <!-- Engine 4b: Market state hubs -> /markets/state/{state_code} (priority 0.95) -->
   <url>
     <loc>https://valifye.com/markets/state/az</loc>
@@ -14422,7 +14917,7 @@
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
-<!-- Engine 4c2: Hub indexes + tool routes -> /solutions, /showcase, /tools/* -->
+<!-- Engine 4c2: Hub indexes -> /solutions, /showcase, /tools, /blueprints -->
   <url>
     <loc>https://valifye.com/solutions</loc>
     <changefreq>weekly</changefreq>
@@ -14438,6 +14933,12 @@
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+  <url>
+    <loc>https://valifye.com/blueprints</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+<!-- Engine 4c3: Tool routes -> /tools/{tool-slug} -->
   <url>
     <loc>https://valifye.com/tools/delivery-calculator</loc>
     <changefreq>monthly</changefreq>
@@ -14457,6 +14958,16 @@
     <loc>https://valifye.com/tools/uk-vat-cliff-scanner</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/tools/build-pivot-kill</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/tools/aeo-scanner</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 <!-- Engine 4d: Comparison engine -> /compare/{slug} (priority 0.8) -->
   <url>
@@ -14488,6 +14999,61 @@
   </url>
   <url>
     <loc>https://valifye.com/solutions/dtc-inventory-burn-test</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/solutions/verify-retail-foot-traffic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/solutions/zoning-permitted-use-address</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/solutions/lease-cam-exclusivity-audit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/solutions/reddit-incumbent-complaint-mining</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/solutions/feature-gap-pricing-leak-mining</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/solutions/ai-search-displacement-risk</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/solutions/competitor-density-cannibalization</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/solutions/saas-pricing-gap-discovery</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/solutions/churn-driver-complaint-mining</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/solutions/rapid-feature-matrix-forensics</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/solutions/franchise-reality-audit</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -14545,5 +15111,21 @@
     <loc>https://valifye.com/showcase/aws-cost-guardian-saas-pivot-playbook</loc>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
+  </url>
+<!-- Engine 7: Forensic Blueprints (Startup + AEO) -> /blueprints/{slug} -->
+  <url>
+    <loc>https://valifye.com/blueprints/i-want-to-build-habit-lul</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/blueprints/smart-home-elderly-safety-automation-0bop</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://valifye.com/blueprints/aeo-rizztalk-in-ewo9f</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
   </url>
 </urlset>

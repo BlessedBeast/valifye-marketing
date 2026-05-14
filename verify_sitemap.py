@@ -7,8 +7,11 @@ from supabase import create_client
 
 _NS = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 
-# Initialize
 load_dotenv()
+
+BASE_URL = (os.getenv("NEXT_PUBLIC_SITE_URL") or "https://valifye.com").rstrip("/")
+BLUEPRINT_PSEO_PREFIX = f"{BASE_URL}/blueprints/"
+
 supabase = create_client(
     os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 )
@@ -62,15 +65,20 @@ def _bucket_path(path: str) -> str | None:
         return "solutions"
     if p.startswith("/showcase/") or p.rstrip("/") == "/showcase":
         return "showcase"
+    if p.startswith("/blueprints"):
+        return "blueprints"
     return None
 
 
-def verify_physical_sitemap() -> tuple[dict[str, int], int]:
+def verify_physical_sitemap() -> tuple[dict[str, int], int, dict[str, object]]:
     """
     Parse public/sitemap.xml and count <loc> entries per canonical engine prefix.
 
     Uses the sitemap 0.9 XML namespace so <loc> nodes are found reliably
     (default xmlns on <urlset> emits Clark notation tags in ElementTree).
+
+    Returns (counts, total_locs, extras) where extras holds blueprint/tool verification
+    fields for the physical sitemap report.
     """
     keys = (
         "ideas",
@@ -82,34 +90,57 @@ def verify_physical_sitemap() -> tuple[dict[str, int], int]:
         "comparisons",
         "solutions",
         "showcase",
+        "blueprints",
     )
     counts: dict[str, int] = {k: 0 for k in keys}
+
+    extras: dict[str, object] = {
+        "blueprint_urls_found": 0,
+        "has_blueprint_pseo_prefix": False,
+        "has_tool_build_pivot_kill": False,
+        "has_tool_aeo_scanner": False,
+    }
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     path = os.path.join(base_dir, "public", "sitemap.xml")
 
     if not os.path.isfile(path):
-        return counts, 0
+        return counts, 0, extras
 
     try:
         tree = ET.parse(path)
         root = tree.getroot()
         loc_elems = root.findall(".//s:loc", _NS)
     except (ET.ParseError, OSError):
-        return counts, 0
+        return counts, 0, extras
 
     total_locs = len(loc_elems)
+    blueprint_loc_count = 0
     for elem in loc_elems:
         raw = (elem.text or "").strip()
         if not raw:
             continue
         parsed = urlparse(raw)
         path_only = parsed.path or ""
+        norm_path = path_only.rstrip("/") or "/"
+
+        if raw.startswith(BLUEPRINT_PSEO_PREFIX):
+            extras["has_blueprint_pseo_prefix"] = True
+        if path_only.startswith("/blueprints"):
+            blueprint_loc_count += 1
+
+        if norm_path == "/tools/build-pivot-kill":
+            extras["has_tool_build_pivot_kill"] = True
+        if norm_path == "/tools/aeo-scanner":
+            extras["has_tool_aeo_scanner"] = True
+
         bucket = _bucket_path(path_only)
         if bucket is not None:
             counts[bucket] += 1
 
-    return counts, total_locs
+    extras["blueprint_urls_found"] = blueprint_loc_count
+
+    return counts, total_locs, extras
 
 
 def run_master_audit():
@@ -184,7 +215,7 @@ def run_master_audit():
         if score > 75:
             high_aeo += 1
 
-    phy, phy_total_locs = verify_physical_sitemap()
+    phy, phy_total_locs, phy_extras = verify_physical_sitemap()
     phy_bucket_total = sum(phy.values())
 
     # --- 4. FINAL TERMINAL DASHBOARD ---
@@ -223,8 +254,12 @@ def run_master_audit():
         print(f"      Comparisons:       {phy['comparisons']}")
         print(f"      Solutions:         {phy['solutions']}")
         print(f"      Showcase:          {phy['showcase']}")
+        print(
+            f"      Blueprint URLs found: {phy_extras['blueprint_urls_found']} "
+            f"(<loc> paths under /blueprints…)"
+        )
         print(f"\n      Total <loc> in file: {phy_total_locs}")
-        print(f"      Sum of buckets (9): {phy_bucket_total}")
+        print(f"      Sum of buckets (10): {phy_bucket_total}")
         bucket_match = phy_total_locs == phy_bucket_total
         if not bucket_match:
             diff = phy_total_locs - phy_bucket_total
@@ -245,6 +280,20 @@ def run_master_audit():
                 "   Expected /solutions/ and /showcase/ entries from solution_pillars and marketing_showcase."
             )
             phy_ok = False
+        elif not phy_extras["has_blueprint_pseo_prefix"]:
+            print(
+                f"\n   {RED}FAIL:{RESET} Physical sitemap has no <loc> starting with "
+                f"{BLUEPRINT_PSEO_PREFIX!r} (need at least one pSEO /blueprints/{{slug}} URL)."
+            )
+            phy_ok = False
+        elif not phy_extras["has_tool_build_pivot_kill"] or not phy_extras[
+            "has_tool_aeo_scanner"
+        ]:
+            print(
+                f"\n   {RED}FAIL:{RESET} Physical sitemap must include static tool routes "
+                f"{BASE_URL}/tools/build-pivot-kill and {BASE_URL}/tools/aeo-scanner."
+            )
+            phy_ok = False
         elif not bucket_match:
             print(
                 f"\n   {RED}FAIL:{RESET} Sum of buckets must equal Total <loc> in file "
@@ -253,8 +302,8 @@ def run_master_audit():
             phy_ok = False
         else:
             print(
-                f"\n   {GREEN}PASS:{RESET} All nine path categories recognized; Solutions & Showcase non-zero; "
-                "bucket sum equals <loc> count."
+                f"\n   {GREEN}PASS:{RESET} All ten path categories recognized; Solutions & Showcase non-zero; "
+                "forensic blueprint pSEO + required tool routes present; bucket sum equals <loc> count."
             )
             phy_ok = True
 

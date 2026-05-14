@@ -14,13 +14,14 @@ import {
   TrendingUp
 } from 'lucide-react'
 
-import type {
-  AeoScanPayload,
-  BpkAnalystPayload,
-  BpkScoreKey,
-  VerdictBadgeValue
+import {
+  SCORE_SCHEMA,
+  coerceVerdictBadgeValue,
+  type AeoScanPayload,
+  type BpkAnalystPayload,
+  type BpkScoreKey,
+  type VerdictBadgeValue
 } from '@/lib/bpkReportParse'
-import { SCORE_SCHEMA } from '@/lib/bpkReportParse'
 import { cn } from '@/lib/utils'
 
 export function BpkEdgeErrorBanner({ message }: { message: string }) {
@@ -46,12 +47,14 @@ export function BpkEdgeErrorBanner({ message }: { message: string }) {
 }
 
 export function BpkVerdictBadge({
-  verdict,
+  verdict: verdictIn,
   caption
 }: {
-  verdict: VerdictBadgeValue
+  verdict: VerdictBadgeValue | string
   caption?: string
 }) {
+  const verdict = coerceVerdictBadgeValue(verdictIn)
+
   const styles =
     verdict === 'BUILD' || verdict === 'OPTIMIZED'
       ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-200 shadow-[0_0_60px_-12px_rgba(16,185,129,0.55)]'

@@ -272,7 +272,19 @@ function parseAeoVerdict(raw: unknown): AeoVerdict | 'PENDING' {
   if (s.includes('OPTIMIZED')) return 'OPTIMIZED'
   if (s.includes('INVISIBLE')) return 'INVISIBLE'
   if (s.includes('FRAGILE')) return 'FRAGILE'
+  if (s.includes('NEEDS_IMPROVEMENT') || s.includes('NEEDS-IMPROVEMENT')) {
+    return 'FRAGILE'
+  }
+  if (s.includes('POOR')) return 'FRAGILE'
+  if (s.includes('WEAK')) return 'FRAGILE'
   return 'PENDING'
+}
+
+/** Normalize any stored startup or AEO verdict for badge UI (server + client safe). */
+export function coerceVerdictBadgeValue(raw: unknown): VerdictBadgeValue {
+  const bpk = parseVerdict(raw)
+  if (bpk) return bpk
+  return parseAeoVerdict(raw)
 }
 
 function clampPercent(n: number): number {

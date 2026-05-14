@@ -65,6 +65,9 @@ function verdictTone(
   if (s.includes('OPTIMIZED')) return 'opt'
   if (s.includes('INVISIBLE')) return 'inv'
   if (s.includes('FRAGILE')) return 'frag'
+  if (s.includes('NEEDS_IMPROVEMENT') || s.includes('NEEDS-IMPROVEMENT')) return 'frag'
+  if (s.includes('POOR')) return 'frag'
+  if (s.includes('WEAK')) return 'frag'
   return 'neutral'
 }
 

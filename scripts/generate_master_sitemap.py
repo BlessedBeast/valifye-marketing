@@ -3,7 +3,7 @@ Master sitemap generator (Supabase → public/sitemap.xml).
 
 Sections are explicitly separated in the XML with comments so `/ideas/`, `/reports/`,
 `/local-reports/report/`, `/markets/`, `/markets/state/`, `/compare/`, key static routes,
-`/solutions/`, and `/showcase/` URLs are grouped.
+`/solutions/`, `/showcase/`, `/blueprints/`, and `/tools/` URLs are grouped.
 
 Local report <loc> values always use /local-reports/report/{slug} (never the pre-redirect
 /local-reports/{slug} shape). Market URLs match Next.js buildMarketPath + buildCanonical.
@@ -167,6 +167,50 @@ def fetch_showcase_urls() -> list[str]:
     return urls
 
 
+def fetch_bpk_blueprint_urls() -> list[str]:
+    """
+    Public startup audits: /blueprints/{slug} (bpk_audits.is_public).
+    """
+    rows = (
+        supabase.table("bpk_audits")
+        .select("slug")
+        .eq("is_public", True)
+        .limit(FETCH_LIMIT)
+        .execute()
+        .data
+        or []
+    )
+    urls: list[str] = []
+    for row in rows:
+        slug = row.get("slug")
+        if not slug or "/" in str(slug):
+            continue
+        urls.append(f"{SITE_URL}/blueprints/{slug}")
+    return urls
+
+
+def fetch_aeo_blueprint_urls() -> list[str]:
+    """
+    Public AEO shadow scans: /blueprints/{slug} (aeo_scans.is_public).
+    """
+    rows = (
+        supabase.table("aeo_scans")
+        .select("slug")
+        .eq("is_public", True)
+        .limit(FETCH_LIMIT)
+        .execute()
+        .data
+        or []
+    )
+    urls: list[str] = []
+    for row in rows:
+        slug = row.get("slug")
+        if not slug or "/" in str(slug):
+            continue
+        urls.append(f"{SITE_URL}/blueprints/{slug}")
+    return urls
+
+
 def fetch_static_marketing_urls() -> list[tuple[str, str]]:
     """High-value static marketing routes (URL, priority)."""
     return [
@@ -175,20 +219,34 @@ def fetch_static_marketing_urls() -> list[tuple[str, str]]:
     ]
 
 
+def fetch_static_hub_urls() -> list[tuple[str, str, str]]:
+    """Marketing index hubs (loc, priority, changefreq)."""
+    return [
+        (f"{SITE_URL}/solutions", "0.8", "weekly"),
+        (f"{SITE_URL}/showcase", "0.8", "weekly"),
+        (f"{SITE_URL}/tools", "0.7", "monthly"),
+        (f"{SITE_URL}/blueprints", "0.9", "daily"),
+    ]
+
+
+def fetch_static_tool_urls() -> list[tuple[str, str, str]]:
+    """Individual tool pages under /tools/* (loc, priority, changefreq)."""
+    return [
+        (f"{SITE_URL}/tools/delivery-calculator", "0.6", "monthly"),
+        (f"{SITE_URL}/tools/sba-loan-scanner", "0.6", "monthly"),
+        (f"{SITE_URL}/tools/franchise-profit-simulator", "0.6", "monthly"),
+        (f"{SITE_URL}/tools/uk-vat-cliff-scanner", "0.6", "monthly"),
+        (f"{SITE_URL}/tools/build-pivot-kill", "0.7", "monthly"),
+        (f"{SITE_URL}/tools/aeo-scanner", "0.7", "monthly"),
+    ]
+
+
 def fetch_static_hub_and_tool_urls() -> list[tuple[str, str, str]]:
     """
     Index hubs plus tool routes (loc, priority, changefreq).
     /tools/* entries complement the /tools hub; avoid duplicating these in other static lists.
     """
-    return [
-        (f"{SITE_URL}/solutions", "0.8", "weekly"),
-        (f"{SITE_URL}/showcase", "0.8", "weekly"),
-        (f"{SITE_URL}/tools", "0.7", "monthly"),
-        (f"{SITE_URL}/tools/delivery-calculator", "0.6", "monthly"),
-        (f"{SITE_URL}/tools/sba-loan-scanner", "0.6", "monthly"),
-        (f"{SITE_URL}/tools/franchise-profit-simulator", "0.6", "monthly"),
-        (f"{SITE_URL}/tools/uk-vat-cliff-scanner", "0.6", "monthly"),
-    ]
+    return fetch_static_hub_urls() + fetch_static_tool_urls()
 
 
 def fetch_comparison_urls() -> list[str]:
@@ -263,8 +321,11 @@ def generate_xml_sitemap() -> None:
     solutions_urls = fetch_solutions_urls()
     showcase_urls = fetch_showcase_urls()
     static_pages = fetch_static_marketing_urls()
-    hub_tool_urls = fetch_static_hub_and_tool_urls()
+    static_hub_urls = fetch_static_hub_urls()
+    static_tool_urls = fetch_static_tool_urls()
     comparison_urls = fetch_comparison_urls()
+    bpk_blueprint_urls = fetch_bpk_blueprint_urls()
+    aeo_blueprint_urls = fetch_aeo_blueprint_urls()
 
     # (absolute URL, priority) — appended before writing solutions/showcase XML
     all_urls: list[tuple[str, str]] = []
@@ -326,9 +387,15 @@ def generate_xml_sitemap() -> None:
         chunks.append(url_entry(loc, priority=priority))
 
     chunks.append(
-        "<!-- Engine 4c2: Hub indexes + tool routes -> /solutions, /showcase, /tools/* -->\n"
+        "<!-- Engine 4c2: Hub indexes -> /solutions, /showcase, /tools, /blueprints -->\n"
     )
-    for loc, priority, changefreq in hub_tool_urls:
+    for loc, priority, changefreq in static_hub_urls:
+        chunks.append(url_entry(loc, changefreq=changefreq, priority=priority))
+
+    chunks.append(
+        "<!-- Engine 4c3: Tool routes -> /tools/{tool-slug} -->\n"
+    )
+    for loc, priority, changefreq in static_tool_urls:
         chunks.append(url_entry(loc, changefreq=changefreq, priority=priority))
 
     chunks.append("<!-- Engine 4d: Comparison engine -> /compare/{slug} (priority 0.8) -->\n")
@@ -344,6 +411,14 @@ def generate_xml_sitemap() -> None:
     )
     for loc, priority in all_urls:
         chunks.append(url_entry(loc, priority=priority))
+
+    chunks.append(
+        "<!-- Engine 7: Forensic Blueprints (Startup + AEO) -> /blueprints/{slug} -->\n"
+    )
+    for loc in bpk_blueprint_urls:
+        chunks.append(url_entry(loc, changefreq="weekly", priority="0.75"))
+    for loc in aeo_blueprint_urls:
+        chunks.append(url_entry(loc, changefreq="weekly", priority="0.75"))
 
     chunks.append("</urlset>")
 
@@ -369,8 +444,11 @@ def generate_xml_sitemap() -> None:
     n_solutions = len(solutions_urls)
     n_showcase = len(showcase_urls)
     n_static = len(static_pages)
-    n_hub_tools = len(hub_tool_urls)
+    n_static_hubs = len(static_hub_urls)
+    n_tool_routes = len(static_tool_urls)
     n_comparisons = len(comparison_urls)
+    n_bpk_blueprints = len(bpk_blueprint_urls)
+    n_aeo_blueprints = len(aeo_blueprint_urls)
 
     grand_total = (
         n_ideas
@@ -379,10 +457,13 @@ def generate_xml_sitemap() -> None:
         + n_markets
         + n_market_state_hubs
         + n_static
-        + n_hub_tools
+        + n_static_hubs
+        + n_tool_routes
         + n_comparisons
         + n_solutions
         + n_showcase
+        + n_bpk_blueprints
+        + n_aeo_blueprints
     )
 
     print(f"✅ Wrote {out_path}")
@@ -393,10 +474,13 @@ def generate_xml_sitemap() -> None:
     print(f"      Markets:             {n_markets}")
     print(f"      Market State Hubs:   {n_market_state_hubs}")
     print(f"      Static Pages:        {n_static}")
-    print(f"      Hub + Tool URLs:     {n_hub_tools}")
+    print(f"      Hub indexes:         {n_static_hubs}")
+    print(f"      Tool routes:         {n_tool_routes}")
     print(f"      Comparisons:         {n_comparisons}")
     print(f"      Solutions:           {n_solutions}")
     print(f"      Showcase:            {n_showcase}")
+    print(f"      Blueprints (BPK):    {n_bpk_blueprints}")
+    print(f"      Blueprints (AEO):    {n_aeo_blueprints}")
     print(f"   Total URL entries: {grand_total}")
 
 
