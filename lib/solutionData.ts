@@ -61,6 +61,9 @@ export type SolutionEvidenceImages = {
   schemaJson: unknown | null
 }
 
+/** Parsed `content_matrix` — section key → row list (arrays coerced at render). */
+export type SolutionContentMatrix = Record<string, unknown>
+
 export type SolutionPillar = {
   id?: string
   slug: string
@@ -76,6 +79,21 @@ export type SolutionPillar = {
   primaryReportType: SolutionPrimaryReportType
   /** Pivot-path hero image (e.g. Digital Battlefield); column or nested in `evidence_images`. */
   pathBOutcomeUrl: string | null
+  /**
+   * DB `layout_type`: `legacy` uses the current forensic deliverable UI; any other
+   * value routes to the modern AEO/data shell.
+   */
+  layoutType: string
+  /**
+   * DB `page_format`: optional CMS hint (not used for thick briefing section pick).
+   */
+  pageFormat: string | null
+  /**
+   * DB `content_matrix` JSON object: optional keys (`timeline`, `benchmarks`,
+   * `sentiment`, `risk_matrix`, …) each holding a row array. Multiple sections
+   * with data render on one page.
+   */
+  contentMatrix: SolutionContentMatrix
   createdAt?: string
   updatedAt?: string
 }
@@ -106,6 +124,48 @@ function asDisplayString(value: unknown): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function normalizeLayoutType(value: unknown): string {
+  const raw = asString(value)?.toLowerCase()?.trim() ?? ''
+  if (!raw) return 'legacy'
+  return raw
+}
+
+function normalizePageFormat(value: unknown): string | null {
+  const raw = asString(value)?.toLowerCase()?.trim() ?? ''
+  if (!raw) return null
+  return raw.replace(/-/g, '_')
+}
+
+function normalizeContentMatrix(value: unknown): SolutionContentMatrix {
+  if (value == null) return {}
+  if (Array.isArray(value)) {
+    return value.length > 0 ? { timeline: value } : {}
+  }
+  if (typeof value === 'string') {
+    const parsed = safeParseJSON<unknown>(value.trim())
+    if (parsed != null) return coerceContentMatrixRecord(parsed)
+    try {
+      return coerceContentMatrixRecord(JSON.parse(value.trim()) as unknown)
+    } catch {
+      return {}
+    }
+  }
+  if (isRecord(value)) {
+    return { ...value }
+  }
+  return {}
+}
+
+function coerceContentMatrixRecord(parsed: unknown): SolutionContentMatrix {
+  if (Array.isArray(parsed)) {
+    return parsed.length > 0 ? { timeline: parsed } : {}
+  }
+  if (isRecord(parsed)) {
+    return { ...parsed }
+  }
+  return {}
 }
 
 function normalizeHeroVibe(value: unknown): SolutionHeroVibe {
@@ -628,6 +688,17 @@ export function normalizeSolutionRow(row: SolutionRow): SolutionPillar | null {
     const pathBOutcomeUrl =
       pathBResolved.trim().length > 0 ? pathBResolved.trim() : null
 
+    const layoutType = normalizeLayoutType(
+      row.layout_type ?? row.layoutType
+    )
+
+    const pageFormat = normalizePageFormat(
+      row.page_format ?? row.pageFormat
+    )
+    const contentMatrix = normalizeContentMatrix(
+      row.content_matrix ?? row.contentMatrix
+    )
+
     return {
       id: asString(row.id) ?? undefined,
       slug,
@@ -647,6 +718,9 @@ export function normalizeSolutionRow(row: SolutionRow): SolutionPillar | null {
         row.primary_report_type ?? row.primaryReportType
       ),
       pathBOutcomeUrl,
+      layoutType,
+      pageFormat,
+      contentMatrix,
       createdAt: asString(row.created_at) ?? undefined,
       updatedAt: asString(row.updated_at) ?? undefined
     }

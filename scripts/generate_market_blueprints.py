@@ -43,11 +43,20 @@ TARGET_CITIES = [
 ]
 
 TARGET_NICHES = [
-    {"sector": "health_wellness", "model": "longevity_center_biohacking_lab"},
-    {"sector": "real_estate_services", "model": "modular_adu_builder_consultancy"},
-    {"sector": "health_wellness", "model": "medical_weight_loss_aesthetic_spa"},
-    {"sector": "home_services", "model": "commercial_hvac_refrigeration_dispatch"},
-    {"sector": "services", "model": "automated_express_car_wash_hub"}
+    # High-intent medical/longevity searches (driven by GLP-1/semaglutide surge)
+    {"sector": "health_wellness", "model": "glp1_weight_loss_longevity_clinic"},
+    
+    # Regulatory-driven (Fortune 500 compliance mandates trickle down to SMBs)
+    {"sector": "professional_services", "model": "smb_esg_compliance_reporting_saas"},
+    
+    # Infrastructure growth (high search volume for station uptime/service)
+    {"sector": "infrastructure", "model": "ev_charging_station_maintenance_dispatch"},
+    
+    # High-ticket pet care (recession-proof and constantly searched in major hubs)
+    {"sector": "pet_services", "model": "luxury_pet_resort_medical_boarding"},
+    
+    # Eco-functional (rapidly growing 'near me' search intent for efficiency audits)
+    {"sector": "home_services", "model": "automated_solar_panel_cleaning_hub"}
 ]
 
 
