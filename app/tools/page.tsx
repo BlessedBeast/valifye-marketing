@@ -55,6 +55,14 @@ const TOOLS = [
     badge: 'FREE'
   },
   {
+    slug: 'aeo-scanner',
+    title: 'AEO Shadow Scanner',
+    description:
+      'Forensic answer-engine visibility probe — URL + category, structured briefing with citation signals and an optimization roadmap.',
+    category: 'Strategy',
+    badge: 'FREE'
+  },
+  {
     slug: 'build-pivot-kill',
     title: 'Build / Pivot / Kill Analyst',
     description:

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { MarketingShell } from '@/components/MarketingShell'
-import { getRecentBpkAudits } from '@/lib/bpkAudits'
+import { getBlueprintFeed } from '@/lib/blueprintsFeed'
 import { buildCanonical } from '@/lib/seo'
 import { cn } from '@/lib/utils'
 
@@ -12,9 +12,9 @@ export const revalidate = 0
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://valifye.com'
 
 const META_TITLE =
-  'Forensic Blueprints: 2026 Startup Market Intelligence Repository'
+  'Forensic Blueprints: Market Intelligence & AEO Shadow Scans (2026)'
 const META_DESCRIPTION =
-  'Browse our library of data-driven startup audits. Real-world analysis on demand, risks, and monetization for micro-SaaS founders.'
+  'Browse startup audits and AEO shadow scans — demand, risks, monetization, and answer-engine visibility in one forensic repository.'
 
 export const metadata: Metadata = {
   title: META_TITLE,
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true }
 }
 
-function truncateIdea(text: string | null, maxLen: number): string {
+function truncatePreview(text: string, maxLen: number): string {
   if (text == null || text.trim().length === 0) return '—'
   const t = text.trim().replace(/\s+/g, ' ')
   if (t.length <= maxLen) return t
@@ -57,11 +57,14 @@ function formatAuditDate(iso: string): string {
 
 function verdictTone(
   status: string | null
-): 'build' | 'pivot' | 'kill' | 'neutral' {
+): 'build' | 'pivot' | 'kill' | 'opt' | 'inv' | 'frag' | 'neutral' {
   const s = (status ?? '').toUpperCase()
   if (s.includes('BUILD')) return 'build'
   if (s.includes('PIVOT')) return 'pivot'
   if (s.includes('KILL')) return 'kill'
+  if (s.includes('OPTIMIZED')) return 'opt'
+  if (s.includes('INVISIBLE')) return 'inv'
+  if (s.includes('FRAGILE')) return 'frag'
   return 'neutral'
 }
 
@@ -69,11 +72,11 @@ function VerdictBadge({ status }: { status: string | null }) {
   const tone = verdictTone(status)
   const label = (status ?? 'PENDING').toUpperCase().slice(0, 24)
   const styles =
-    tone === 'build'
+    tone === 'build' || tone === 'opt'
       ? 'border-emerald-500/45 bg-emerald-500/10 text-emerald-200'
-      : tone === 'pivot'
+      : tone === 'pivot' || tone === 'frag'
         ? 'border-orange-500/45 bg-orange-500/10 text-orange-200'
-        : tone === 'kill'
+        : tone === 'kill' || tone === 'inv'
           ? 'border-rose-500/45 bg-rose-500/10 text-rose-200'
           : 'border-zinc-600/50 bg-zinc-900/40 text-zinc-400'
 
@@ -89,8 +92,24 @@ function VerdictBadge({ status }: { status: string | null }) {
   )
 }
 
+function SignalKind({ kind }: { kind: 'bpk' | 'aeo' }) {
+  const isStartup = kind === 'bpk'
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded border px-2 py-0.5 font-mono text-[8px] font-bold uppercase tracking-[0.24em]',
+        isStartup
+          ? 'border-emerald-800/60 bg-emerald-950/40 text-emerald-300/90'
+          : 'border-orange-800/50 bg-orange-950/35 text-orange-200/90'
+      )}
+    >
+      {isStartup ? '[ SIGNAL: STARTUP ]' : '[ SIGNAL: SHADOW SCAN ]'}
+    </span>
+  )
+}
+
 export default async function BlueprintsIndexPage() {
-  const audits = await getRecentBpkAudits(50)
+  const items = await getBlueprintFeed(50)
 
   return (
     <MarketingShell className="max-w-5xl gap-12 text-zinc-400">
@@ -104,21 +123,22 @@ export default async function BlueprintsIndexPage() {
           </h1>
           <p className="max-w-3xl text-base leading-relaxed text-zinc-400 md:text-lg">
             Unauthorized access to these market signals is prohibited. Use these
-            records to identify patterns in 2026 consumer behavior.
+            records to identify patterns in 2026 consumer behavior — startup audits and
+            AEO shadow scans in one feed.
           </p>
         </header>
 
-        <section aria-label="Latest forensic startup audits">
+        <section aria-label="Latest forensic blueprints">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-zinc-800/80 pb-4">
             <h2 className="font-serif text-xl font-bold tracking-tight text-zinc-100 md:text-2xl">
-              Latest audits
+              Latest blueprints
             </h2>
             <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">
-              {audits.length} record{audits.length === 1 ? '' : 's'} · bpk_audits
+              {items.length} record{items.length === 1 ? '' : 's'} · merged feed
             </p>
           </div>
 
-          {audits.length === 0 ? (
+          {items.length === 0 ? (
             <div
               className="rounded-lg border border-dashed border-zinc-700/80 bg-zinc-950/60 p-8 font-mono text-sm text-zinc-500"
               role="status"
@@ -127,14 +147,14 @@ export default async function BlueprintsIndexPage() {
                 /// NO ROWS RETURNED
               </p>
               <p className="mt-3 leading-relaxed">
-                The bpk_audits table returned zero rows, or the query failed (check
-                RLS and NEXT_PUBLIC_SUPABASE_* env).
+                Both `bpk_audits` and `aeo_scans` returned zero rows, or a query
+                failed (check RLS and NEXT_PUBLIC_SUPABASE_* env).
               </p>
             </div>
           ) : (
             <ul className="grid list-none grid-cols-1 gap-4 p-0 md:grid-cols-2">
-              {audits.map((row) => (
-                <li key={row.slug}>
+              {items.map((row) => (
+                <li key={`${row.kind}-${row.slug}`}>
                   <Link
                     href={`/blueprints/${encodeURIComponent(row.slug)}`}
                     className={cn(
@@ -142,8 +162,11 @@ export default async function BlueprintsIndexPage() {
                       'hover:border-emerald-500/35 hover:bg-zinc-900/70 hover:shadow-[0_0_40px_-20px_rgba(16,185,129,0.12)]'
                     )}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <VerdictBadge status={row.verdict_status} />
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <SignalKind kind={row.kind} />
+                        <VerdictBadge status={row.verdict_status} />
+                      </div>
                       <time
                         dateTime={row.created_at || undefined}
                         className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-zinc-500"
@@ -152,7 +175,7 @@ export default async function BlueprintsIndexPage() {
                       </time>
                     </div>
                     <p className="font-mono text-sm leading-relaxed text-zinc-300 group-hover:text-zinc-200">
-                      {truncateIdea(row.idea_input, 160)}
+                      {truncatePreview(row.preview, 160)}
                     </p>
                     <p className="font-mono text-[10px] text-zinc-600">
                       slug:{' '}

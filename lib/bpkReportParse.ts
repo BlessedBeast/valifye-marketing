@@ -246,3 +246,67 @@ export function parseBpkFullReport(raw: unknown): BpkAnalystPayload {
     if_this_works
   }
 }
+
+// --- AEO Shadow Scanner (aeo-scanner edge + `aeo_scans` JSON) -----------------
+
+export type AeoVerdict = 'OPTIMIZED' | 'INVISIBLE' | 'FRAGILE'
+
+export type AeoScanPayload = {
+  /** Present when upstream returns an error envelope instead of scan fields. */
+  edgeError?: string | null
+  visibility_score: number
+  perceived_authority: string
+  citation_snippets: string[]
+  missing_entities: string[]
+  sentiment_analysis: string
+  competitor_threat: string
+  aeo_verdict: AeoVerdict | 'PENDING'
+  improvement_roadmap: string[]
+}
+
+/** Union for shared verdict badge (startup audit + shadow scan). */
+export type VerdictBadgeValue = BpkVerdictDisplay | AeoVerdict
+
+function parseAeoVerdict(raw: unknown): AeoVerdict | 'PENDING' {
+  const s = asString(raw).toUpperCase()
+  if (s.includes('OPTIMIZED')) return 'OPTIMIZED'
+  if (s.includes('INVISIBLE')) return 'INVISIBLE'
+  if (s.includes('FRAGILE')) return 'FRAGILE'
+  return 'PENDING'
+}
+
+function clampPercent(n: number): number {
+  if (!Number.isFinite(n)) return 0
+  return Math.min(100, Math.max(0, n))
+}
+
+/** Parse `aeo-scanner` JSON (strict contract, resilient defaults). */
+export function parseAeoScanPayload(raw: unknown): AeoScanPayload {
+  const bag = isRecord(raw) ? raw : unwrapFunctionBody(raw)
+  const edgeError = asEdgeErrorString(bag.error)
+
+  const vs = bag.visibility_score ?? bag.visibilityScore
+  let visibility_score = 0
+  if (typeof vs === 'number' && Number.isFinite(vs)) visibility_score = clampPercent(vs)
+  else if (typeof vs === 'string') {
+    const n = parseFloat(vs.replace(/[^\d.-]/g, ''))
+    if (!Number.isNaN(n)) visibility_score = clampPercent(n)
+  }
+
+  const verdictRaw = bag.aeo_verdict ?? bag.aeoVerdict
+  const aeo_verdict = parseAeoVerdict(verdictRaw)
+
+  return {
+    edgeError,
+    visibility_score,
+    perceived_authority: strictStringField(bag, 'perceived_authority'),
+    citation_snippets: coerceToTextArray(bag.citation_snippets ?? bag.citationSnippets),
+    missing_entities: coerceToTextArray(bag.missing_entities ?? bag.missingEntities),
+    sentiment_analysis: strictStringField(bag, 'sentiment_analysis'),
+    competitor_threat: strictStringField(bag, 'competitor_threat'),
+    aeo_verdict,
+    improvement_roadmap: coerceToTextArray(
+      bag.improvement_roadmap ?? bag.improvementRoadmap
+    )
+  }
+}
