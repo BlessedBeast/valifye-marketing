@@ -53,6 +53,14 @@ const TOOLS = [
       'Find the VAT registration threshold cliff for UK businesses. Know when crossing £85k in revenue hits your margins.',
     category: 'Tax & Compliance',
     badge: 'FREE'
+  },
+  {
+    slug: 'build-pivot-kill',
+    title: 'Build / Pivot / Kill Analyst',
+    description:
+      'Forensic startup idea validator — demand, saturation, and fatal risks in one structured audit.',
+    category: 'Strategy',
+    badge: 'FREE'
   }
 ] as const
 
