@@ -23,6 +23,14 @@ export const metadata: Metadata = {
 
 const TOOLS = [
   {
+    slug: 'local-scout',
+    title: 'Local Market Scout',
+    description:
+      'On-ground validation for physical businesses — traffic zones, field tactics with metrics, and local nuance before you sign the lease.',
+    category: 'Local',
+    badge: 'FREE'
+  },
+  {
     slug: 'delivery-calculator',
     title: 'Delivery Margin Calculator',
     description:
