@@ -11,7 +11,7 @@ import {
   BarChart3,
   ListChecks,
   Sparkles,
-  FileText
+  Scale
 } from 'lucide-react'
 
 import { supabase } from '@/lib/supabase'
@@ -19,38 +19,43 @@ import { cn } from '@/lib/utils'
 
 type Verdict = 'BUILD' | 'PIVOT' | 'KILL'
 
-type ScoreKey = 'need' | 'diff' | 'feasibility' | 'distribution' | 'speed'
+/** Matches `scores` object from `bpk-analyst` edge function (snake_case). */
+export type BpkScoreKey =
+  | 'market_need'
+  | 'differentiation'
+  | 'feasibility'
+  | 'ease_of_distribution'
+  | 'speed_to_first_revenue'
 
-const SCORE_LABELS: { key: ScoreKey; label: string }[] = [
-  { key: 'need', label: 'Need' },
-  { key: 'diff', label: 'Diff' },
+const SCORE_SCHEMA: { key: BpkScoreKey; label: string }[] = [
+  { key: 'market_need', label: 'Market need' },
+  { key: 'differentiation', label: 'Differentiation' },
   { key: 'feasibility', label: 'Feasibility' },
-  { key: 'distribution', label: 'Distribution' },
-  { key: 'speed', label: 'Speed' }
+  { key: 'ease_of_distribution', label: 'Ease of distribution' },
+  { key: 'speed_to_first_revenue', label: 'Speed to first revenue' }
 ]
 
-const SCORE_ALIASES: Record<ScoreKey, string[]> = {
-  need: ['need', 'problem_need', 'problemNeed', 'demand'],
-  diff: ['diff', 'differentiation', 'differentiation_score', 'moat'],
-  feasibility: ['feasibility', 'feasible', 'execution'],
-  distribution: ['distribution', 'distribution_score', 'gtm', 'channels'],
-  speed: ['speed', 'velocity', 'time_to_value', 'timeToValue']
+function toCamelCase(snake: string): string {
+  return snake.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())
 }
 
-/** Badge value: canonical verdict or any string the edge function emitted. */
-export type BpkVerdictDisplay = Verdict | string
+/** Badge: strict verdict or fallback when the payload is incomplete. */
+export type BpkVerdictDisplay = Verdict | 'PENDING'
 
 export type BpkAnalystPayload = {
+  /** Populated when the edge function returns an `error` field (HTTP 200 + error body). */
+  edgeError: string | null
   verdict: BpkVerdictDisplay
-  scores: Record<ScoreKey, number>
+  scores: Record<BpkScoreKey, number>
   demand_problem: string
   market_competitors: string
+  /** Rendered from `key_assumptions` string[]. */
   key_assumptions: string
+  /** Rendered from `fatal_risks` string[]. */
   fatal_risks: string
   monetization_reality: string
+  verdict_reasoning: string
   if_this_works: string
-  /** Top-level keys not mapped to fixed dossier cards — still shown when they carry text. */
-  extraSections: { slug: string; label: string; body: string }[]
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -177,147 +182,85 @@ function fieldToDossierString(value: unknown): string {
   return coerceToTextArray(value).join('\n\n')
 }
 
-function humanizeSlugKey(key: string): string {
-  const spaced = key
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/[_-]+/g, ' ')
-    .trim()
-  if (!spaced) return key
-  return spaced
-    .split(/\s+/)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(' ')
+function formatNumberedList(lines: string[]): string {
+  if (lines.length === 0) return ''
+  return lines.map((l, i) => `${i + 1}. ${l}`).join('\n')
 }
 
-const PAYLOAD_KEYS_USED = new Set([
-  'verdict_status',
-  'verdictStatus',
-  'verdict',
-  'status',
-  'decision',
-  'call',
-  'summary',
-  'scores',
-  'scoring',
-  'demand_problem',
-  'demandProblem',
-  'problem_demand',
-  'market_competitors',
-  'marketCompetitors',
-  'competition',
-  'key_assumptions',
-  'keyAssumptions',
-  'assumptions',
-  'fatal_risks',
-  'fatalRisks',
-  'risks',
-  'risk_summary',
-  'monetization_reality',
-  'monetizationReality',
-  'monetization',
-  'if_this_works',
-  'ifThisWorks',
-  'success_path',
-  'path_to_win',
-  'startup_idea',
-  'startupIdea',
-  'target_audience',
-  'targetAudience',
-  'monetization_strategy',
-  'monetizationStrategy',
-  'data',
-  'result',
-  'payload',
-  'body',
-  'error',
-  'message',
-  'success'
-])
-
-function isRenderableUnknownValue(value: unknown): boolean {
-  if (value == null) return false
-  if (typeof value === 'string') return value.trim().length > 0
-  if (typeof value === 'number' || typeof value === 'boolean') return true
-  if (Array.isArray(value)) return value.length > 0
-  if (isRecord(value)) return Object.keys(value).length > 0
-  return false
+function strictStringField(bag: Record<string, unknown>, snake: string): string {
+  const camel = toCamelCase(snake)
+  const raw = bag[snake] ?? bag[camel]
+  const direct = asString(raw)
+  if (direct) return direct
+  return fieldToDossierString(raw)
 }
 
-function collectExtraSections(bag: Record<string, unknown>): BpkAnalystPayload['extraSections'] {
-  const out: BpkAnalystPayload['extraSections'] = []
-  for (const key of Object.keys(bag)) {
-    if (PAYLOAD_KEYS_USED.has(key)) continue
-    const val = bag[key]
-    if (!isRenderableUnknownValue(val)) continue
-    const body = fieldToDossierString(val)
-    if (!body.trim()) continue
-    out.push({ slug: key, label: humanizeSlugKey(key), body })
+function asEdgeErrorString(value: unknown): string | null {
+  if (value == null || value === false) return null
+  if (typeof value === 'string') {
+    const t = value.trim()
+    return t.length > 0 ? t : null
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  if (isRecord(value)) {
+    const m =
+      asString(value.message) ??
+      asString(value.error) ??
+      asString(value.detail) ??
+      asString(value.description)
+    if (m) return m
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return 'Unspecified error'
+    }
+  }
+  return null
+}
+
+function normalizeScores(raw: unknown): Record<BpkScoreKey, number> {
+  const zero: Record<BpkScoreKey, number> = {
+    market_need: 0,
+    differentiation: 0,
+    feasibility: 0,
+    ease_of_distribution: 0,
+    speed_to_first_revenue: 0
+  }
+  if (!isRecord(raw)) return { ...zero }
+  const out = { ...zero }
+  for (const k of Object.keys(zero) as BpkScoreKey[]) {
+    out[k] = pickScore(raw, [k, toCamelCase(k)]) ?? 0
   }
   return out
 }
 
 /**
- * Always returns a renderable payload. Unknown / partial edge responses degrade
- * with defaults instead of failing the UI.
+ * Maps `bpk-analyst` strict JSON to UI state. Unknown fields are ignored;
+ * missing `scores` defaults to 0; `error` surfaces as `edgeError`.
  */
 function parseBpkResponse(raw: unknown): BpkAnalystPayload {
   const root = unwrapFunctionBody(raw)
   const bag: Record<string, unknown> = isRecord(root) ? root : {}
 
-  const verdictRaw =
-    bag.verdict_status ??
-    bag.verdictStatus ??
-    bag.verdict ??
-    bag.status ??
-    bag.decision ??
-    bag.call ??
-    (isRecord(bag.summary) ? bag.summary.headline : bag.summary)
+  const edgeError = asEdgeErrorString(bag.error)
 
-  const canonical = parseVerdict(verdictRaw)
-  const verdict: BpkVerdictDisplay =
-    canonical ??
-    (asString(verdictRaw) ? asString(verdictRaw).toUpperCase() : 'PENDING')
+  const verdictRaw = bag.verdict_status ?? bag.verdictStatus
+  const verdict: BpkVerdictDisplay = parseVerdict(verdictRaw) ?? 'PENDING'
 
-  const scoresBlock: Record<string, unknown> = isRecord(bag.scores)
-    ? bag.scores
-    : isRecord(bag.scoring)
-      ? bag.scoring
-      : bag
+  const scores = normalizeScores(bag.scores)
 
-  const scores = {} as Record<ScoreKey, number>
-  for (const { key } of SCORE_LABELS) {
-    const aliases = SCORE_ALIASES[key]
-    const picked = pickScore(scoresBlock, aliases)
-    scores[key] = picked ?? 0
-  }
-
-  const demand_problem = fieldToDossierString(
-    bag.demand_problem ?? bag.demandProblem ?? bag.problem_demand
+  const demand_problem = strictStringField(bag, 'demand_problem')
+  const market_competitors = strictStringField(bag, 'market_competitors')
+  const key_assumptions = formatNumberedList(
+    coerceToTextArray(bag.key_assumptions)
   )
-  const market_competitors = fieldToDossierString(
-    bag.market_competitors ?? bag.marketCompetitors ?? bag.competition
-  )
-  const key_assumptions = fieldToDossierString(
-    bag.key_assumptions ?? bag.keyAssumptions ?? bag.assumptions
-  )
-  const fatal_risks = fieldToDossierString(
-    bag.fatal_risks ?? bag.fatalRisks ?? bag.risks ?? bag.risk_summary
-  )
-  const monetization_reality = fieldToDossierString(
-    bag.monetization_reality ??
-      bag.monetizationReality ??
-      bag.monetization
-  )
-  const if_this_works = fieldToDossierString(
-    bag.if_this_works ??
-      bag.ifThisWorks ??
-      bag.success_path ??
-      bag.path_to_win
-  )
-
-  const extraSections = collectExtraSections(bag)
+  const fatal_risks = formatNumberedList(coerceToTextArray(bag.fatal_risks))
+  const monetization_reality = strictStringField(bag, 'monetization_reality')
+  const verdict_reasoning = strictStringField(bag, 'verdict_reasoning')
+  const if_this_works = strictStringField(bag, 'if_this_works')
 
   return {
+    edgeError,
     verdict,
     scores,
     demand_problem,
@@ -325,8 +268,8 @@ function parseBpkResponse(raw: unknown): BpkAnalystPayload {
     key_assumptions,
     fatal_risks,
     monetization_reality,
-    if_this_works,
-    extraSections
+    verdict_reasoning,
+    if_this_works
   }
 }
 
@@ -340,8 +283,7 @@ function VerdictBadge({ verdict }: { verdict: BpkVerdictDisplay }) {
           ? 'border-rose-500/50 bg-rose-500/10 text-rose-200 shadow-[0_0_56px_-12px_rgba(244,63,94,0.45)]'
           : 'border-zinc-600/50 bg-zinc-900/40 text-zinc-200 shadow-[0_0_40px_-16px_rgba(255,255,255,0.06)]'
 
-  const label =
-    typeof verdict === 'string' ? verdict.toUpperCase() : verdict
+  const label = verdict
 
   return (
     <div className="flex flex-col items-center gap-3 py-2">
@@ -362,7 +304,7 @@ function VerdictBadge({ verdict }: { verdict: BpkVerdictDisplay }) {
   )
 }
 
-function ScoreStrip({ scores }: { scores: Record<ScoreKey, number> }) {
+function ScoreStrip({ scores }: { scores: Record<BpkScoreKey, number> }) {
   return (
     <section
       aria-label="Validation scores"
@@ -372,7 +314,7 @@ function ScoreStrip({ scores }: { scores: Record<ScoreKey, number> }) {
         Signal grid · /10
       </p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 md:gap-2">
-        {SCORE_LABELS.map(({ key, label }) => {
+        {SCORE_SCHEMA.map(({ key, label }) => {
           const v = scores[key]
           const display = Number.isFinite(v) ? v.toFixed(1) : '0.0'
           return (
@@ -591,6 +533,27 @@ export function BuildPivotKillAnalyst() {
           className="space-y-8 border border-zinc-800/90 bg-zinc-950/40 p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)] md:space-y-10 md:p-8"
         >
           <header className="space-y-6 text-center">
+            {result.edgeError ? (
+              <div
+                role="alert"
+                className="rounded-lg border-2 border-rose-600/70 bg-rose-950/35 p-5 text-left shadow-[0_0_40px_-12px_rgba(244,63,94,0.35)] md:p-6"
+              >
+                <div className="flex items-start gap-3">
+                  <ShieldAlert
+                    className="mt-0.5 h-6 w-6 shrink-0 text-rose-400"
+                    aria-hidden
+                  />
+                  <div className="min-w-0 space-y-2">
+                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-rose-300">
+                      Red alert · analyst error
+                    </p>
+                    <p className="font-mono text-sm leading-relaxed text-rose-100">
+                      {result.edgeError}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <VerdictBadge verdict={result.verdict} />
             <ScoreStrip scores={result.scores} />
           </header>
@@ -600,52 +563,50 @@ export function BuildPivotKillAnalyst() {
             className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5"
           >
             <DossierCard
-              title="Demand & problem"
+              title="demand_problem"
               body={result.demand_problem}
               icon={Target}
               iconClass="text-emerald-400/90"
               className="md:col-span-2"
             />
             <DossierCard
-              title="Market & competitors"
+              title="market_competitors"
               body={result.market_competitors}
               icon={BarChart3}
               iconClass="text-orange-400/90"
             />
             <DossierCard
-              title="Key assumptions"
+              title="key_assumptions"
               body={result.key_assumptions}
               icon={ListChecks}
               iconClass="text-zinc-400"
             />
             <DossierCard
-              title="Fatal risks"
+              title="fatal_risks"
               body={result.fatal_risks}
               icon={ShieldAlert}
               iconClass="text-rose-400/90"
               className="border-rose-500/20 bg-rose-950/10 md:col-span-2"
             />
             <DossierCard
-              title="Monetization reality"
+              title="monetization_reality"
               body={result.monetization_reality}
               icon={TrendingUp}
               iconClass="text-emerald-400/90"
             />
             <DossierCard
-              title="If this works"
+              title="verdict_reasoning"
+              body={result.verdict_reasoning}
+              icon={Scale}
+              iconClass="text-orange-300/90"
+              className="md:col-span-2"
+            />
+            <DossierCard
+              title="if_this_works"
               body={result.if_this_works}
               icon={Sparkles}
               iconClass="text-orange-300/90"
             />
-            {result.extraSections.map((ex) => (
-              <DossierCard
-                key={ex.slug}
-                title={ex.label}
-                body={ex.body}
-                icon={FileText}
-                iconClass="text-zinc-400"
-              />
-            ))}
           </section>
         </section>
       ) : null}
