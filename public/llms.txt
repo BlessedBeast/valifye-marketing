@@ -1,0 +1,51 @@
+# Valifye
+
+> Public marketing site for Valifye — a **forensic market intelligence** product for founders. The homepage positions Valifye as a **Forensic Market Intelligence Engine**: structured audits on micro-SaaS and business niches (competitor mapping, demand signals, pricing gaps) that return **BUILD**, **PIVOT**, or **KILL** verdicts. Copy emphasizes data and methodology over opinions — not “AI-generated” framing in site metadata.
+
+## Primary domain
+
+- Canonical links in code default to `https://valifye.com`; this file uses **`https://www.valifye.com`** per site policy.
+
+## Intelligence surfaces (indexed content)
+
+- [Home](https://www.valifye.com/) — Four “engines”: Ideas database, Verdict reports, Local reports, Market blueprints; verdict types BUILD / PIVOT / KILL; FAQ defines **Whitespace Score** and **Forensic Market Audit**.
+- [Ideas](https://www.valifye.com/ideas) — Niche directory; nested routes include `/ideas/directory`, `/ideas/directory/[niche]`, `/cities/[slug]`, `/countries/[country]`.
+- [Verdict reports](https://www.valifye.com/reports) — Forensic niche reports; `/reports/industry`, `/reports/industry/[sector]`, `/reports/[slug]`.
+- [Local reports](https://www.valifye.com/local-reports) — City-level dossiers; `/local-reports/report/[slug]`, `/local-reports/city/[city]`.
+- [Market blueprints](https://www.valifye.com/markets) — Region × sector × model; `/markets/[region]/[sector]/[model]`, state hubs `/markets/state/[state_code]`.
+- [Compare](https://www.valifye.com/compare) — Head-to-head comparisons; `/compare/[slug]`.
+- [Forensic blueprints](https://www.valifye.com/blueprints) — Repository of startup audits and AEO shadow scans; `/blueprints/[slug]`.
+- [Showcase](https://www.valifye.com/showcase) — Example reports; `/showcase/[slug]`.
+- [Solutions](https://www.valifye.com/solutions) — Playbook index from CMS; `/solutions/[slug]`.
+
+## Product hubs (curated report families)
+
+- [Local Market Intelligence Center](https://www.valifye.com/local-market-scout) — Hub at `/local-market-scout` (distinct from free tool `/tools/local-scout`). Showcases scout, scout_pivot, and arsenal templates linking to `/showcase/[slug]`.
+- [Digital Battlefield Hub](https://www.valifye.com/digital-battlefield) — Competitive intelligence and pivot playbooks; battlefield / pivot showcase templates.
+- [Forensic Local Audit landing](https://www.valifye.com/audit) — Purchase funnel CTA to `app.valifye.com`; describes PDF + JSON deliverable.
+
+## Free tools (`/tools`)
+
+Hub: [Free tools](https://www.valifye.com/tools)
+
+- [Local Market Scout (tool)](https://www.valifye.com/tools/local-scout) — Territory / validation briefing (edge: `local-scout`).
+- [Delivery margin calculator](https://www.valifye.com/tools/delivery-calculator)
+- [SBA loan scanner](https://www.valifye.com/tools/sba-loan-scanner)
+- [Franchise profit simulator](https://www.valifye.com/tools/franchise-profit-simulator)
+- [UK VAT cliff scanner](https://www.valifye.com/tools/uk-vat-cliff-scanner)
+- [AEO shadow scanner](https://www.valifye.com/tools/aeo-scanner)
+- [Build / Pivot / Kill analyst](https://www.valifye.com/tools/build-pivot-kill)
+
+## Legal & contact
+
+- [Privacy](https://www.valifye.com/privacy), [Terms](https://www.valifye.com/terms)
+- Contact in footer: `mailto:hello@valifye.com` (no `/contact` route in this repo).
+
+## Out of scope for this repository
+
+This repo is the **marketing** Next.js app only. There is **no** `/features`, `/pricing`, or `/contact` page route; no `/l/:slug` landing routes; no in-repo definitions of paid checkout, experiment runners, or app backend — those live elsewhere (e.g. `app.valifye.com`).
+
+## Conventions for crawlers
+
+- Dynamic SEO pages pull from Supabase-backed tables where configured; blueprint and tool pages may call Supabase edge functions.
+- Use `llms.txt` + `sitemap.xml` under `/public` for URL discovery alongside on-site navigation (`valifye-navbar`, `valifye-footer`).

@@ -7,7 +7,8 @@ Sections are explicitly separated in the XML with comments so `/ideas/`, `/repor
 
 Local report <loc> values always use /local-reports/report/{slug} (never the pre-redirect
 /local-reports/{slug} shape). Market URLs match Next.js buildMarketPath + buildCanonical.
-State hub URLs are `/markets/state/{state_code}` derived from USA-* region_key prefixes.
+State hub URLs are `/markets/state/{region_slug}` derived from the middle segment of
+`COUNTRY-REGION-CITY` region_key values (e.g. USA-TX-AUSTIN → tx, CAN-ON-TORONTO → on).
 Comparison pages use `competitor_comparisons.slug` when the table exists, else a safe fallback.
 """
 from __future__ import annotations
@@ -33,12 +34,15 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 FETCH_LIMIT = 5000
 
 
-_USA_REGION_STATE = re.compile(r"^USA-([A-Za-z]{2})-", re.IGNORECASE)
+_REGION_HUB = re.compile(
+    r"^[A-Za-z]{3}-([A-Za-z]{2,3})-.+",
+    re.IGNORECASE,
+)
 
 
-def extract_usa_state_code(region_key: str) -> str | None:
-    """Two-letter state code from keys like USA-TX-AUSTIN (aligned with TS extractUsaStateCode)."""
-    m = _USA_REGION_STATE.match((region_key or "").strip())
+def extract_global_region_hub_code(region_key: str) -> str | None:
+    """Middle segment of COUNTRY-REGION-CITY (aligned with TS extractGlobalRegionHubCode)."""
+    m = _REGION_HUB.match((region_key or "").strip())
     if not m:
         return None
     return m.group(1).upper()
@@ -104,7 +108,8 @@ def fetch_market_blueprint_urls() -> list[str]:
 
 def fetch_market_state_hub_urls() -> list[str]:
     """
-    Unique /markets/state/{xx} hubs from published local_business_blueprints.region_key (USA-xx-…).
+    Unique /markets/state/{hub} URLs from published local_business_blueprints.region_key
+    (COUNTRY-REGION-CITY → region hub slug lowercased).
     """
     rows = (
         supabase.table("local_business_blueprints")
@@ -118,7 +123,7 @@ def fetch_market_state_hub_urls() -> list[str]:
     codes: set[str] = set()
     for row in rows:
         rk = row.get("region_key")
-        code = extract_usa_state_code(str(rk) if rk else "")
+        code = extract_global_region_hub_code(str(rk) if rk else "")
         if code:
             codes.add(code)
     return [f"{SITE_URL}/markets/state/{c.lower()}" for c in sorted(codes)]

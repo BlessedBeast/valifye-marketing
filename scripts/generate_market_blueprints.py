@@ -30,35 +30,44 @@ client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 MODEL_NAME = "gemini-2.5-flash"
 
 TARGET_CITIES = [
-    "USA-TX-AUSTIN",
-    "USA-FL-MIAMI",
-    "USA-CO-DENVER",
-    "USA-UT-PROVO",
-    "USA-AZ-SCOTTSDALE",
-    "USA-TN-NASHVILLE",
-    "USA-NC-RALEIGH",
-    "USA-GA-ATLANTA",
-    "USA-NV-LAS-VEGAS",
-    "USA-OH-COLUMBUS",
+    # United Kingdom (High commercial intent, dense urban populations)
+    "GBR-LND-LONDON",
+    "GBR-ENG-MANCHESTER",
+    
+    # Canada (Rapidly growing tech and immigrant entrepreneur hubs)
+    "CAN-ON-TORONTO",
+    "CAN-BC-VANCOUVER",
+    
+    # Australia & New Zealand (High disposable income, massive local services demand)
+    "AUS-NSW-SYDNEY",
+    "AUS-VIC-MELBOURNE",
+    "NZL-AUK-AUCKLAND",
+    
+    # Global / Expat Business Hubs (Explosive company formation search volume)
+    "ARE-DXB-DUBAI",
+    "SGP-SG-SINGAPORE",
+    
+    # India (Massive English-speaking volume for tech-enabled local services)
+    "IND-KA-BENGALURU",
+    "IND-MH-MUMBAI"
 ]
 
 TARGET_NICHES = [
-    # Climate Adaptation (Driven by homeowners seeking to retain property insurance)
-    {"sector": "home_services", "model": "wildfire_flood_resilience_auditing_retrofitting"},
+    # Short-Term Rental Logistics (Driven by the Airbnb/VRBO explosion in Tier-1 hubs)
+    {"sector": "logistics_hospitality", "model": "automated_short_term_rental_turnover_and_cleaning_service"},
     
-    # Demographic Shift (Addressing 'Silver Tsunami' demand for tech-enabled aging in place)
-    {"sector": "health_construction", "model": "smart_home_elderly_safety_automation_integrator"},
+    # High-Ticket Auto Care (Massive search volume for protecting vehicle assets)
+    {"sector": "automotive_services", "model": "mobile_ceramic_coating_and_high_end_detailing_unit"},
     
-    # AI Governance (Trickle-down liability protection for SMBs using unmanaged AI tools)
-    {"sector": "professional_services", "model": "smb_ai_usage_governance_liability_insurance_audit"},
+    # Specialized Clearance (High intent for "Estate Sales" and "Moving" stress points)
+    {"sector": "home_services", "model": "residential_estate_cleanout_and_junk_removal_specialist"},
     
-    # Energy Infrastructure (Capitalizing on residential battery exports and grid independence)
-    {"sector": "utilities", "model": "residential_vpp_virtual_power_plant_management_service"},
+    # Post-Pandemic Infrastructure (High intent for permanent WFH setups)
+    {"sector": "construction_tech", "model": "modular_backyard_office_pod_installation_and_setup"},
     
-    # Circular Economy (Driven by hardware costs and right-to-repair regulatory shifts)
-    {"sector": "logistics_sustainability", "model": "luxury_electronics_remanufacturing_circular_logistics"}
+    # Rapid Wellness (Huge "Hangover Cure" and "Performance" search volume)
+    {"sector": "health_wellness", "model": "mobile_iv_hydration_and_vitamin_recovery_infusion"}
 ]
-
 
 # --- Pydantic: matches JSONB shape on `local_business_blueprints` ------------
 

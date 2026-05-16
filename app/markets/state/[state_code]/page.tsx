@@ -4,7 +4,11 @@ import { notFound } from 'next/navigation'
 import { ArrowRight, Crosshair, MapPin } from 'lucide-react'
 
 import { MarketingShell } from '@/components/MarketingShell'
-import { formatSectorLabel, usaStateDisplayName } from '@/lib/marketsStateHub'
+import {
+  deriveHubTitleFromRows,
+  extractGlobalRegionHubCode,
+  formatSectorLabel
+} from '@/lib/marketsStateHub'
 import { buildCanonical } from '@/lib/seo'
 import { buildMarketPath } from '@/lib/slugify'
 import { createClient } from '@/utils/supabase/server'
@@ -23,28 +27,31 @@ type BlueprintRow = {
 
 type Props = { params: Promise<{ state_code: string }> }
 
-function normalizeStateParam(raw: string): string | null {
+/** URL segment: 2–3 letter region code (e.g. tx, on, lnd, dxb). */
+function normalizeHubParam(raw: string): string | null {
   const s = decodeURIComponent(raw ?? '')
     .trim()
     .toUpperCase()
-  if (s.length !== 2 || !/^[A-Z]{2}$/.test(s)) return null
+  if (!/^[A-Z]{2,3}$/.test(s)) return null
   return s
 }
 
-async function fetchBlueprintsForState(stateUpper: string): Promise<BlueprintRow[]> {
+async function fetchBlueprintsForHub(
+  hubCodeUpper: string
+): Promise<BlueprintRow[]> {
   const supabase = createClient()
-  const pattern = `%USA-${stateUpper}-%`
   const { data, error } = await supabase
     .from('local_business_blueprints')
     .select('region_key, region_label, sector, business_model, meta_title')
     .eq('status', 'published')
-    .ilike('region_key', pattern)
+    .limit(10000)
 
   if (error) {
     console.error('[markets/state] fetch:', error.message)
     return []
   }
-  return Array.isArray(data) ? (data as BlueprintRow[]) : []
+  const rows = Array.isArray(data) ? (data as BlueprintRow[]) : []
+  return rows.filter((r) => extractGlobalRegionHubCode(r.region_key) === hubCodeUpper)
 }
 
 function sectionGroupKey(row: BlueprintRow): string {
@@ -68,14 +75,15 @@ function groupByLabelOrRegionKey(rows: BlueprintRow[]): Map<string, BlueprintRow
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { state_code } = await params
-  const st = normalizeStateParam(state_code)
-  if (!st) {
-    return { title: 'State markets | Valifye' }
+  const hub = normalizeHubParam(state_code)
+  if (!hub) {
+    return { title: 'Market hubs | Valifye' }
   }
-  const stateName = usaStateDisplayName(st)
-  const title = `Market Blueprints in ${stateName} | Valifye`
-  const description = `Forensic local business blueprints and market intelligence indexed for ${stateName}.`
-  const path = `/markets/state/${st.toLowerCase()}`
+  const rows = await fetchBlueprintsForHub(hub)
+  const hubTitle = deriveHubTitleFromRows(rows, hub)
+  const title = `${hubTitle} Market Intelligence | Valifye`
+  const description = `Forensic local business blueprints and market intelligence indexed for ${hubTitle}.`
+  const path = `/markets/state/${hub.toLowerCase()}`
   const canonical = buildCanonical(path)
   return {
     title,
@@ -92,16 +100,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function MarketsStateHubPage({ params }: Props) {
   const { state_code } = await params
-  const st = normalizeStateParam(state_code)
-  if (!st) {
+  const hub = normalizeHubParam(state_code)
+  if (!hub) {
     notFound()
   }
 
-  const rows = await fetchBlueprintsForState(st)
+  const rows = await fetchBlueprintsForHub(hub)
   const bySection = groupByLabelOrRegionKey(rows)
   const sectionKeys = [...bySection.keys()].sort((a, b) => a.localeCompare(b))
   const uniqueRegionKeys = new Set(rows.map((r) => r.region_key)).size
-  const stateName = usaStateDisplayName(st)
+  const hubTitle = deriveHubTitleFromRows(rows, hub)
 
   return (
     <MarketingShell className="max-w-4xl gap-12 px-4 py-10 md:px-8 md:py-14">
@@ -111,17 +119,17 @@ export default async function MarketsStateHubPage({ params }: Props) {
             Markets
           </Link>
           <span className="mx-2 text-zinc-700">/</span>
-          <span className="text-zinc-300">{stateName}</span>
+          <span className="text-zinc-300">{hubTitle}</span>
         </nav>
 
         <header className="space-y-6 border-b border-zinc-800/80 pb-10">
           <p className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-zinc-500">
             <Crosshair className="h-3.5 w-3.5 text-amber-500/90" aria-hidden />
-            State intelligence hub
+            Regional intelligence hub
           </p>
           <div className="space-y-3">
             <h1 className="font-serif text-3xl font-black leading-tight tracking-tight text-zinc-50 md:text-4xl">
-              Market Blueprints in {stateName}
+              {hubTitle} Market Intelligence
             </h1>
             <p className="max-w-2xl font-serif text-sm leading-relaxed text-zinc-500 md:text-[15px]">
               Answer-engine ready dossiers grouped by metro. Each card links to a full forensic
@@ -146,13 +154,13 @@ export default async function MarketsStateHubPage({ params }: Props) {
             role="status"
           >
             <p className="font-serif text-sm text-zinc-400">
-              No published blueprints for this state yet.
+              No published blueprints for this region yet.
             </p>
             <Link
               href="/markets"
               className="mt-4 inline-block font-mono text-xs font-bold uppercase tracking-widest text-amber-500/90 hover:text-amber-400"
             >
-              ← All state hubs
+              ← All market hubs
             </Link>
           </div>
         ) : (

@@ -12,7 +12,7 @@ import {
 import { MarketingShell } from '@/components/MarketingShell'
 import {
   formatSectorLabel,
-  parseUsaRegionKeyForBreadcrumb
+  parseRegionKeyForHubBreadcrumb
 } from '@/lib/marketsStateHub'
 import { buildCanonical } from '@/lib/seo'
 import { buildMarketPath } from '@/lib/slugify'
@@ -203,7 +203,7 @@ export default async function MarketBlueprintPage({ params }: Props) {
     ? Math.max(0, Math.min(100, Math.round(verdict.score)))
     : 0
   const tone = scoreTone(score)
-  const regionCrumb = parseUsaRegionKeyForBreadcrumb(row.region_key)
+  const regionCrumb = parseRegionKeyForHubBreadcrumb(row.region_key)
 
   return (
     <MarketingShell className="max-w-4xl gap-12 px-4 py-10 pb-28 md:px-8 md:py-14 md:pb-32">
@@ -219,10 +219,10 @@ export default async function MarketBlueprintPage({ params }: Props) {
           {regionCrumb ? (
             <>
               <Link
-                href={`/markets/state/${regionCrumb.stateSlug}`}
+                href={`/markets/state/${regionCrumb.hubSlug}`}
                 className="text-zinc-400 hover:text-amber-500/90"
               >
-                {regionCrumb.stateName}
+                {regionCrumb.hubDisplayName}
               </Link>
               <span className="text-zinc-700">/</span>
               <span className="text-zinc-400">{regionCrumb.cityLabel}</span>
