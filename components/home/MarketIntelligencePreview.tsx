@@ -2,6 +2,12 @@ import Link from 'next/link'
 import { unstable_noStore as noStore } from 'next/cache'
 import { ArrowRight, Crosshair, MapPin } from 'lucide-react'
 
+import {
+  dossierTextWrapClass,
+  formatBusinessModelLabel,
+  formatDossierTitle,
+  formatSectorLabel
+} from '@/lib/marketsStateHub'
 import { createClient } from '@/utils/supabase/server'
 import { cn } from '@/lib/utils'
 
@@ -212,10 +218,19 @@ export async function MarketIntelligencePreview() {
                           <p className="font-mono text-[9px] font-medium uppercase tracking-[0.2em] text-zinc-500">
                             Business model
                           </p>
-                          <p className="mt-1 font-mono text-[11px] leading-snug text-zinc-400">
-                            <span className="font-normal text-zinc-500">{row.sector}</span>
+                          <p
+                            className={cn(
+                              'mt-1 font-mono text-[11px] leading-snug text-zinc-400',
+                              dossierTextWrapClass
+                            )}
+                          >
+                            <span className="font-normal text-zinc-500">
+                              {formatSectorLabel(row.sector)}
+                            </span>
                             <span className="text-zinc-700"> · </span>
-                            <span className="text-zinc-300">{row.business_model.replace(/_/g, ' ')}</span>
+                            <span className="text-zinc-300">
+                              {formatBusinessModelLabel(row.business_model)}
+                            </span>
                           </p>
                         </div>
                       </div>
@@ -243,8 +258,13 @@ export async function MarketIntelligencePreview() {
                       </div>
                     </div>
 
-                    <h3 className="mt-5 line-clamp-2 shrink-0 font-serif text-sm font-semibold leading-snug text-zinc-100">
-                      {row.meta_title}
+                    <h3
+                      className={cn(
+                        'mt-5 shrink-0 font-serif text-sm font-semibold leading-snug text-zinc-100 line-clamp-2',
+                        dossierTextWrapClass
+                      )}
+                    >
+                      {formatDossierTitle(row.meta_title)}
                     </h3>
                     <p
                       className="mt-3 min-h-0 flex-1 overflow-hidden font-serif text-[13px] leading-relaxed text-zinc-400 line-clamp-5"

@@ -269,10 +269,28 @@ export function formatMetroLabelFromRegionKey(regionKey: string): string {
   return regionKey.replace(/-/g, ' ')
 }
 
+/** Tailwind: long snake_case labels stay inside dossier card bounds */
+export const dossierTextWrapClass =
+  'break-words whitespace-normal [overflow-wrap:anywhere]' as const
+
+/** Underscore / snake_case → spaced title case (sector, business_model, sluggy meta_title). */
+export function formatSnakeCaseLabel(value: string): string {
+  const t = (value ?? '').replace(/_/g, ' ').replace(/\s+/g, ' ').trim()
+  if (!t) return ''
+  return t.replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 export function formatSectorLabel(sector: string): string {
-  return (sector ?? '')
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
+  return formatSnakeCaseLabel(sector)
+}
+
+export function formatBusinessModelLabel(model: string): string {
+  return formatSnakeCaseLabel(model)
+}
+
+/** Display-safe dossier / card headline from stored meta_title. */
+export function formatDossierTitle(title: string): string {
+  return formatSnakeCaseLabel(title)
 }
 
 export type UsaRegionCrumb = {

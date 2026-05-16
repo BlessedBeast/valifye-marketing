@@ -11,6 +11,9 @@ import {
 
 import { MarketingShell } from '@/components/MarketingShell'
 import {
+  dossierTextWrapClass,
+  formatBusinessModelLabel,
+  formatDossierTitle,
   formatSectorLabel,
   parseRegionKeyForHubBreadcrumb
 } from '@/lib/marketsStateHub'
@@ -248,16 +251,27 @@ export default async function MarketBlueprintPage({ params }: Props) {
                 <Crosshair className="h-3.5 w-3.5 text-amber-500/90" aria-hidden />
                 Forensic market blueprint
               </p>
-              <h1 className="hyphens-auto break-words font-serif text-3xl font-black leading-tight tracking-tight text-zinc-50 md:text-4xl">
-                {row.meta_title}
+              <h1
+                className={cn(
+                  'hyphens-auto font-serif text-3xl font-black leading-tight tracking-tight text-zinc-50 md:text-4xl',
+                  dossierTextWrapClass
+                )}
+              >
+                {formatDossierTitle(row.meta_title)}
               </h1>
               {row.meta_description ? (
                 <p className="max-w-2xl font-serif text-sm leading-relaxed text-zinc-500">
                   {row.meta_description}
                 </p>
               ) : null}
-              <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-600">
-                {row.region_key} · {row.sector} · {row.business_model}
+              <p
+                className={cn(
+                  'font-mono text-[10px] uppercase tracking-widest text-zinc-600',
+                  dossierTextWrapClass
+                )}
+              >
+                {row.region_key} · {formatSectorLabel(row.sector)} ·{' '}
+                {formatBusinessModelLabel(row.business_model)}
               </p>
             </div>
 

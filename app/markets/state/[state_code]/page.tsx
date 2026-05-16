@@ -6,7 +6,10 @@ import { ArrowRight, Crosshair, MapPin } from 'lucide-react'
 import { MarketingShell } from '@/components/MarketingShell'
 import {
   deriveHubTitleFromRows,
+  dossierTextWrapClass,
   extractGlobalRegionHubCode,
+  formatBusinessModelLabel,
+  formatDossierTitle,
   formatSectorLabel
 } from '@/lib/marketsStateHub'
 import { buildCanonical } from '@/lib/seo'
@@ -214,21 +217,31 @@ export default async function MarketsStateHubPage({ params }: Props) {
                             row.business_model
                           )}
                           className={cn(
-                            'group flex h-full flex-col justify-between gap-4 rounded-lg border border-zinc-800/90 bg-[#09090b] p-5',
+                            'group flex h-full min-w-0 flex-col justify-between gap-4 rounded-lg border border-zinc-800/90 bg-[#09090b] p-5',
                             'shadow-[0_0_48px_-20px_rgba(245,158,11,0.08)] transition-colors',
                             'hover:border-amber-500/25 hover:bg-zinc-950/80',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40'
                           )}
                         >
                           <div className="min-w-0 space-y-2">
-                            <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                            <p
+                              className={cn(
+                                'font-mono text-[10px] font-bold uppercase tracking-widest text-zinc-500',
+                                dossierTextWrapClass
+                              )}
+                            >
                               {formatSectorLabel(row.sector)}
                               <span className="text-zinc-700"> · </span>
-                              {row.business_model.replace(/_/g, ' ')}
+                              {formatBusinessModelLabel(row.business_model)}
                             </p>
-                            <p className="font-serif text-base font-semibold leading-snug text-zinc-100 md:text-[17px]">
-                              {row.meta_title}
-                            </p>
+                            <h3
+                              className={cn(
+                                'font-serif text-base font-semibold leading-snug text-zinc-100 md:text-[17px]',
+                                dossierTextWrapClass
+                              )}
+                            >
+                              {formatDossierTitle(row.meta_title)}
+                            </h3>
                           </div>
                           <span className="inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-amber-500/90">
                             Open dossier
