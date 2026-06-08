@@ -42,7 +42,7 @@ function normalizeHubParam(raw: string): string | null {
 async function fetchBlueprintsForHub(
   hubCodeUpper: string
 ): Promise<BlueprintRow[]> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('local_business_blueprints')
     .select('region_key, region_label, sector, business_model, meta_title')

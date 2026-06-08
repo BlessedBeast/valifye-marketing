@@ -119,7 +119,7 @@ function scorePresentation(score: number | null): {
 }
 
 async function fetchBlueprintPool(): Promise<BlueprintPreviewRow[]> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('local_business_blueprints')
     .select('region_key, sector, business_model, meta_title, executive_verdict, aeo_summary')

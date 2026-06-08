@@ -39,7 +39,7 @@ export default async function LocalCityHubPage({ params }: Props) {
     notFound()
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('local_city_hubs')

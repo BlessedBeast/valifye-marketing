@@ -36,7 +36,7 @@ export const metadata: Metadata = {
 }
 
 async function fetchPublishedRegionKeys(): Promise<string[]> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('local_business_blueprints')
     .select('region_key')

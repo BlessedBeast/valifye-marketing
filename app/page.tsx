@@ -411,6 +411,55 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section
+        aria-labelledby="founders-lounge-cta-heading"
+        className="border-t border-[#1f2937] bg-[#0a0a0a] px-6 py-20 md:px-12 lg:px-24"
+      >
+        <div className="mx-auto max-w-6xl">
+          <div className="relative overflow-hidden rounded-2xl p-[1px] bg-gradient-to-br from-[#f5a623]/50 via-[#22c55e]/30 to-[#f5a623]/20">
+            <div className="relative rounded-[15px] bg-[#0d0d0d] px-6 py-12 md:px-12 md:py-16">
+              <div
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(34,197,94,0.08)_0%,_transparent_50%)]"
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(245,166,35,0.08)_0%,_transparent_50%)]"
+                aria-hidden
+              />
+              <div className="relative mx-auto max-w-3xl text-center">
+                <p className="mb-4 font-mono text-[11px] font-bold uppercase tracking-[0.25em] text-[#22c55e]">
+                  Valifye Founders Lounge
+                </p>
+                <h2
+                  id="founders-lounge-cta-heading"
+                  className="text-balance text-3xl font-black leading-tight text-white md:text-4xl lg:text-5xl"
+                >
+                  Build in Public. Without the Toxicity.
+                </h2>
+                <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-[#9ca3af] md:text-lg">
+                  Join 1,000+ vibe-coders and indie hackers in the Valifye Founders Lounge. Exchange feedback,
+                  unlock autonomous market scans, and launch your SaaS without fighting auto-moderators.
+                </p>
+                <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                  <Link
+                    href="/community"
+                    className="inline-flex items-center justify-center rounded-full bg-[#22c55e] px-8 py-3.5 font-mono text-sm font-extrabold uppercase tracking-[0.12em] text-black transition hover:bg-[#22c55e]/90"
+                  >
+                    Enter the Lounge
+                  </Link>
+                  <Link
+                    href="/founders-lounge"
+                    className="inline-flex items-center justify-center rounded-full border border-[#374151] px-8 py-3.5 font-mono text-sm font-bold uppercase tracking-[0.12em] text-white transition hover:border-[#f5a623] hover:text-[#f5a623]"
+                  >
+                    How the Karma System Works
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="border-t border-[#1f2937] bg-[#0a0a0a] px-6 py-20 md:px-12 lg:px-24">
         <div className="mx-auto max-w-6xl">
           <div className="mb-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowRight, ChevronDown, Menu, X } from 'lucide-react'
+import { ChevronDown, Menu, X } from 'lucide-react'
 
 import {
   INTELLIGENCE_NAV_ITEMS,
@@ -13,6 +13,7 @@ import {
   RESOURCES_NAV_ITEMS,
   type NavDropdownItem
 } from '@/components/navbar-dropdown'
+import { NavbarAuthButtons } from '@/components/navbar-auth-buttons'
 import { cn } from '@/lib/utils'
 
 /** Tools hub + calculators */
@@ -144,6 +145,17 @@ export function ValifyeNavbar() {
             </div>
 
             <Link
+              href="/community"
+              className={cn(
+                'inline-flex h-11 items-center rounded-lg px-3 font-mono text-xs font-bold uppercase tracking-[0.18em] transition-colors',
+                pathActive(pathname, '/community')
+                  ? 'text-[#f5a623]'
+                  : 'text-white hover:text-[#f5a623]'
+              )}
+            >
+              Founders Lounge
+            </Link>
+            <Link
               href="/markets"
               className={cn(
                 'inline-flex h-11 items-center rounded-lg px-3 font-mono text-xs font-bold uppercase tracking-[0.18em] transition-colors',
@@ -166,15 +178,7 @@ export function ValifyeNavbar() {
               Tools
             </Link>
 
-            <a
-              href="https://app.valifye.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-2 inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[#22c55e] px-5 font-mono text-xs font-extrabold uppercase tracking-[0.14em] text-black transition hover:bg-[#22c55e]/90"
-            >
-              Access Terminal
-              <ArrowRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
-            </a>
+            <NavbarAuthButtons variant="desktop" />
           </nav>
 
           {/* Mobile toggle */}
@@ -271,6 +275,13 @@ export function ValifyeNavbar() {
               </div>
 
               <Link
+                href="/community"
+                onClick={closeDrawer}
+                className="min-h-[48px] border-b border-[#1f2937] py-4 font-mono text-xs font-bold uppercase tracking-[0.2em] text-white"
+              >
+                Founders Lounge
+              </Link>
+              <Link
                 href="/markets"
                 onClick={closeDrawer}
                 className="min-h-[48px] border-b border-[#1f2937] py-4 font-mono text-xs font-bold uppercase tracking-[0.2em] text-white"
@@ -286,16 +297,7 @@ export function ValifyeNavbar() {
               </Link>
 
               <div className="mt-auto w-full shrink-0 border-t border-[#1f2937] pt-4">
-                <a
-                  href="https://app.valifye.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={closeDrawer}
-                  className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#22c55e] py-3.5 text-center font-mono text-sm font-extrabold uppercase tracking-[0.14em] text-black"
-                >
-                  Access Terminal
-                  <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
-                </a>
+                <NavbarAuthButtons variant="mobile" />
               </div>
             </motion.div>
           </>

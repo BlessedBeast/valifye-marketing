@@ -37,7 +37,7 @@ export default async function CityHubPage({ params }: Props) {
     notFound()
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('market_data')

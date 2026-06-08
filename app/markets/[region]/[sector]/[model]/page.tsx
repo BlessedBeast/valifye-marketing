@@ -117,7 +117,7 @@ async function fetchPublishedBlueprint(
   sector: string,
   model: string
 ): Promise<LocalBusinessBlueprintRow | null> {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   // Reconstruct the full dashed slug from the URL parameters
   // This matches the format stored in our 'slug' column

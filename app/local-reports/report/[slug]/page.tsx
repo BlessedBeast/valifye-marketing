@@ -66,7 +66,7 @@ export async function generateMetadata({
 }) {
   const { slug } = await params
   const cleanSlug = decodeURIComponent(slug)
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data } = await supabase
     .from('public_seo_reports')
@@ -197,7 +197,7 @@ function formatBoldText(text: string) {
 export default async function LocalSeoReportPage({ params }: Props) {
   const { slug } = await params
   const cleanSlug = decodeURIComponent(slug)
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data, error } = await supabase
     .from('public_seo_reports')

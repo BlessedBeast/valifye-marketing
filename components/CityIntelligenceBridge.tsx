@@ -39,7 +39,7 @@ export async function CityIntelligenceBridge({ currentCity, excludeSlug, current
     return null
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const [ideasRes, localRes] = await Promise.all([
     supabase

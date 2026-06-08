@@ -96,7 +96,7 @@ export default async function IdeaDossierPage({ params }: Props) {
     return { cityName, reportSlug }
   })
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: existingReports } = await supabase
     .from('public_seo_reports')
     .select('slug')

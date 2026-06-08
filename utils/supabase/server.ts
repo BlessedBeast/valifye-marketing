@@ -1,6 +1,29 @@
-import { supabase } from '@/lib/supabase'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
-// 🛡️ THE PROXY: Intercepts legacy calls and returns the secure singleton
-export function createClient() {
-  return supabase;
+import { applyAuthCookieOptions } from '@/utils/supabase/cookie-options'
+
+export async function createClient() {
+  const cookieStore = await cookies()
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, applyAuthCookieOptions(options))
+            )
+          } catch {
+            // Server Components cannot always mutate cookies; middleware refreshes sessions.
+          }
+        },
+      },
+    }
+  )
 }
