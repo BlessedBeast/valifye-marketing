@@ -77,7 +77,7 @@ export function FoundersLoungeCta({
   return (
     <button
       type="button"
-      onClick={() => signInWithGoogle('/community')}
+      onClick={() => signInWithGoogle()}
       className={cn(
         'inline-flex items-center justify-center gap-2 rounded-full px-8 py-3.5 font-mono text-sm font-extrabold uppercase tracking-[0.12em] transition',
         baseStyles,
