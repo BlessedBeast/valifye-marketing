@@ -16,7 +16,7 @@ export function FeedSortToggle({ active, basePath = '/community' }: FeedSortTogg
 
   return (
     <div
-      className="inline-flex rounded-md border border-border bg-background p-0.5"
+      className="inline-flex rounded-lg border border-zinc-900 bg-black/40 p-0.5"
       role="tablist"
       aria-label="Sort feed"
     >
@@ -31,10 +31,10 @@ export function FeedSortToggle({ active, basePath = '/community' }: FeedSortTogg
             role="tab"
             aria-selected={isActive}
             className={cn(
-              'rounded px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors',
+              'rounded-md px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest transition-colors',
               isActive
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-amber-500 text-black'
+                : 'text-zinc-500 hover:text-amber-500'
             )}
           >
             {option.label}

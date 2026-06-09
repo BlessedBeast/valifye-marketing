@@ -73,14 +73,14 @@ export function NavbarAuthButtons({
       <div className={cn('flex w-full flex-col gap-3', className)}>
         <button
           type="button"
-          onClick={() => signInWithGoogle('/community')}
+          onClick={() => signInWithGoogle(window.location.pathname)}
           className="min-h-[48px] w-full rounded-full border border-[#374151] py-3 font-mono text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:border-[#f5a623] hover:text-[#f5a623]"
         >
           Sign In
         </button>
         <button
           type="button"
-          onClick={() => signInWithGoogle('/community')}
+          onClick={() => signInWithGoogle(window.location.pathname)}
           className="min-h-[52px] w-full rounded-full bg-[#22c55e] py-3.5 font-mono text-sm font-extrabold uppercase tracking-[0.14em] text-black transition hover:bg-[#22c55e]/90"
         >
           Sign Up
@@ -93,14 +93,14 @@ export function NavbarAuthButtons({
     <div className={cn('ml-2 flex shrink-0 items-center gap-2', className)}>
       <button
         type="button"
-        onClick={() => signInWithGoogle('/community')}
+        onClick={() => signInWithGoogle(window.location.pathname)}
         className="inline-flex h-10 items-center rounded-full border border-[#374151] px-4 font-mono text-xs font-bold uppercase tracking-[0.14em] text-white transition hover:border-[#f5a623] hover:text-[#f5a623]"
       >
         Sign In
       </button>
       <button
         type="button"
-        onClick={() => signInWithGoogle('/community')}
+        onClick={() => signInWithGoogle(window.location.pathname)}
         className="inline-flex h-10 items-center rounded-full bg-[#22c55e] px-5 font-mono text-xs font-extrabold uppercase tracking-[0.14em] text-black transition hover:bg-[#22c55e]/90"
       >
         Sign Up

@@ -5,6 +5,7 @@ import { PostCard } from '@/components/community/PostCard'
 import {
   COMMUNITY_SPACES,
   COMMUNITY_SPACE_IDS,
+  type CommunitySpaceId,
 } from '@/lib/community/constants'
 import {
   DEFAULT_COMMUNITY_FEED_LIMIT,
@@ -12,11 +13,38 @@ import {
   type CommunityPostSort,
 } from '@/lib/community/queries'
 import { getTodayTheme } from '@/lib/community/themes'
+import { cn } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
 type CommunityFeedPageProps = {
   searchParams: Promise<{ sort?: string }>
+}
+
+const SPACE_HOVER_ACCENTS: Record<
+  CommunitySpaceId,
+  { border: string; glow: string; tag: string }
+> = {
+  validate: {
+    border: 'hover:border-amber-500/50',
+    glow: 'hover:shadow-[0_0_24px_rgba(245,158,11,0.08)]',
+    tag: 'text-amber-500',
+  },
+  build: {
+    border: 'hover:border-sky-500/50',
+    glow: 'hover:shadow-[0_0_24px_rgba(14,165,233,0.08)]',
+    tag: 'text-sky-400',
+  },
+  launch: {
+    border: 'hover:border-emerald-500/50',
+    glow: 'hover:shadow-[0_0_24px_rgba(16,185,129,0.08)]',
+    tag: 'text-emerald-400',
+  },
+  grow: {
+    border: 'hover:border-violet-500/50',
+    glow: 'hover:shadow-[0_0_24px_rgba(139,92,246,0.08)]',
+    tag: 'text-violet-400',
+  },
 }
 
 function parseSort(raw: string | undefined): CommunityPostSort {
@@ -35,45 +63,50 @@ export default async function CommunityFeedPage({
   })
 
   return (
-    <div className="space-y-8">
-      <header className="space-y-4 border-b border-border pb-6">
+    <div className="space-y-10">
+      <header className="space-y-4 border-b border-zinc-900 pb-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-foreground">Community Feed</h1>
-            <p className="text-sm text-muted-foreground">
-              Welcome to the Valifye founder community. Browse spaces, follow the daily
-              theme, and share what you are building.
+          <div className="space-y-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500">
+              Live Feed
             </p>
-            <p className="text-xs text-muted-foreground">
+            <h1 className="text-3xl font-black uppercase tracking-tight text-zinc-100">
+              Community Feed
+            </h1>
+            <p className="max-w-xl text-sm leading-relaxed text-zinc-500">
+              Welcome to the Valifye founder community. Browse spaces, follow the daily theme,
+              and share what you are building.
+            </p>
+            <p className="text-xs text-zinc-600">
               Today&apos;s theme:{' '}
-              <span className="text-foreground">{todayTheme.title}</span>
+              <span className="font-bold text-amber-500">{todayTheme.title}</span>
             </p>
           </div>
           <FeedSortToggle active={sort} />
         </div>
       </header>
 
-      <section className="flex items-center justify-between gap-3">
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Link
           href="/community/new"
-          className="inline-flex items-center rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
+          className="inline-flex items-center justify-center rounded-lg bg-amber-500 px-5 py-3 font-mono text-xs font-bold uppercase tracking-widest text-black shadow-[0_0_20px_rgba(245,158,11,0.2)] transition-all hover:bg-amber-400"
         >
-          Create a new post
+          Create a New Post
         </Link>
-        <p className="text-xs text-muted-foreground">
-          {posts.length} thread{posts.length === 1 ? '' : 's'}
+        <p className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
+          {posts.length} thread{posts.length === 1 ? '' : 's'} indexed
         </p>
       </section>
 
       <section className="space-y-3">
         {posts.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border bg-card/50 px-4 py-10 text-center">
-            <p className="text-sm text-muted-foreground">
+          <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-900/20 px-4 py-12 text-center">
+            <p className="text-sm text-zinc-500">
               No threads yet. Be the first to post in the community.
             </p>
             <Link
               href="/community/new"
-              className="mt-3 inline-block text-sm text-primary underline-offset-4 hover:underline"
+              className="mt-4 inline-block font-mono text-xs font-bold uppercase tracking-widest text-amber-500 underline-offset-4 hover:text-amber-400 hover:underline"
             >
               Start a thread
             </Link>
@@ -83,21 +116,39 @@ export default async function CommunityFeedPage({
         )}
       </section>
 
-      <section className="space-y-3 border-t border-border pt-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+      <section className="space-y-4 border-t border-zinc-900 pt-10">
+        <h2 className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">
           Active Spaces
         </h2>
-        <ul className="grid gap-2 sm:grid-cols-2">
+        <ul className="grid gap-3 sm:grid-cols-2">
           {COMMUNITY_SPACE_IDS.map((spaceId) => {
             const space = COMMUNITY_SPACES[spaceId]
+            const accent = SPACE_HOVER_ACCENTS[spaceId]
+
             return (
               <li key={spaceId}>
                 <Link
                   href={`/community/${spaceId}`}
-                  className="block rounded-md border border-border bg-card px-3 py-2 text-sm transition-colors hover:border-primary/40 hover:text-primary"
+                  className={cn(
+                    'group block rounded-xl border border-zinc-900 bg-zinc-900/40 p-4 transition-all duration-200',
+                    accent.border,
+                    accent.glow
+                  )}
                 >
-                  <span className="font-medium text-foreground">{space.label}</span>
-                  <span className="text-muted-foreground"> — {space.description}</span>
+                  <span
+                    className={cn(
+                      'font-mono text-[10px] font-bold uppercase tracking-[0.2em]',
+                      accent.tag
+                    )}
+                  >
+                    {`// ${space.label}`}
+                  </span>
+                  <p className="mt-2 text-sm font-bold text-zinc-100 transition-colors group-hover:text-white">
+                    {space.label}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-zinc-600 transition-colors group-hover:text-zinc-500">
+                    {space.description}
+                  </p>
                 </Link>
               </li>
             )

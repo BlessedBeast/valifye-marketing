@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { User } from '@supabase/supabase-js'
 
+import { CommunitySidebarNav } from '@/components/community/CommunitySidebarNav'
 import { CommunitySignInButton } from '@/components/community/CommunitySignInButton'
 import { COMMUNITY_SPACES, type CommunitySpaceId } from '@/lib/community/constants'
 import { createClient } from '@/utils/supabase/server'
@@ -89,11 +90,11 @@ async function getCommunitySession(): Promise<CommunitySession | null> {
 function SessionBadge({ session }: { session: CommunitySession | null }) {
   if (!session) {
     return (
-      <div className="border border-border bg-card p-3 text-xs">
-        <p className="font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/30 p-4">
+        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
           Guest Mode
         </p>
-        <p className="mt-1 text-foreground">
+        <p className="mt-2 text-xs leading-relaxed text-zinc-400">
           Sign in to post, earn karma, and unlock spaces.
         </p>
         <CommunitySignInButton />
@@ -110,24 +111,26 @@ function SessionBadge({ session }: { session: CommunitySession | null }) {
     'Member'
 
   return (
-    <div className="border border-border bg-card p-3 text-xs">
-      <p className="font-semibold uppercase tracking-wider text-muted-foreground">
-        Signed in
+    <div className="rounded-xl border border-emerald-900/50 bg-emerald-950/20 p-4">
+      <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500/80">
+        Session Active
       </p>
       {profile ? (
         <Link
           href={`/community/u/${profile.username}`}
-          className="mt-1 block font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
+          className="mt-2 block font-mono text-sm font-bold text-zinc-100 underline-offset-4 transition hover:text-amber-500 hover:underline"
         >
           {displayName}
         </Link>
       ) : (
-        <p className="mt-1 font-medium text-foreground">{displayName}</p>
+        <p className="mt-2 font-mono text-sm font-bold text-zinc-100">{displayName}</p>
       )}
       {profile ? (
-        <p className="mt-0.5 text-muted-foreground">{profile.karmaPoints} karma</p>
+        <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+          {profile.karmaPoints} karma
+        </p>
       ) : user.email ? (
-        <p className="mt-0.5 truncate text-muted-foreground">{user.email}</p>
+        <p className="mt-1 truncate font-mono text-[10px] text-zinc-500">{user.email}</p>
       ) : null}
     </div>
   )
@@ -137,43 +140,33 @@ export default async function CommunityLayout({ children }: CommunityLayoutProps
   const session = await getCommunitySession()
 
   return (
-    <div className="-mx-4 flex min-h-[calc(100vh-8rem)] flex-col gap-6 sm:-mx-6 lg:flex-row lg:gap-8">
+    <div className="-mx-4 flex min-h-[calc(100vh-8rem)] flex-col bg-[#0a0a0a] font-mono text-zinc-100 sm:-mx-6 lg:flex-row">
       <aside
-        className="flex w-full shrink-0 flex-col border border-border bg-card lg:min-h-[calc(100vh-8rem)] lg:w-56 xl:w-64"
+        className={cn(
+          'flex w-full shrink-0 flex-col border-b border-zinc-900 lg:min-h-[calc(100vh-8rem)] lg:w-56 lg:border-b-0 lg:border-r xl:w-64',
+          'bg-black/40 backdrop-blur-sm'
+        )}
         aria-label="Community navigation"
       >
-        <div className="border-b border-border p-4">
-          <Link href="/community" className="block">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+        <div className="border-b border-zinc-900 px-4 py-5">
+          <Link href="/community" className="group block">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500">
               Valifye
             </p>
-            <h2 className="text-lg font-bold text-foreground">Community</h2>
+            <h2 className="text-lg font-black uppercase tracking-tight text-zinc-100 transition-colors group-hover:text-amber-500">
+              Founders Lounge
+            </h2>
           </Link>
         </div>
 
-        <nav className="flex flex-col p-2">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors',
-                'hover:bg-muted hover:text-foreground'
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <CommunitySidebarNav items={NAV_ITEMS} />
 
-        <div className="mt-auto border-t border-border p-4">
+        <div className="mt-auto border-t border-zinc-900 p-4">
           <SessionBadge session={session} />
         </div>
       </aside>
 
-      <div className="min-w-0 flex-1 border border-border bg-background p-4 sm:p-6">
-        {children}
-      </div>
+      <div className="min-w-0 flex-1 bg-[#0a0a0a] p-4 sm:p-6 lg:p-8">{children}</div>
     </div>
   )
 }

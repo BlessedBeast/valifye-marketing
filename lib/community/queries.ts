@@ -56,6 +56,7 @@ export type CommunityThreadPageData = {
 }
 
 export type CommunityLeaderboardEntry = {
+  id: string
   username: string
   displayName: string
   avatarUrl: string | null
@@ -85,6 +86,7 @@ export type CommunityKarmaEventItem = {
 
 type ProfileLeaderboardRow = Pick<
   ProfileRow,
+  | 'id'
   | 'username'
   | 'display_name'
   | 'avatar_url'
@@ -429,6 +431,7 @@ export async function getCommunityPosts(
 
 function mapLeaderboardRow(row: ProfileLeaderboardRow): CommunityLeaderboardEntry {
   return {
+    id: row.id,
     username: row.username,
     displayName: row.display_name?.trim() || row.username,
     avatarUrl: row.avatar_url ?? null,
@@ -469,16 +472,18 @@ export async function getTopValidators(
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('username, display_name, avatar_url, badge, karma_points, total_reviews')
+    .select('id, username, display_name, avatar_url, badge, karma_points, total_reviews')
     .order('karma_points', { ascending: false, nullsFirst: false })
     .limit(cappedLimit)
 
   if (error) {
-    console.error('[community] getTopValidators failed:', error.message)
+    console.error('[Leaderboard Query Error]:', error)
     return []
   }
 
-  if (!Array.isArray(data)) return []
+  if (!Array.isArray(data)) {
+    return []
+  }
 
   return (data as ProfileLeaderboardRow[]).map(mapLeaderboardRow)
 }

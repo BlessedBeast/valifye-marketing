@@ -96,7 +96,7 @@ export default async function LeaderboardPage() {
             const badgeLabel = resolveBadgeLabel(entry)
 
             return (
-              <li key={entry.username}>
+              <li key={entry.id}>
                 <Link
                   href={`/community/u/${entry.username}`}
                   className={cn(

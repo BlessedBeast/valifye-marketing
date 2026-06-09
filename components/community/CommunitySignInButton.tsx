@@ -6,8 +6,8 @@ export function CommunitySignInButton() {
   return (
     <button
       type="button"
-      onClick={() => signInWithGoogle('/community')}
-      className="mt-2 inline-block text-left text-primary underline-offset-4 hover:underline"
+      onClick={() => signInWithGoogle(window.location.pathname)}
+      className="mt-3 inline-block font-mono text-[10px] font-bold uppercase tracking-widest text-amber-500 underline-offset-4 transition hover:text-amber-400 hover:underline"
     >
       Sign in with Google
     </button>
