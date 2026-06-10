@@ -35,5 +35,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/community', '/community/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|auth/callback).*)'],
 }
