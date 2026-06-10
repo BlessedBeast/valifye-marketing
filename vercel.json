@@ -1,18 +1,8 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/publish",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/cron/reprocess-comments",
-      "schedule": "*/10 * * * *"
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/app/:path*",
-      "destination": "https://your-lovable-app-url.vercel.app/app/:path*"
-    }
-  ]
-}
+{
+  "rewrites": [
+    {
+      "source": "/app/:path*",
+      "destination": "https://your-lovable-app-url.vercel.app/app/:path*"
+    }
+  ]
+}
