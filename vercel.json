@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/publish",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/reprocess-comments",
+      "schedule": "*/10 * * * *"
     }
   ],
   "rewrites": [
