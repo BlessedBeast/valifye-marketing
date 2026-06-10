@@ -1,16 +1,16 @@
 'use server'
 
-import { after } from 'next/server'
+import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 
 import {
   createCommentSchema,
-  MIN_COMMENT_BODY_CHARS,
   upvoteTargetSchema,
   type UpvoteTargetType,
 } from '@/lib/community/comment-schema'
-import { awardReviewKarma } from '@/lib/community/karma'
-import { incrementPostCommentCount } from '@/lib/community/post-mutations'
+import { runPreWriteGate, scheduleModeration } from '@/lib/community/moderation'
+import type { RequestFingerprint } from '@/lib/community/types'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import { createClient } from '@/utils/supabase/server'
 
 export type ToggleUpvoteResult = {
@@ -20,6 +20,7 @@ export type ToggleUpvoteResult = {
 }
 
 export type CreateCommentResult = {
+  commentId?: string
   error?: string
 }
 
@@ -37,7 +38,52 @@ async function requireAuthenticatedUserId(): Promise<string> {
   return user.id
 }
 
-async function toggleUpvoteFallback(
+/**
+ * Recounts upvote rows and syncs the cached counter on the parent post/comment.
+ * Runs on the service-role client: the global counter must update even when the
+ * viewer upvotes another author's content, which user-scoped RLS would block.
+ */
+async function syncTargetUpvoteCount(
+  targetId: string,
+  targetType: UpvoteTargetType
+): Promise<number> {
+  const admin = getSupabaseAdmin()
+
+  const { count, error: countError } = await admin
+    .from('upvotes')
+    .select('id', { count: 'exact', head: true })
+    .eq('target_id', targetId)
+    .eq('target_type', targetType)
+
+  if (countError) {
+    console.error('[community] upvote count failed:', countError.message)
+    return 0
+  }
+
+  const upvoteCount = count ?? 0
+  const countTable = targetType === 'post' ? 'posts' : 'comments'
+
+  const { error: updateError } = await admin
+    .from(countTable)
+    .update({ upvotes: upvoteCount })
+    .eq('id', targetId)
+
+  if (updateError) {
+    console.error('[community] upvote count sync failed:', updateError.message)
+  }
+
+  return upvoteCount
+}
+
+function isUniqueViolation(error: { code?: string } | null): boolean {
+  return error?.code === '23505'
+}
+
+/**
+ * Idempotent upvote toggle: DELETE when a row exists, INSERT when it does not.
+ * Handles duplicate-key races by falling back to DELETE on conflict.
+ */
+async function toggleUpvoteRecord(
   userId: string,
   targetId: string,
   targetType: UpvoteTargetType
@@ -56,15 +102,21 @@ async function toggleUpvoteFallback(
     return { upvoteCount: 0, userHasUpvoted: false, error: lookupError.message }
   }
 
+  let hasUpvoted: boolean
+
   if (existing?.id) {
     const { error: deleteError } = await supabase
       .from('upvotes')
       .delete()
-      .eq('id', existing.id)
+      .eq('user_id', userId)
+      .eq('target_id', targetId)
+      .eq('target_type', targetType)
 
     if (deleteError) {
       return { upvoteCount: 0, userHasUpvoted: true, error: deleteError.message }
     }
+
+    hasUpvoted = false
   } else {
     const { error: insertError } = await supabase.from('upvotes').insert({
       user_id: userId,
@@ -73,28 +125,32 @@ async function toggleUpvoteFallback(
     })
 
     if (insertError) {
-      return { upvoteCount: 0, userHasUpvoted: false, error: insertError.message }
+      if (isUniqueViolation(insertError)) {
+        const { error: deleteError } = await supabase
+          .from('upvotes')
+          .delete()
+          .eq('user_id', userId)
+          .eq('target_id', targetId)
+          .eq('target_type', targetType)
+
+        if (deleteError) {
+          return { upvoteCount: 0, userHasUpvoted: true, error: deleteError.message }
+        }
+
+        hasUpvoted = false
+      } else {
+        return { upvoteCount: 0, userHasUpvoted: false, error: insertError.message }
+      }
+    } else {
+      hasUpvoted = true
     }
   }
 
-  const countTable = targetType === 'post' ? 'posts' : 'comments'
-  const { data: targetRow, error: countError } = await supabase
-    .from(countTable)
-    .select('upvotes')
-    .eq('id', targetId)
-    .maybeSingle<{ upvotes: number | null }>()
-
-  if (countError || !targetRow) {
-    return {
-      upvoteCount: 0,
-      userHasUpvoted: !existing?.id,
-      error: countError?.message,
-    }
-  }
+  const upvoteCount = await syncTargetUpvoteCount(targetId, targetType)
 
   return {
-    upvoteCount: targetRow.upvotes ?? 0,
-    userHasUpvoted: !existing?.id,
+    upvoteCount,
+    userHasUpvoted: hasUpvoted,
   }
 }
 
@@ -118,38 +174,33 @@ export async function toggleCommunityUpvote(
     return { upvoteCount: 0, userHasUpvoted: false, error: 'Unauthorized' }
   }
 
-  const supabase = await createClient()
-  const { data: rpcData, error: rpcError } = await supabase.rpc(
-    'toggle_community_upvote',
-    {
-      p_target_id: parsed.data.targetId,
-      p_target_type: parsed.data.targetType,
-    }
-  )
+  return toggleUpvoteRecord(userId, parsed.data.targetId, parsed.data.targetType)
+}
 
-  if (!rpcError && rpcData) {
-    const payload = rpcData as {
-      upvote_count?: number
-      user_has_upvoted?: boolean
-    }
-    return {
-      upvoteCount: payload.upvote_count ?? 0,
-      userHasUpvoted: Boolean(payload.user_has_upvoted),
-    }
+async function buildRequestFingerprint(
+  formData: FormData
+): Promise<RequestFingerprint> {
+  const headerList = await headers()
+  const jsTokenValue = formData.get('_jst')
+  const honeypotValue = formData.get('_hp')
+
+  return {
+    userAgent: headerList.get('user-agent'),
+    referer: headerList.get('referer'),
+    acceptLanguage: headerList.get('accept-language'),
+    honeypotValue: typeof honeypotValue === 'string' ? honeypotValue : null,
+    jsToken: typeof jsTokenValue === 'string' ? jsTokenValue : null,
   }
-
-  if (rpcError) {
-    console.warn('[community] toggle_community_upvote RPC unavailable:', rpcError.message)
-  }
-
-  return toggleUpvoteFallback(userId, parsed.data.targetId, parsed.data.targetType)
 }
 
 export async function createCommunityComment(
   postId: string,
   postSlug: string,
-  body: string
+  formData: FormData
 ): Promise<CreateCommentResult> {
+  const bodyValue = formData.get('body')
+  const body = typeof bodyValue === 'string' ? bodyValue : ''
+
   const parsed = createCommentSchema.safeParse({ postId, body })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'Invalid comment.' }
@@ -162,6 +213,22 @@ export async function createCommunityComment(
     return { error: 'Unauthorized' }
   }
 
+  const fingerprint = await buildRequestFingerprint(formData)
+  const gate = await runPreWriteGate(fingerprint, userId)
+
+  if (gate.blocked) {
+    // Shadow-ban response: pretend success so the agent learns nothing.
+    console.warn(
+      '[community] comment blocked by pre-write gate:',
+      gate.reason ?? 'unknown reason'
+    )
+    return { commentId: crypto.randomUUID() }
+  }
+
+  if (gate.rateLimited) {
+    return { error: 'You are posting too quickly. Please wait a moment.' }
+  }
+
   const supabase = await createClient()
   const { data: commentRow, error: insertError } = await supabase
     .from('comments')
@@ -169,7 +236,7 @@ export async function createCommunityComment(
       post_id: parsed.data.postId,
       author_id: userId,
       body: parsed.data.body,
-      status: 'active',
+      status: 'published',
       is_bot: false,
     })
     .select('id')
@@ -180,19 +247,17 @@ export async function createCommunityComment(
     return { error: insertError?.message ?? 'Failed to post comment.' }
   }
 
-  await incrementPostCommentCount(parsed.data.postId)
+  // posts.comment_count is maintained by the on_comment_change DB trigger.
 
-  if (parsed.data.body.length >= MIN_COMMENT_BODY_CHARS) {
-    const commentId = commentRow.id
-    after(async () => {
-      try {
-        await awardReviewKarma(userId, commentId)
-      } catch (error) {
-        console.error('[community] review karma award failed:', error)
-      }
-    })
-  }
+  // Deferred scoring + karma pass; runs after the response is flushed.
+  scheduleModeration({
+    commentId: commentRow.id,
+    profileId: userId,
+    userId,
+    body: parsed.data.body,
+    isBot: false,
+  })
 
   revalidatePath(`/community/${postSlug}`)
-  return {}
+  return { commentId: commentRow.id }
 }

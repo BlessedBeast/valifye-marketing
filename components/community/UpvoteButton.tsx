@@ -1,6 +1,6 @@
 'use client'
 
-import { useOptimistic, useState, useTransition } from 'react'
+import { useOptimistic, useRef, useState, useTransition } from 'react'
 import { ThumbsUp } from 'lucide-react'
 
 import { toggleCommunityUpvote } from '@/app/community/actions'
@@ -33,6 +33,7 @@ export function UpvoteButton({
   className,
 }: UpvoteButtonProps) {
   const resolvedInitialHasUpvoted = initialHasUpvoted ?? initialVoted ?? false
+  const inFlightRef = useRef(false)
   const [baseState, setBaseState] = useState<UpvoteState>({
     count: initialUpvoteCount,
     hasUpvoted: resolvedInitialHasUpvoted,
@@ -49,21 +50,31 @@ export function UpvoteButton({
     }
   )
 
+  const isBusy = disabled || isPending || inFlightRef.current
+
   function handleClick() {
-    if (disabled || isPending) return
+    if (isBusy) return
+
+    inFlightRef.current = true
 
     startTransition(async () => {
       addOptimistic('toggle')
-      const result = await toggleCommunityUpvote(targetId, targetType)
-      if (result.error) {
-        console.error('[UpvoteButton]', result.error)
-        return
-      }
 
-      setBaseState({
-        count: result.upvoteCount,
-        hasUpvoted: result.userHasUpvoted,
-      })
+      try {
+        const result = await toggleCommunityUpvote(targetId, targetType)
+
+        if (result.error) {
+          console.error('[UpvoteButton]', result.error)
+          return
+        }
+
+        setBaseState({
+          count: result.upvoteCount,
+          hasUpvoted: result.userHasUpvoted,
+        })
+      } finally {
+        inFlightRef.current = false
+      }
     })
   }
 
@@ -71,7 +82,8 @@ export function UpvoteButton({
     <button
       type="button"
       onClick={handleClick}
-      disabled={disabled || isPending}
+      disabled={isBusy}
+      aria-busy={isPending || inFlightRef.current}
       aria-pressed={optimisticState.hasUpvoted}
       aria-label={
         optimisticState.hasUpvoted

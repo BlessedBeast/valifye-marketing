@@ -14,6 +14,22 @@ type CommentFormProps = {
   disabled?: boolean
 }
 
+/** Base64 browser-environment token consumed by the moderation fingerprint. */
+function buildJsToken(): string {
+  try {
+    const payload = {
+      userAgent: navigator.userAgent,
+      screenWidth: window.screen?.width ?? null,
+      screenHeight: window.screen?.height ?? null,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? null,
+      language: navigator.language ?? null,
+    }
+    return btoa(JSON.stringify(payload))
+  } catch {
+    return ''
+  }
+}
+
 export function CommentForm({ postId, postSlug, disabled = false }: CommentFormProps) {
   const router = useRouter()
   const [body, setBody] = useState('')
@@ -34,8 +50,12 @@ export function CommentForm({ postId, postSlug, disabled = false }: CommentFormP
       return
     }
 
+    const formData = new FormData(event.currentTarget)
+    formData.set('body', body)
+    formData.set('_jst', buildJsToken())
+
     startTransition(async () => {
-      const result = await createCommunityComment(postId, postSlug, body)
+      const result = await createCommunityComment(postId, postSlug, formData)
       if (result.error) {
         setError(result.error)
         return
@@ -55,6 +75,16 @@ export function CommentForm({ postId, postSlug, disabled = false }: CommentFormP
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
+      {/* Honeypot: invisible to humans, irresistible to autofill bots. */}
+      <input
+        type="text"
+        name="_hp"
+        tabIndex={-1}
+        autoComplete="off"
+        defaultValue=""
+        aria-hidden="true"
+        className="absolute -left-[9999px] h-0 w-0 opacity-0"
+      />
       <div className="space-y-2">
         <label htmlFor="comment-body" className="text-sm font-medium text-foreground">
           Add a constructive reply

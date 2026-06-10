@@ -132,20 +132,81 @@ export function ThreadView({ data }: ThreadViewProps) {
           className="space-y-4 rounded-lg border border-emerald-500/35 bg-emerald-950/20 p-5 shadow-[0_0_40px_-16px_rgba(16,185,129,0.25)]"
           aria-label="Valifye autonomous market audit"
         >
-          <div className="space-y-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-emerald-300">
               🤖 Valifye Autonomous Market Audit
             </h2>
             {botScan.verdict ? (
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-emerald-400/80">
+              <p className="rounded border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-300">
                 Verdict: {botScan.verdict}
               </p>
             ) : null}
           </div>
-          <MarkdownBody
-            content={botScan.scanContent}
-            className="font-mono text-sm text-emerald-50/90"
-          />
+
+          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="rounded-md border border-emerald-500/20 bg-emerald-950/30 px-3 py-2">
+              <dt className="font-mono text-[10px] uppercase tracking-wider text-emerald-400/70">
+                Keyword CPC
+              </dt>
+              <dd className="mt-1 font-mono text-sm font-bold tabular-nums text-emerald-100">
+                {botScan.keywordCpc != null
+                  ? `$${botScan.keywordCpc.toFixed(2)}`
+                  : '—'}
+              </dd>
+            </div>
+            <div className="rounded-md border border-emerald-500/20 bg-emerald-950/30 px-3 py-2">
+              <dt className="font-mono text-[10px] uppercase tracking-wider text-emerald-400/70">
+                Competitors
+              </dt>
+              <dd className="mt-1 font-mono text-sm font-bold tabular-nums text-emerald-100">
+                {botScan.competitorCount ?? '—'}
+              </dd>
+            </div>
+            <div className="rounded-md border border-emerald-500/20 bg-emerald-950/30 px-3 py-2">
+              <dt className="font-mono text-[10px] uppercase tracking-wider text-emerald-400/70">
+                Density
+              </dt>
+              <dd className="mt-1 font-mono text-sm font-bold uppercase text-emerald-100">
+                {botScan.competitorDensity ?? '—'}
+              </dd>
+            </div>
+          </dl>
+
+          {botScan.competitors.length > 0 ? (
+            <div className="space-y-2">
+              <h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400/70">
+                Mapped competitor domains
+              </h3>
+              <ul className="space-y-1.5">
+                {botScan.competitors.map((competitor) => (
+                  <li key={competitor.url || competitor.domain} className="text-sm">
+                    <a
+                      href={competitor.url || `https://${competitor.domain}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono font-semibold text-emerald-300 underline-offset-4 hover:underline"
+                    >
+                      {competitor.domain}
+                    </a>
+                    {competitor.title ? (
+                      <span className="ml-2 text-emerald-50/70">{competitor.title}</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {botScan.fullReportUrl ? (
+            <a
+              href={botScan.fullReportUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block font-mono text-xs font-bold uppercase tracking-widest text-emerald-300 underline-offset-4 hover:underline"
+            >
+              Open full forensic report →
+            </a>
+          ) : null}
         </section>
       ) : null}
 

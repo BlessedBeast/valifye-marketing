@@ -43,11 +43,22 @@ export type CommunityCommentItem = {
   isBot: boolean
 }
 
+export type CommunityBotScanCompetitor = {
+  domain: string
+  title: string
+  url: string
+  snippet: string
+}
+
 export type CommunityBotScanItem = {
   id: string
   postId: string
-  scanContent: string
+  keywordCpc: number | null
+  competitorCount: number | null
+  competitors: CommunityBotScanCompetitor[]
   verdict: string | null
+  competitorDensity: string | null
+  fullReportUrl: string | null
   createdAt: string
 }
 
@@ -82,7 +93,7 @@ export type CommunityUserProfile = {
 export type CommunityKarmaEventItem = {
   id: string
   eventType: KarmaEventRow['event_type']
-  delta: number
+  points: number
   referenceId: string | null
   createdAt: string
 }
@@ -277,6 +288,60 @@ async function mapPostsWithViewerUpvotes(
   return rows.map((row) => mapPostRow(row, upvotedPostIds.has(row.id)))
 }
 
+function parseBotScanCompetitors(raw: unknown): CommunityBotScanCompetitor[] {
+  if (!Array.isArray(raw)) return []
+
+  return raw.flatMap((item) => {
+    if (item == null || typeof item !== 'object') return []
+    const record = item as Record<string, unknown>
+    const domain = typeof record.domain === 'string' ? record.domain.trim() : ''
+    const url = typeof record.url === 'string' ? record.url.trim() : ''
+    if (!domain && !url) return []
+
+    return [
+      {
+        domain: domain || url,
+        title: typeof record.title === 'string' ? record.title : '',
+        url,
+        snippet: typeof record.snippet === 'string' ? record.snippet : '',
+      },
+    ]
+  })
+}
+
+function parseBotScanRiskFlags(raw: unknown): {
+  verdict: string | null
+  competitorDensity: string | null
+} {
+  if (raw == null || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { verdict: null, competitorDensity: null }
+  }
+
+  const record = raw as Record<string, unknown>
+
+  return {
+    verdict: typeof record.verdict === 'string' ? record.verdict : null,
+    competitorDensity:
+      typeof record.competitor_density === 'string' ? record.competitor_density : null,
+  }
+}
+
+function mapBotScanRow(row: BotScanRow): CommunityBotScanItem {
+  const riskFlags = parseBotScanRiskFlags(row.risk_flags)
+
+  return {
+    id: row.id,
+    postId: row.post_id,
+    keywordCpc: row.keyword_cpc ?? null,
+    competitorCount: row.competitor_count ?? null,
+    competitors: parseBotScanCompetitors(row.competitors),
+    verdict: riskFlags.verdict,
+    competitorDensity: riskFlags.competitorDensity,
+    fullReportUrl: row.full_report_url ?? null,
+    createdAt: row.created_at,
+  }
+}
+
 async function getViewerUserId(): Promise<string | null> {
   const supabase = await createClient()
   const {
@@ -367,11 +432,13 @@ export async function getThreadPageData(
       `
       )
       .eq('post_id', postData.id)
-      .eq('status', 'active')
+      .eq('status', 'published')
       .order('created_at', { ascending: true }),
     supabase
       .from('bot_scans')
-      .select('id, post_id, scan_content, verdict, created_at')
+      .select(
+        'id, post_id, keyword_cpc, competitor_count, competitors, risk_flags, full_report_url, created_at'
+      )
       .eq('post_id', postData.id)
       .maybeSingle<BotScanRow>(),
     getUserUpvoteTargetIds(viewerUserId, [postData.id], 'post'),
@@ -397,15 +464,7 @@ export async function getThreadPageData(
     mapCommentRow(row, commentUpvotes.has(row.id))
   )
 
-  const botScan = botScanResult.data
-    ? {
-        id: botScanResult.data.id,
-        postId: botScanResult.data.post_id,
-        scanContent: botScanResult.data.scan_content,
-        verdict: botScanResult.data.verdict,
-        createdAt: botScanResult.data.created_at,
-      }
-    : null
+  const botScan = botScanResult.data ? mapBotScanRow(botScanResult.data) : null
 
   return {
     post: mapPostDetailRow(postData, postUpvotes.has(postData.id)),
@@ -496,7 +555,7 @@ function mapKarmaEventRow(row: KarmaEventRow): CommunityKarmaEventItem {
   return {
     id: row.id,
     eventType: row.event_type,
-    delta: row.delta,
+    points: row.points,
     referenceId: row.reference_id ?? null,
     createdAt: row.created_at,
   }
@@ -556,7 +615,7 @@ export async function getUserKarmaEvents(
 
   const { data, error } = await supabase
     .from('karma_events')
-    .select('id, event_type, delta, reference_id, created_at')
+    .select('id, event_type, points, reference_id, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
 

@@ -3,7 +3,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { revalidatePath } from 'next/cache'
 
-import { incrementPostCommentCount } from '@/lib/community/post-mutations'
 import { getSupabaseAdmin } from '@/lib/supabase'
 
 const BOT_SCAN_DELAY_MS = 3000
@@ -112,53 +111,43 @@ function formatSearchResultsForPrompt(results: OrganicSearchHit[]): string {
     .join('\n\n')
 }
 
-function buildScanContent(params: {
-  market: string
-  description: string
-  cpc: number
-  competitors: number
-  competitorDomains: string[]
-  organicResults: OrganicSearchHit[]
-  reportUrl: string
-  verdict: string
-}): string {
-  const {
-    market,
-    description,
-    cpc,
-    competitors,
-    competitorDomains,
-    organicResults,
-    reportUrl,
-    verdict,
-  } = params
+type BotScanCompetitorEntry = {
+  domain: string
+  title: string
+  url: string
+  snippet: string
+}
 
-  const excerpt =
-    description.trim().length > 280
-      ? `${description.trim().slice(0, 280).trim()}…`
-      : description.trim()
+type BotScanRiskFlags = {
+  verdict: 'BUILD' | 'PIVOT' | 'KILL'
+  competitor_density: 'low' | 'medium' | 'high'
+  market_query: string
+  source: 'serper_organic'
+}
 
-  const competitorLines = organicResults.map(
-    (result) => `- **${result.domain}** — ${result.title}${result.snippet ? `: ${result.snippet}` : ''}`
-  )
+function buildCompetitorEntries(results: OrganicSearchHit[]): BotScanCompetitorEntry[] {
+  return results.map((result) => ({
+    domain: result.domain,
+    title: result.title,
+    url: result.link,
+    snippet: result.snippet,
+  }))
+}
 
-  return [
-    `## Market Snapshot: ${market}`,
-    '',
-    '### Competitor domains (live Google index)',
-    competitorLines.length > 0 ? competitorLines.join('\n') : '- No mapped domains',
-    '',
-    '### Metrics',
-    `- **Estimated keyword CPC:** $${cpc.toFixed(2)}`,
-    `- **Active competitors mapped:** ${competitors}`,
-    `- **Domains indexed:** ${competitorDomains.join(', ') || 'none'}`,
-    `- **Autonomous verdict:** ${verdict}`,
-    `- **Full forensic report:** ${reportUrl}`,
-    '',
-    excerpt ? `**Founder context:** ${excerpt}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n')
+function buildRiskFlags(params: {
+  verdict: 'BUILD' | 'PIVOT' | 'KILL'
+  competitorCount: number
+  marketQuery: string
+}): BotScanRiskFlags {
+  const density =
+    params.competitorCount >= 5 ? 'high' : params.competitorCount >= 4 ? 'medium' : 'low'
+
+  return {
+    verdict: params.verdict,
+    competitor_density: density,
+    market_query: params.marketQuery,
+    source: 'serper_organic',
+  }
 }
 
 async function generateModeratorComment(params: {
@@ -216,8 +205,8 @@ async function generateModeratorComment(params: {
 }
 
 /**
- * Runs a live Serper + Gemini market scan, writes bot_scans metadata,
- * then posts a system comment marked is_bot=true.
+ * Runs a live Serper + Gemini market scan, upserts structured bot_scans metrics,
+ * flips posts.is_bot_processed, then posts a system comment marked is_bot=true.
  */
 export async function triggerAutonomousBotScan(
   postId: string,
@@ -236,43 +225,52 @@ export async function triggerAutonomousBotScan(
       return
     }
 
-    const competitorDomains = [...new Set(organicResults.map((result) => result.domain))]
-    const competitors = organicResults.length
-    const cpc = estimateCpc(competitors)
-    const verdict = deriveVerdict(competitors)
-    const reportUrl = `https://app.valifye.com/report/${postId}`
+    const competitorEntries = buildCompetitorEntries(organicResults)
+    const competitorCount = organicResults.length
+    const keywordCpc = estimateCpc(competitorCount)
+    const verdict = deriveVerdict(competitorCount)
+    const riskFlags = buildRiskFlags({
+      verdict,
+      competitorCount,
+      marketQuery: searchQuery,
+    })
+    const fullReportUrl = `https://app.valifye.com/report/${postId}`
 
     const botCommentBody = await generateModeratorComment({
       market: searchQuery,
       description,
       searchResults: organicResults,
-      cpc,
-      competitorCount: competitors,
-      reportUrl,
-    })
-
-    const scanContent = buildScanContent({
-      market: searchQuery,
-      description,
-      cpc,
-      competitors,
-      competitorDomains,
-      organicResults,
-      reportUrl,
-      verdict,
+      cpc: keywordCpc,
+      competitorCount,
+      reportUrl: fullReportUrl,
     })
 
     const supabase = getSupabaseAdmin()
 
-    const { error: scanError } = await supabase.from('bot_scans').insert({
-      post_id: postId,
-      scan_content: scanContent,
-      verdict,
-    })
+    const { error: scanError } = await supabase.from('bot_scans').upsert(
+      {
+        post_id: postId,
+        keyword_cpc: keywordCpc,
+        competitor_count: competitorCount,
+        competitors: competitorEntries,
+        risk_flags: riskFlags,
+        full_report_url: fullReportUrl,
+      },
+      { onConflict: 'post_id' }
+    )
 
     if (scanError) {
-      console.error('[community] bot_scans insert failed:', scanError.message)
+      console.error('[community] bot_scans upsert failed:', scanError.message)
       return
+    }
+
+    const { error: flagError } = await supabase
+      .from('posts')
+      .update({ is_bot_processed: true })
+      .eq('id', postId)
+
+    if (flagError) {
+      console.error('[community] is_bot_processed update failed:', flagError.message)
     }
 
     const { error: commentError } = await supabase.from('comments').insert({
@@ -280,7 +278,7 @@ export async function triggerAutonomousBotScan(
       author_id: null,
       is_bot: true,
       body: botCommentBody,
-      status: 'active',
+      status: 'published',
     })
 
     if (commentError) {
@@ -288,7 +286,7 @@ export async function triggerAutonomousBotScan(
       return
     }
 
-    await incrementPostCommentCount(postId)
+    // posts.comment_count is maintained by the on_comment_change DB trigger.
 
     if (postSlug) {
       revalidatePath(`/community/${postSlug}`)

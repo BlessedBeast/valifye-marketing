@@ -6,9 +6,9 @@ const KARMA_EVENT_LABELS: Record<KarmaEventRow['event_type'], string> = {
 
 export function formatKarmaEventDescription(
   eventType: KarmaEventRow['event_type'],
-  delta: number
+  points: number
 ): string {
   const label = KARMA_EVENT_LABELS[eventType] ?? eventType
-  const sign = delta >= 0 ? '+' : ''
-  return `${sign}${delta} Karma awarded for ${label}`
+  const sign = points >= 0 ? '+' : ''
+  return `${sign}${points} Karma awarded for ${label}`
 }

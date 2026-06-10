@@ -177,7 +177,7 @@ export function UserProfileView({
                     className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <p className="text-sm text-foreground">
-                      {formatKarmaEventDescription(event.eventType, event.delta)}
+                      {formatKarmaEventDescription(event.eventType, event.points)}
                     </p>
                     <time
                       dateTime={event.createdAt}

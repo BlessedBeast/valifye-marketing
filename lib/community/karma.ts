@@ -3,36 +3,37 @@ import { KARMA_RULES } from '@/lib/community/constants'
 
 export type KarmaEventType = 'review_given'
 
-/**
- * Awards review karma (+3) and writes an immutable audit row to karma_events.
- * Intended for background invocation after a qualifying comment is posted.
- */
-export async function awardReviewKarma(
-  userId: string,
+export type AwardCommentKarmaParams = {
   commentId: string
-): Promise<void> {
+  profileId: string
+  userId: string
+  points?: number
+  eventType?: KarmaEventType
+}
+
+/**
+ * Atomically awards comment karma via the award_comment_karma RPC.
+ * The database function owns idempotency (karma_awarded), counter increments,
+ * and the karma_events audit row in a single transaction.
+ * Returns true when points were awarded, false when skipped or failed.
+ */
+export async function awardCommentKarma(
+  params: AwardCommentKarmaParams
+): Promise<boolean> {
   const supabase = getSupabaseAdmin()
-  const delta = KARMA_RULES.REVIEW_GIVEN.delta
 
-  const { error: rpcError } = await supabase.rpc('increment_karma', {
-    p_user_id: userId,
-    p_delta: delta,
+  const { data, error } = await supabase.rpc('award_comment_karma', {
+    p_comment_id: params.commentId,
+    p_profile_id: params.profileId,
+    p_user_id: params.userId,
+    p_points: params.points ?? KARMA_RULES.REVIEW_GIVEN.delta,
+    p_event_type: params.eventType ?? ('review_given' satisfies KarmaEventType),
   })
 
-  if (rpcError) {
-    console.error('[community] increment_karma RPC failed:', rpcError.message)
-    throw rpcError
+  if (error) {
+    console.error('[community] award_comment_karma RPC failed:', error.message)
+    return false
   }
 
-  const { error: eventError } = await supabase.from('karma_events').insert({
-    user_id: userId,
-    event_type: 'review_given' satisfies KarmaEventType,
-    delta,
-    reference_id: commentId,
-  })
-
-  if (eventError) {
-    console.error('[community] karma_events insert failed:', eventError.message)
-    throw eventError
-  }
+  return data === true
 }

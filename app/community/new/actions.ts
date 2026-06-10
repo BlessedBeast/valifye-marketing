@@ -4,6 +4,7 @@ import { after } from 'next/server'
 import { redirect } from 'next/navigation'
 
 import { triggerAutonomousBotScan } from '@/app/community/actions/bot-scan'
+import { schedulePostModeration } from '@/lib/community/moderation'
 import { getSpaceAvailabilityForTheme } from '@/lib/community/theme-guards'
 import {
   createPostSchema,
@@ -102,6 +103,13 @@ export async function createCommunityPost(
     console.error('[community] post insert failed:', error?.message)
     return { error: error?.message ?? 'Failed to create post. Please try again.' }
   }
+
+  // Deferred thread quality pass; bot threads are shielded inside.
+  schedulePostModeration({
+    postId: data.id,
+    body: input.body,
+    isBot: false,
+  })
 
   const market = input.title.trim() || `${input.space} market`
   after(() => {

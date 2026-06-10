@@ -87,8 +87,15 @@ function AuthorAvatar({
 
 export function PostCard({ post }: PostCardProps) {
   const spaceLabel = COMMUNITY_SPACES[post.space]?.label ?? post.space
-  const stageStyle = STAGE_TAG_STYLES[post.stage]
-  const stageLabel = POST_STAGE_LABELS[post.stage] ?? post.stage
+  // Defensive: legacy/imported rows can carry a null or unknown stage.
+  const stageStyle = post.stage ? STAGE_TAG_STYLES[post.stage] : undefined
+  const stageTagClass =
+    stageStyle?.className ?? 'border-zinc-700 bg-zinc-900/50 text-zinc-500'
+  const stageTagLabel =
+    stageStyle?.label ?? (post.stage ? String(post.stage).toUpperCase() : 'UNSTAGED')
+  const stageLabel = post.stage
+    ? POST_STAGE_LABELS[post.stage] ?? post.stage
+    : 'Unstaged'
   const badgeLabel = post.author.badge ? BADGE_LABELS[post.author.badge] : null
   const spaceTagClass = SPACE_TAG_STYLES[post.space] ?? 'border-zinc-700 text-zinc-400'
 
@@ -143,10 +150,10 @@ export function PostCard({ post }: PostCardProps) {
             <span
               className={cn(
                 'rounded border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-widest',
-                stageStyle.className
+                stageTagClass
               )}
             >
-              {stageStyle.label}
+              {stageTagLabel}
             </span>
             <span className="sr-only">{stageLabel}</span>
           </div>

@@ -6,7 +6,11 @@
 import type { CommunitySpaceId } from '@/lib/community/constants'
 import type { PostStage } from '@/lib/community/post-schema'
 
-export type PostStatus = 'active' | 'hidden' | 'removed'
+/** posts.status — matches the DDL check constraint (active/archived/removed). */
+export type PostStatus = 'active' | 'archived' | 'removed'
+
+/** comments.status — DB default is 'published'. 'low_quality' suppresses from curated feeds. */
+export type CommentStatus = 'published' | 'hidden' | 'removed' | 'low_quality'
 
 export type ProfileBadge = 'member' | 'builder' | 'verified_founder' | null
 
@@ -24,6 +28,7 @@ export type Database = {
           status: PostStatus
           upvotes: number
           comment_count: number
+          is_bot_processed: boolean | null
           created_at: string
           author_id: string
           product_url: string | null
@@ -38,6 +43,7 @@ export type Database = {
           status?: PostStatus
           upvotes?: number
           comment_count?: number
+          is_bot_processed?: boolean | null
           created_at?: string
           author_id: string
           product_url?: string | null
@@ -85,7 +91,11 @@ export type Database = {
           body: string
           upvotes: number
           is_bot: boolean
-          status: 'active' | 'hidden' | 'removed'
+          status: CommentStatus
+          karma_awarded: boolean | null
+          moderation_score: number | null
+          moderation_flags: string[] | null
+          moderation_version: number | null
           created_at: string
         }
         Insert: {
@@ -96,7 +106,11 @@ export type Database = {
           body: string
           upvotes?: number
           is_bot?: boolean
-          status?: 'active' | 'hidden' | 'removed'
+          status?: CommentStatus
+          karma_awarded?: boolean | null
+          moderation_score?: number | null
+          moderation_flags?: string[] | null
+          moderation_version?: number | null
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['comments']['Insert']>
@@ -120,7 +134,7 @@ export type Database = {
           id: string
           user_id: string
           event_type: 'review_given'
-          delta: number
+          points: number
           reference_id: string | null
           created_at: string
         }
@@ -128,7 +142,7 @@ export type Database = {
           id?: string
           user_id: string
           event_type: 'review_given'
-          delta: number
+          points: number
           reference_id?: string | null
           created_at?: string
         }
@@ -164,15 +178,21 @@ export type Database = {
         Row: {
           id: string
           post_id: string
-          scan_content: string
-          verdict: string | null
+          keyword_cpc: number | null
+          competitor_count: number | null
+          competitors: unknown
+          risk_flags: unknown
+          full_report_url: string | null
           created_at: string
         }
         Insert: {
           id?: string
           post_id: string
-          scan_content: string
-          verdict?: string | null
+          keyword_cpc?: number | null
+          competitor_count?: number | null
+          competitors?: unknown
+          risk_flags?: unknown
+          full_report_url?: string | null
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['bot_scans']['Insert']>
@@ -188,20 +208,27 @@ export type Database = {
     }
     Views: Record<string, never>
     Functions: {
-      toggle_community_upvote: {
-        Args: {
-          p_target_id: string
-          p_target_type: 'post' | 'comment'
-        }
-        Returns: {
-          upvote_count: number
-          user_has_upvoted: boolean
-        }
-      }
       increment_karma: {
         Args: {
           p_user_id: string
           p_delta: number
+        }
+        Returns: number
+      }
+      award_comment_karma: {
+        Args: {
+          p_comment_id: string
+          p_profile_id: string
+          p_user_id: string
+          p_points: number
+          p_event_type: string
+        }
+        Returns: boolean
+      }
+      get_user_velocity: {
+        Args: {
+          p_profile_id: string
+          p_window_mins: number
         }
         Returns: number
       }
