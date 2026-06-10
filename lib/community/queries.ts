@@ -26,6 +26,10 @@ export type CommunityPostFeedItem = {
   author: CommunityPostAuthor
   /** Whether the signed-in viewer has an active upvote row for this post. */
   hasUpvoted: boolean
+  /** Public URLs of attached images. Empty array when none. */
+  imageUrls: string[]
+  /** Whether the signed-in viewer authored this post. */
+  isOwner: boolean
 }
 
 export type CommunityThreadPost = CommunityPostFeedItem & {
@@ -41,6 +45,10 @@ export type CommunityCommentItem = {
   author: CommunityPostAuthor
   hasUpvoted: boolean
   isBot: boolean
+  /** Public URLs of attached images. Empty array when none. */
+  imageUrls: string[]
+  /** Whether the signed-in viewer authored this comment. */
+  isOwner: boolean
 }
 
 export type CommunityBotScanCompetitor = {
@@ -136,7 +144,9 @@ type PostWithProfile = Pick<
   | 'stage'
   | 'upvotes'
   | 'comment_count'
+  | 'image_urls'
   | 'created_at'
+  | 'author_id'
 > & {
   profiles: ProfileSnippet | ProfileSnippet[] | null
 }
@@ -151,17 +161,31 @@ type PostDetailRow = Pick<
   | 'stage'
   | 'upvotes'
   | 'comment_count'
+  | 'image_urls'
   | 'created_at'
   | 'product_url'
+  | 'author_id'
 > & {
   profiles: ProfileSnippet | ProfileSnippet[] | null
 }
 
 type CommentWithProfile = Pick<
   CommentRow,
-  'id' | 'body' | 'upvotes' | 'created_at' | 'is_bot' | 'parent_id'
+  | 'id'
+  | 'body'
+  | 'upvotes'
+  | 'created_at'
+  | 'is_bot'
+  | 'parent_id'
+  | 'image_urls'
+  | 'author_id'
 > & {
   profiles: ProfileSnippet | ProfileSnippet[] | null
+}
+
+function normalizeImageUrls(raw: string[] | null): string[] {
+  if (!Array.isArray(raw)) return []
+  return raw.filter((url) => typeof url === 'string' && url.trim() !== '')
 }
 
 function resolveProfile(
@@ -213,7 +237,11 @@ function normalizeAuthor(profile: ProfileSnippet | null): CommunityPostAuthor {
   }
 }
 
-function mapPostRow(row: PostWithProfile, hasUpvoted = false): CommunityPostFeedItem {
+function mapPostRow(
+  row: PostWithProfile,
+  hasUpvoted = false,
+  viewerUserId: string | null = null
+): CommunityPostFeedItem {
   return {
     id: row.id,
     slug: row.slug,
@@ -226,22 +254,26 @@ function mapPostRow(row: PostWithProfile, hasUpvoted = false): CommunityPostFeed
     createdAt: row.created_at,
     author: normalizeAuthor(resolveProfile(row.profiles)),
     hasUpvoted,
+    imageUrls: normalizeImageUrls(row.image_urls),
+    isOwner: viewerUserId != null && row.author_id === viewerUserId,
   }
 }
 
 function mapPostDetailRow(
   row: PostDetailRow,
-  hasUpvoted: boolean
+  hasUpvoted: boolean,
+  viewerUserId: string | null
 ): CommunityThreadPost {
   return {
-    ...mapPostRow(row, hasUpvoted),
+    ...mapPostRow(row, hasUpvoted, viewerUserId),
     productUrl: row.product_url,
   }
 }
 
 function mapCommentRow(
   row: CommentWithProfile,
-  hasUpvoted: boolean
+  hasUpvoted: boolean,
+  viewerUserId: string | null
 ): CommunityCommentItem {
   if (row.is_bot) {
     return {
@@ -258,6 +290,8 @@ function mapCommentRow(
       },
       hasUpvoted,
       isBot: true,
+      imageUrls: normalizeImageUrls(row.image_urls),
+      isOwner: false,
     }
   }
 
@@ -270,6 +304,8 @@ function mapCommentRow(
     author: normalizeAuthor(resolveProfile(row.profiles)),
     hasUpvoted,
     isBot: false,
+    imageUrls: normalizeImageUrls(row.image_urls),
+    isOwner: viewerUserId != null && row.author_id === viewerUserId,
   }
 }
 
@@ -285,7 +321,9 @@ async function mapPostsWithViewerUpvotes(
     'post'
   )
 
-  return rows.map((row) => mapPostRow(row, upvotedPostIds.has(row.id)))
+  return rows.map((row) =>
+    mapPostRow(row, upvotedPostIds.has(row.id), viewerUserId)
+  )
 }
 
 function parseBotScanCompetitors(raw: unknown): CommunityBotScanCompetitor[] {
@@ -391,8 +429,10 @@ export async function getThreadPageData(
       stage,
       upvotes,
       comment_count,
+      image_urls,
       created_at,
       product_url,
+      author_id,
       profiles:author_id (
         username,
         display_name,
@@ -423,6 +463,8 @@ export async function getThreadPageData(
         created_at,
         is_bot,
         parent_id,
+        image_urls,
+        author_id,
         profiles:author_id (
           username,
           display_name,
@@ -461,13 +503,13 @@ export async function getThreadPageData(
   )
 
   const comments = commentRows.map((row) =>
-    mapCommentRow(row, commentUpvotes.has(row.id))
+    mapCommentRow(row, commentUpvotes.has(row.id), viewerUserId)
   )
 
   const botScan = botScanResult.data ? mapBotScanRow(botScanResult.data) : null
 
   return {
-    post: mapPostDetailRow(postData, postUpvotes.has(postData.id)),
+    post: mapPostDetailRow(postData, postUpvotes.has(postData.id), viewerUserId),
     comments,
     botScan,
     isAuthenticated: viewerUserId != null,
@@ -494,7 +536,9 @@ export async function getCommunityPosts(
       stage,
       upvotes,
       comment_count,
+      image_urls,
       created_at,
+      author_id,
       profiles:author_id (
         username,
         display_name,
@@ -652,7 +696,9 @@ export async function getPostsByAuthorId(
       stage,
       upvotes,
       comment_count,
+      image_urls,
       created_at,
+      author_id,
       profiles:author_id (
         username,
         display_name,

@@ -73,6 +73,7 @@ export type PostInsert = {
   space: CommunitySpaceId
   stage: PostStage
   product_url: string | null
+  image_urls: string[] | null
 }
 
 export function validatePostForTheme(

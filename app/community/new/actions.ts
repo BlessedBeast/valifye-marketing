@@ -14,6 +14,10 @@ import {
   type PostInsert,
 } from '@/lib/community/post-schema'
 import { getTodayTheme } from '@/lib/community/themes'
+import {
+  extractCommunityImageFiles,
+  uploadCommunityImages,
+} from '@/lib/supabase/storage'
 import { createClient } from '@/utils/supabase/server'
 
 export type CreatePostState = {
@@ -84,6 +88,9 @@ export async function createCommunityPost(
     }
   }
 
+  const imageFiles = extractCommunityImageFiles(formData)
+  const imageUrls = await uploadCommunityImages(imageFiles)
+
   const row: PostInsert = {
     author_id: user.id,
     title: input.title,
@@ -91,6 +98,7 @@ export async function createCommunityPost(
     space: input.space,
     stage: input.stage,
     product_url: productUrl || null,
+    image_urls: imageUrls.length > 0 ? imageUrls : null,
   }
 
   const { data, error } = await supabase

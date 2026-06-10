@@ -29,6 +29,7 @@ export type Database = {
           upvotes: number
           comment_count: number
           is_bot_processed: boolean | null
+          image_urls: string[] | null
           created_at: string
           author_id: string
           product_url: string | null
@@ -44,6 +45,7 @@ export type Database = {
           upvotes?: number
           comment_count?: number
           is_bot_processed?: boolean | null
+          image_urls?: string[] | null
           created_at?: string
           author_id: string
           product_url?: string | null
@@ -96,6 +98,7 @@ export type Database = {
           moderation_score: number | null
           moderation_flags: string[] | null
           moderation_version: number | null
+          image_urls: string[] | null
           created_at: string
         }
         Insert: {
@@ -111,6 +114,7 @@ export type Database = {
           moderation_score?: number | null
           moderation_flags?: string[] | null
           moderation_version?: number | null
+          image_urls?: string[] | null
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['comments']['Insert']>

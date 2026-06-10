@@ -11,6 +11,10 @@ import {
 import { runPreWriteGate, scheduleModeration } from '@/lib/community/moderation'
 import type { RequestFingerprint } from '@/lib/community/types'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import {
+  extractCommunityImageFiles,
+  uploadCommunityImages,
+} from '@/lib/supabase/storage'
 import { createClient } from '@/utils/supabase/server'
 
 export type ToggleUpvoteResult = {
@@ -229,6 +233,9 @@ export async function createCommunityComment(
     return { error: 'You are posting too quickly. Please wait a moment.' }
   }
 
+  const imageFiles = extractCommunityImageFiles(formData)
+  const imageUrls = await uploadCommunityImages(imageFiles)
+
   const supabase = await createClient()
   const { data: commentRow, error: insertError } = await supabase
     .from('comments')
@@ -238,6 +245,7 @@ export async function createCommunityComment(
       body: parsed.data.body,
       status: 'published',
       is_bot: false,
+      image_urls: imageUrls.length > 0 ? imageUrls : null,
     })
     .select('id')
     .single<{ id: string }>()

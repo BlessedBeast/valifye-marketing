@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   },
   alternates: {
     types: {
-      'application/rss+xml': '/sitemap.xml'
+      'application/xml': '/sitemap-index.xml'
     }
   }
 }

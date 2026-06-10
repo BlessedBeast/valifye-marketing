@@ -1,6 +1,7 @@
 import Link from 'next/link'
-import { MessageSquare, ThumbsUp } from 'lucide-react'
+import { MessageSquare, Pencil, ThumbsUp } from 'lucide-react'
 
+import { CommunityImageGrid } from '@/components/community/CommunityImageGrid'
 import { COMMUNITY_SPACES } from '@/lib/community/constants'
 import { formatTimeAgo } from '@/lib/community/format-time-ago'
 import { POST_STAGE_LABELS, type PostStage } from '@/lib/community/post-schema'
@@ -167,6 +168,10 @@ export function PostCard({ post }: PostCardProps) {
             </p>
           </div>
 
+          {post.imageUrls.length > 0 ? (
+            <CommunityImageGrid urls={post.imageUrls} />
+          ) : null}
+
           <div className="flex items-center gap-5 font-mono text-[10px] uppercase tracking-wider text-zinc-600">
             <span
               className={cn(
@@ -184,6 +189,15 @@ export function PostCard({ post }: PostCardProps) {
               <MessageSquare className="h-3.5 w-3.5" aria-hidden />
               {post.commentCount} replies
             </span>
+            {post.isOwner ? (
+              <span
+                className="inline-flex items-center gap-1 rounded border border-amber-500/30 bg-amber-500/5 px-1.5 py-0.5 font-bold text-amber-500/80 transition-colors group-hover:text-amber-500"
+                title="Open thread to edit your post"
+              >
+                <Pencil className="h-3 w-3" aria-hidden />
+                Edit
+              </span>
+            ) : null}
           </div>
         </div>
       </div>

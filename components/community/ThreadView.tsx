@@ -1,7 +1,9 @@
 import Link from 'next/link'
 
+import { CommentBodyEditor } from '@/components/community/CommentBodyEditor'
 import { CommentForm } from '@/components/community/CommentForm'
-import { MarkdownBody } from '@/components/community/MarkdownBody'
+import { CommunityImageGrid } from '@/components/community/CommunityImageGrid'
+import { PostBodyEditor } from '@/components/community/PostBodyEditor'
 import { UpvoteButton } from '@/components/community/UpvoteButton'
 import { COMMUNITY_SPACES } from '@/lib/community/constants'
 import { formatTimeAgo } from '@/lib/community/format-time-ago'
@@ -101,7 +103,16 @@ export function ThreadView({ data }: ThreadViewProps) {
       </header>
 
       <section className="space-y-4">
-        <MarkdownBody content={post.body} className="prose-invert max-w-none" />
+        <PostBodyEditor
+          key={`${post.id}-${post.title}-${post.body}-${post.stage}`}
+          postId={post.id}
+          postSlug={post.slug}
+          title={post.title}
+          body={post.body}
+          stage={post.stage}
+          imageUrls={post.imageUrls}
+          canEdit={post.isOwner}
+        />
 
         {post.productUrl ? (
           <p className="text-sm">
@@ -238,8 +249,19 @@ export function ThreadView({ data }: ThreadViewProps) {
                   createdAt={comment.createdAt}
                 />
                 <div className="mt-3">
-                  <MarkdownBody content={comment.body} />
+                  <CommentBodyEditor
+                    key={`${comment.id}-${comment.body}`}
+                    commentId={comment.id}
+                    postSlug={post.slug}
+                    body={comment.body}
+                    canEdit={comment.isOwner}
+                  />
                 </div>
+                {comment.imageUrls.length > 0 ? (
+                  <div className="mt-3">
+                    <CommunityImageGrid urls={comment.imageUrls} />
+                  </div>
+                ) : null}
                 <div className="mt-3">
                   <UpvoteButton
                     key={`${comment.id}-${comment.upvotes}-${comment.hasUpvoted}`}

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { Settings } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
@@ -43,6 +44,21 @@ export function CommunitySidebarNav({ items }: CommunitySidebarNavProps) {
           </Link>
         )
       })}
+
+      <div className="my-1.5 border-t border-zinc-900" aria-hidden />
+
+      <Link
+        href="/community/settings"
+        className={cn(
+          'flex items-center gap-2 rounded-lg px-3 py-2.5 font-mono text-xs uppercase tracking-wide transition-colors duration-150',
+          isNavActive(pathname, '/community/settings')
+            ? 'bg-amber-500/10 font-bold text-amber-500'
+            : 'text-zinc-500 hover:bg-zinc-900/60 hover:text-amber-500'
+        )}
+      >
+        <Settings className="h-3.5 w-3.5" aria-hidden />
+        Settings
+      </Link>
     </nav>
   )
 }

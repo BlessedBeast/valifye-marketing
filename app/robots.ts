@@ -1,9 +1,6 @@
 import { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
-  // Hardcode the production URL as the primary fallback
-  const baseUrl = "https://valifye.com"
-
   return {
     rules: [
       {
@@ -13,6 +10,6 @@ export default function robots(): MetadataRoute.Robots {
         // disallow: ["/admin", "/api/private"],
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: 'https://valifye.com/sitemap-index.xml',
   }
 }

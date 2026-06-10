@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 
 import { createCommunityPost, type CreatePostState } from '@/app/community/new/actions'
+import { ImageAttachmentInput } from '@/components/community/ImageAttachmentInput'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -39,6 +40,7 @@ const AUTH_REDIRECT_URL = 'https://app.valifye.com'
 export function CreateThreadForm({ todayTheme, karmaPoints }: CreateThreadFormProps) {
   const [isPending, startTransition] = useTransition()
   const [serverError, setServerError] = useState<string | null>(null)
+  const [images, setImages] = useState<File[]>([])
 
   const spaceAvailabilities = useMemo(
     () => getAllSpaceAvailabilities(todayTheme, karmaPoints),
@@ -115,6 +117,9 @@ export function CreateThreadForm({ todayTheme, karmaPoints }: CreateThreadFormPr
       formData.set('stage', values.stage)
       formData.set('body', values.body)
       formData.set('productUrl', canShareProductUrl ? values.productUrl ?? '' : '')
+      for (const file of images) {
+        formData.append('images', file)
+      }
 
       const result: CreatePostState = await createCommunityPost({}, formData)
       if (result.error) {
@@ -269,6 +274,17 @@ export function CreateThreadForm({ todayTheme, karmaPoints }: CreateThreadFormPr
           {errors.body ? (
             <p className="text-xs text-destructive">{errors.body.message}</p>
           ) : null}
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-foreground">
+            Attachments <span className="text-muted-foreground">(optional, up to 3 images)</span>
+          </p>
+          <ImageAttachmentInput
+            files={images}
+            onChange={setImages}
+            disabled={isPending}
+          />
         </div>
 
         {canShareProductUrl ? (

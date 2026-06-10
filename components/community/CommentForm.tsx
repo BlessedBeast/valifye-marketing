@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
 import { createCommunityComment } from '@/app/community/actions'
+import { ImageAttachmentInput } from '@/components/community/ImageAttachmentInput'
 import { Button } from '@/components/ui/button'
 import { MIN_COMMENT_BODY_CHARS } from '@/lib/community/comment-schema'
 import { cn } from '@/lib/utils'
@@ -33,6 +34,7 @@ function buildJsToken(): string {
 export function CommentForm({ postId, postSlug, disabled = false }: CommentFormProps) {
   const router = useRouter()
   const [body, setBody] = useState('')
+  const [images, setImages] = useState<File[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -53,6 +55,10 @@ export function CommentForm({ postId, postSlug, disabled = false }: CommentFormP
     const formData = new FormData(event.currentTarget)
     formData.set('body', body)
     formData.set('_jst', buildJsToken())
+    formData.delete('images')
+    for (const file of images) {
+      formData.append('images', file)
+    }
 
     startTransition(async () => {
       const result = await createCommunityComment(postId, postSlug, formData)
@@ -61,6 +67,7 @@ export function CommentForm({ postId, postSlug, disabled = false }: CommentFormP
         return
       }
       setBody('')
+      setImages([])
       router.refresh()
     })
   }
@@ -117,6 +124,12 @@ export function CommentForm({ postId, postSlug, disabled = false }: CommentFormP
           </span>
         </div>
       </div>
+
+      <ImageAttachmentInput
+        files={images}
+        onChange={setImages}
+        disabled={isPending}
+      />
 
       {error ? (
         <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
