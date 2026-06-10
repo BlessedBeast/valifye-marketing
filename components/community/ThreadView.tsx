@@ -23,10 +23,12 @@ type ThreadViewProps = {
 
 function AuthorMeta({
   displayName,
+  username,
   badge,
   createdAt,
 }: {
   displayName: string
+  username: string | null
   badge: ProfileBadge
   createdAt: string
 }) {
@@ -35,6 +37,14 @@ function AuthorMeta({
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
       <span className="font-medium text-foreground">{displayName}</span>
+      {username ? (
+        <Link
+          href={`/community/u/${username}`}
+          className="font-mono text-amber-500/90 underline-offset-4 hover:text-amber-400 hover:underline"
+        >
+          @{username}
+        </Link>
+      ) : null}
       {badgeLabel ? (
         <span
           className={cn(
@@ -84,6 +94,7 @@ export function ThreadView({ data }: ThreadViewProps) {
 
         <AuthorMeta
           displayName={post.author.displayName}
+          username={post.author.username}
           badge={post.author.badge}
           createdAt={post.createdAt}
         />
@@ -107,10 +118,11 @@ export function ThreadView({ data }: ThreadViewProps) {
         ) : null}
 
         <UpvoteButton
+          key={`${post.id}-${post.upvotes}-${post.hasUpvoted}`}
           targetId={post.id}
           targetType="post"
           initialUpvoteCount={post.upvotes}
-          initialVoted={post.userHasUpvoted}
+          initialHasUpvoted={post.hasUpvoted}
           disabled={!isAuthenticated}
         />
       </section>
@@ -160,6 +172,7 @@ export function ThreadView({ data }: ThreadViewProps) {
               >
                 <AuthorMeta
                   displayName={comment.author.displayName}
+                  username={comment.author.username}
                   badge={comment.author.badge}
                   createdAt={comment.createdAt}
                 />
@@ -168,10 +181,11 @@ export function ThreadView({ data }: ThreadViewProps) {
                 </div>
                 <div className="mt-3">
                   <UpvoteButton
+                    key={`${comment.id}-${comment.upvotes}-${comment.hasUpvoted}`}
                     targetId={comment.id}
                     targetType="comment"
                     initialUpvoteCount={comment.upvotes}
-                    initialVoted={comment.userHasUpvoted}
+                    initialHasUpvoted={comment.hasUpvoted}
                     disabled={!isAuthenticated}
                   />
                 </div>

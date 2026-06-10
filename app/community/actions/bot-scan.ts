@@ -179,7 +179,7 @@ async function generateModeratorComment(params: {
     model: GEMINI_MODEL,
     systemInstruction: MODERATOR_SYSTEM_PROMPT,
     generationConfig: {
-      maxOutputTokens: 500,
+      maxOutputTokens: 2000,
       temperature: 0.4,
     },
   })

@@ -7,11 +7,14 @@ export type CommunityPostSort = 'new' | 'top'
 
 export type CommunityPostAuthor = {
   displayName: string
+  /** Profile handle (e.g. `beastmanewow_a1fc`). Null for bot/deleted authors. */
+  username: string | null
   avatarUrl: string | null
   badge: ProfileBadge
 }
 
 export type CommunityPostFeedItem = {
+  id: string
   slug: string
   title: string
   body: string
@@ -21,12 +24,12 @@ export type CommunityPostFeedItem = {
   commentCount: number
   createdAt: string
   author: CommunityPostAuthor
+  /** Whether the signed-in viewer has an active upvote row for this post. */
+  hasUpvoted: boolean
 }
 
 export type CommunityThreadPost = CommunityPostFeedItem & {
-  id: string
   productUrl: string | null
-  userHasUpvoted: boolean
 }
 
 export type CommunityCommentItem = {
@@ -36,7 +39,7 @@ export type CommunityCommentItem = {
   upvotes: number
   createdAt: string
   author: CommunityPostAuthor
-  userHasUpvoted: boolean
+  hasUpvoted: boolean
   isBot: boolean
 }
 
@@ -107,11 +110,22 @@ type ProfileDetailRow = Pick<
   | 'total_reviews'
 >
 
-type ProfileSnippet = Pick<ProfileRow, 'display_name' | 'avatar_url' | 'badge'>
+type ProfileSnippet = Pick<
+  ProfileRow,
+  'username' | 'display_name' | 'avatar_url' | 'badge'
+>
 
 type PostWithProfile = Pick<
   PostRow,
-  'slug' | 'title' | 'body' | 'space' | 'stage' | 'upvotes' | 'comment_count' | 'created_at'
+  | 'id'
+  | 'slug'
+  | 'title'
+  | 'body'
+  | 'space'
+  | 'stage'
+  | 'upvotes'
+  | 'comment_count'
+  | 'created_at'
 > & {
   profiles: ProfileSnippet | ProfileSnippet[] | null
 }
@@ -178,15 +192,19 @@ function resolvePaginationRange(options: GetCommunityPostsOptions): {
 }
 
 function normalizeAuthor(profile: ProfileSnippet | null): CommunityPostAuthor {
+  const username = profile?.username?.trim() || null
+
   return {
-    displayName: profile?.display_name?.trim() || 'Deleted User',
+    displayName: profile?.display_name?.trim() || username || 'Deleted User',
+    username,
     avatarUrl: profile?.avatar_url ?? null,
     badge: profile?.badge ?? null,
   }
 }
 
-function mapPostRow(row: PostWithProfile): CommunityPostFeedItem {
+function mapPostRow(row: PostWithProfile, hasUpvoted = false): CommunityPostFeedItem {
   return {
+    id: row.id,
     slug: row.slug,
     title: row.title,
     body: row.body,
@@ -196,24 +214,23 @@ function mapPostRow(row: PostWithProfile): CommunityPostFeedItem {
     commentCount: row.comment_count ?? 0,
     createdAt: row.created_at,
     author: normalizeAuthor(resolveProfile(row.profiles)),
+    hasUpvoted,
   }
 }
 
 function mapPostDetailRow(
   row: PostDetailRow,
-  userHasUpvoted: boolean
+  hasUpvoted: boolean
 ): CommunityThreadPost {
   return {
-    ...mapPostRow(row),
-    id: row.id,
+    ...mapPostRow(row, hasUpvoted),
     productUrl: row.product_url,
-    userHasUpvoted,
   }
 }
 
 function mapCommentRow(
   row: CommentWithProfile,
-  userHasUpvoted: boolean
+  hasUpvoted: boolean
 ): CommunityCommentItem {
   if (row.is_bot) {
     return {
@@ -224,10 +241,11 @@ function mapCommentRow(
       createdAt: row.created_at,
       author: {
         displayName: 'Valifye Bot',
+        username: null,
         avatarUrl: null,
         badge: null,
       },
-      userHasUpvoted,
+      hasUpvoted,
       isBot: true,
     }
   }
@@ -239,9 +257,24 @@ function mapCommentRow(
     upvotes: row.upvotes ?? 0,
     createdAt: row.created_at,
     author: normalizeAuthor(resolveProfile(row.profiles)),
-    userHasUpvoted,
+    hasUpvoted,
     isBot: false,
   }
+}
+
+async function mapPostsWithViewerUpvotes(
+  rows: PostWithProfile[],
+  viewerUserId: string | null
+): Promise<CommunityPostFeedItem[]> {
+  if (rows.length === 0) return []
+
+  const upvotedPostIds = await getUserUpvoteTargetIds(
+    viewerUserId,
+    rows.map((row) => row.id),
+    'post'
+  )
+
+  return rows.map((row) => mapPostRow(row, upvotedPostIds.has(row.id)))
 }
 
 async function getViewerUserId(): Promise<string | null> {
@@ -296,6 +329,7 @@ export async function getThreadPageData(
       created_at,
       product_url,
       profiles:author_id (
+        username,
         display_name,
         avatar_url,
         badge
@@ -325,6 +359,7 @@ export async function getThreadPageData(
         is_bot,
         parent_id,
         profiles:author_id (
+          username,
           display_name,
           avatar_url,
           badge
@@ -386,11 +421,13 @@ export async function getCommunityPosts(
   const { space, sort = 'new' } = options
   const { from, to } = resolvePaginationRange(options)
   const supabase = await createClient()
+  const viewerUserId = await getViewerUserId()
 
   let query = supabase
     .from('posts')
     .select(
       `
+      id,
       slug,
       title,
       body,
@@ -400,6 +437,7 @@ export async function getCommunityPosts(
       comment_count,
       created_at,
       profiles:author_id (
+        username,
         display_name,
         avatar_url,
         badge
@@ -426,7 +464,7 @@ export async function getCommunityPosts(
 
   if (!Array.isArray(data)) return []
 
-  return (data as PostWithProfile[]).map(mapPostRow)
+  return mapPostsWithViewerUpvotes(data as PostWithProfile[], viewerUserId)
 }
 
 function mapLeaderboardRow(row: ProfileLeaderboardRow): CommunityLeaderboardEntry {
@@ -541,11 +579,13 @@ export async function getPostsByAuthorId(
     Math.max(1, options.limit ?? DEFAULT_COMMUNITY_FEED_LIMIT)
   )
   const supabase = await createClient()
+  const viewerUserId = await getViewerUserId()
 
   const { data, error } = await supabase
     .from('posts')
     .select(
       `
+      id,
       slug,
       title,
       body,
@@ -555,6 +595,7 @@ export async function getPostsByAuthorId(
       comment_count,
       created_at,
       profiles:author_id (
+        username,
         display_name,
         avatar_url,
         badge
@@ -573,5 +614,5 @@ export async function getPostsByAuthorId(
 
   if (!Array.isArray(data)) return []
 
-  return (data as PostWithProfile[]).map(mapPostRow)
+  return mapPostsWithViewerUpvotes(data as PostWithProfile[], viewerUserId)
 }

@@ -105,7 +105,14 @@ export function PostCard({ post }: PostCardProps) {
 
         <div className="min-w-0 flex-1 space-y-3">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-            <span className="font-bold text-zinc-300">{post.author.displayName}</span>
+            <span className="font-bold text-zinc-300">
+              {post.author.displayName}
+              {post.author.username ? (
+                <span className="ml-1.5 font-normal normal-case text-amber-500/80">
+                  (@{post.author.username})
+                </span>
+              ) : null}
+            </span>
             {badgeLabel ? (
               <span
                 className={cn(
@@ -154,8 +161,16 @@ export function PostCard({ post }: PostCardProps) {
           </div>
 
           <div className="flex items-center gap-5 font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-            <span className="inline-flex items-center gap-1.5 transition-colors group-hover:text-zinc-500">
-              <ThumbsUp className="h-3.5 w-3.5" aria-hidden />
+            <span
+              className={cn(
+                'inline-flex items-center gap-1.5 transition-colors group-hover:text-zinc-500',
+                post.hasUpvoted && 'text-amber-500'
+              )}
+            >
+              <ThumbsUp
+                className={cn('h-3.5 w-3.5', post.hasUpvoted && 'fill-current')}
+                aria-hidden
+              />
               {post.upvotes} upvotes
             </span>
             <span className="inline-flex items-center gap-1.5 transition-colors group-hover:text-zinc-500">
