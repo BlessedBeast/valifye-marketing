@@ -1,15 +1,13 @@
 import Link from 'next/link'
 
-import { CommentBodyEditor } from '@/components/community/CommentBodyEditor'
 import { CommentForm } from '@/components/community/CommentForm'
-import { CommunityImageGrid } from '@/components/community/CommunityImageGrid'
+import { CommentThreadList } from '@/components/community/CommentThreadList'
 import { PostBodyEditor } from '@/components/community/PostBodyEditor'
 import { UpvoteButton } from '@/components/community/UpvoteButton'
 import { COMMUNITY_SPACES } from '@/lib/community/constants'
 import { formatTimeAgo } from '@/lib/community/format-time-ago'
 import { POST_STAGE_LABELS } from '@/lib/community/post-schema'
 import type { CommunityThreadPageData } from '@/lib/community/queries'
-import { sortThreadComments } from '@/lib/community/sort-comments'
 import type { ProfileBadge } from '@/types/supabase'
 import { cn } from '@/lib/utils'
 
@@ -67,7 +65,6 @@ function AuthorMeta({
 
 export function ThreadView({ data }: ThreadViewProps) {
   const { post, comments, botScan, isAuthenticated } = data
-  const sortedComments = sortThreadComments(comments)
   const spaceLabel = COMMUNITY_SPACES[post.space]?.label ?? post.space
   const stageLabel = POST_STAGE_LABELS[post.stage] ?? post.stage
 
@@ -223,59 +220,15 @@ export function ThreadView({ data }: ThreadViewProps) {
 
       <section className="space-y-4">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          {sortedComments.length} {sortedComments.length === 1 ? 'Reply' : 'Replies'}
+          {comments.length} {comments.length === 1 ? 'Reply' : 'Replies'}
         </h2>
 
-        {sortedComments.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No human replies yet. Be the first to leave constructive feedback.
-          </p>
-        ) : (
-          <ul className="space-y-4">
-            {sortedComments.map((comment) => (
-              <li
-                key={comment.id}
-                className={cn(
-                  comment.isBot
-                    ? 'rounded-lg border border-emerald-500/30 bg-emerald-950/15 p-4'
-                    : 'rounded-lg border border-border bg-card/60 p-4',
-                  comment.depth > 0 && 'ml-4 border-l-2 border-muted/50 pl-6'
-                )}
-              >
-                <AuthorMeta
-                  displayName={comment.author.displayName}
-                  username={comment.author.username}
-                  badge={comment.author.badge}
-                  createdAt={comment.createdAt}
-                />
-                <div className="mt-3">
-                  <CommentBodyEditor
-                    key={`${comment.id}-${comment.body}`}
-                    commentId={comment.id}
-                    postSlug={post.slug}
-                    body={comment.body}
-                    canEdit={comment.isOwner}
-                  />
-                </div>
-                {comment.imageUrls.length > 0 ? (
-                  <div className="mt-3">
-                    <CommunityImageGrid urls={comment.imageUrls} />
-                  </div>
-                ) : null}
-                <div className="mt-3">
-                  <UpvoteButton
-                    key={`${comment.id}-${comment.upvotes}-${comment.hasUpvoted}`}
-                    targetId={comment.id}
-                    targetType="comment"
-                    initialUpvoteCount={comment.upvotes}
-                    initialHasUpvoted={comment.hasUpvoted}
-                    disabled={!isAuthenticated}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+        <CommentThreadList
+          postId={post.id}
+          postSlug={post.slug}
+          comments={comments}
+          isAuthenticated={isAuthenticated}
+        />
       </section>
 
       <section className="border-t border-border pt-6">

@@ -8,62 +8,79 @@ export type ThreadComment = FlatThreadComment & {
   depth: number
 }
 
+export type CommentTreeNode = ThreadComment & {
+  children: CommentTreeNode[]
+}
+
 function compareCreatedAt(a: FlatThreadComment, b: FlatThreadComment): number {
   return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
 }
 
-function resolveRootId(
-  comment: FlatThreadComment,
-  byId: Map<string, FlatThreadComment>
-): string {
-  let node: FlatThreadComment | undefined = comment
-
-  while (node?.parentId && byId.has(node.parentId)) {
-    node = byId.get(node.parentId)
-  }
-
-  return node?.id ?? comment.id
-}
-
 /**
- * Orders a flat comment list into root → nested-reply groups while preserving
- * chronological order among roots and among each reply thread.
- * All descendants of a root render at depth = 1 (capped for mobile readability).
+ * Builds a nested comment tree with true depth from parent_id chains.
+ * Orphan replies (missing parent in the set) surface as roots.
  */
-export function sortThreadComments(comments: FlatThreadComment[]): ThreadComment[] {
+export function buildCommentTree(comments: FlatThreadComment[]): CommentTreeNode[] {
   if (comments.length === 0) return []
 
-  const byId = new Map(comments.map((comment) => [comment.id, comment]))
+  const nodes = new Map<string, CommentTreeNode>(
+    comments.map((comment) => [
+      comment.id,
+      {
+        ...comment,
+        parentId: comment.parentId ?? null,
+        depth: 0,
+        children: [],
+      },
+    ])
+  )
 
-  const roots = comments
-    .filter((comment) => {
-      const parentId = comment.parentId ?? null
-      return parentId == null || !byId.has(parentId)
-    })
-    .sort(compareCreatedAt)
-
-  const rootIds = new Set(roots.map((root) => root.id))
-  const repliesByRoot = new Map<string, FlatThreadComment[]>()
+  const roots: CommentTreeNode[] = []
 
   for (const comment of comments) {
-    if (rootIds.has(comment.id)) continue
+    const node = nodes.get(comment.id)
+    if (!node) continue
 
-    const rootId = resolveRootId(comment, byId)
-    const bucket = repliesByRoot.get(rootId) ?? []
-    bucket.push(comment)
-    repliesByRoot.set(rootId, bucket)
-  }
+    const parentId = comment.parentId ?? null
+    const parent = parentId ? nodes.get(parentId) : undefined
 
-  const sorted: ThreadComment[] = []
-
-  for (const root of roots) {
-    sorted.push({ ...root, depth: 0 })
-
-    const replies = (repliesByRoot.get(root.id) ?? []).sort(compareCreatedAt)
-    for (const reply of replies) {
-      sorted.push({ ...reply, depth: 1 })
+    if (parent) {
+      parent.children.push(node)
+    } else {
+      roots.push(node)
     }
   }
 
-  return sorted
+  function assignDepth(node: CommentTreeNode, depth: number): void {
+    node.depth = depth
+    node.children.sort(compareCreatedAt)
+    for (const child of node.children) {
+      assignDepth(child, depth + 1)
+    }
+  }
+
+  roots.sort(compareCreatedAt)
+  for (const root of roots) {
+    assignDepth(root, 0)
+  }
+
+  return roots
+}
+
+/** @deprecated Prefer buildCommentTree for threaded UI. */
+export function sortThreadComments(comments: FlatThreadComment[]): ThreadComment[] {
+  const flattened: ThreadComment[] = []
+
+  function walk(node: CommentTreeNode): void {
+    flattened.push(node)
+    for (const child of node.children) {
+      walk(child)
+    }
+  }
+
+  for (const root of buildCommentTree(comments)) {
+    walk(root)
+  }
+
+  return flattened
 }

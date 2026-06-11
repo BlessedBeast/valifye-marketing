@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
-import { ImagePlus, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ImagePlus, Upload, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
@@ -11,18 +11,28 @@ type ImageAttachmentInputProps = {
   files: File[]
   onChange: (files: File[]) => void
   disabled?: boolean
+  /** `dropzone` — full drag-and-drop area for thread creation. */
+  variant?: 'compact' | 'dropzone'
+}
+
+function mergeImageFiles(existing: File[], incoming: File[]): File[] {
+  const valid = incoming.filter((file) => file.size > 0 && file.type.startsWith('image/'))
+  if (valid.length === 0) return existing
+  return [...existing, ...valid].slice(0, MAX_ATTACHMENT_IMAGES)
 }
 
 /**
- * Hidden file input + "Add Image" trigger with removable preview thumbnails.
- * Selected File objects live in the parent so it can append them to FormData.
+ * Image picker for post attachments. Supports compact button mode and a
+ * drag-and-drop dropzone for thread creation.
  */
 export function ImageAttachmentInput({
   files,
   onChange,
   disabled = false,
+  variant = 'compact',
 }: ImageAttachmentInputProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   const previews = useMemo(
     () => files.map((file) => URL.createObjectURL(file)),
@@ -35,16 +45,17 @@ export function ImageAttachmentInput({
     }
   }, [previews])
 
+  const atCapacity = files.length >= MAX_ATTACHMENT_IMAGES
+
+  const addFiles = useCallback(
+    (incoming: File[]) => {
+      onChange(mergeImageFiles(files, incoming))
+    },
+    [files, onChange]
+  )
+
   function handleSelect(event: React.ChangeEvent<HTMLInputElement>) {
-    const selected = Array.from(event.target.files ?? []).filter(
-      (file) => file.size > 0 && file.type.startsWith('image/')
-    )
-
-    if (selected.length > 0) {
-      onChange([...files, ...selected].slice(0, MAX_ATTACHMENT_IMAGES))
-    }
-
-    // Reset so picking the same file again re-triggers onChange.
+    addFiles(Array.from(event.target.files ?? []))
     event.target.value = ''
   }
 
@@ -52,7 +63,112 @@ export function ImageAttachmentInput({
     onChange(files.filter((_, i) => i !== index))
   }
 
-  const atCapacity = files.length >= MAX_ATTACHMENT_IMAGES
+  function handleDragOver(event: React.DragEvent) {
+    event.preventDefault()
+    if (!disabled && !atCapacity) {
+      setIsDragging(true)
+    }
+  }
+
+  function handleDragLeave(event: React.DragEvent) {
+    event.preventDefault()
+    setIsDragging(false)
+  }
+
+  function handleDrop(event: React.DragEvent) {
+    event.preventDefault()
+    setIsDragging(false)
+    if (disabled || atCapacity) return
+    addFiles(Array.from(event.dataTransfer.files ?? []))
+  }
+
+  const previewGrid =
+    files.length > 0 ? (
+      <ul className="flex flex-wrap gap-2">
+        {files.map((file, index) => (
+          <li
+            key={`${file.name}-${file.lastModified}-${index}`}
+            className="group relative h-24 w-24 overflow-hidden rounded-md border border-zinc-800"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previews[index]}
+              alt={file.name}
+              className="h-full w-full object-cover"
+            />
+            <button
+              type="button"
+              onClick={() => handleRemove(index)}
+              disabled={disabled}
+              aria-label={`Remove ${file.name}`}
+              className={cn(
+                'absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full',
+                'border border-zinc-700 bg-black/80 text-zinc-300',
+                'transition-colors hover:border-red-500/60 hover:text-red-400'
+              )}
+            >
+              <X className="h-3 w-3" aria-hidden />
+            </button>
+          </li>
+        ))}
+      </ul>
+    ) : null
+
+  if (variant === 'dropzone') {
+    return (
+      <div className="space-y-3">
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={handleSelect}
+          disabled={disabled || atCapacity}
+        />
+
+        <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              inputRef.current?.click()
+            }
+          }}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => !disabled && !atCapacity && inputRef.current?.click()}
+          className={cn(
+            'cursor-pointer rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors',
+            'border-zinc-800 bg-zinc-900/30 hover:border-amber-500/40 hover:bg-zinc-900/50',
+            isDragging && 'border-amber-500/60 bg-amber-500/5',
+            (disabled || atCapacity) && 'cursor-not-allowed opacity-50'
+          )}
+        >
+          <Upload
+            className={cn(
+              'mx-auto h-8 w-8',
+              isDragging ? 'text-amber-500' : 'text-zinc-600'
+            )}
+            aria-hidden
+          />
+          <p className="mt-3 font-mono text-xs font-bold uppercase tracking-widest text-zinc-300">
+            Drop screenshots here
+          </p>
+          <p className="mt-1 text-xs text-zinc-500">
+            PNG, JPG, or WebP — up to {MAX_ATTACHMENT_IMAGES} images for your pitch
+          </p>
+          <p className="mt-3 font-mono text-[10px] tabular-nums text-zinc-600">
+            {files.length} / {MAX_ATTACHMENT_IMAGES} attached
+          </p>
+        </div>
+
+        {previewGrid}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-2">
@@ -86,36 +202,7 @@ export function ImageAttachmentInput({
         </span>
       </div>
 
-      {files.length > 0 ? (
-        <ul className="flex flex-wrap gap-2">
-          {files.map((file, index) => (
-            <li
-              key={`${file.name}-${file.lastModified}-${index}`}
-              className="group relative h-20 w-20 overflow-hidden rounded-md border border-zinc-800"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={previews[index]}
-                alt={file.name}
-                className="h-full w-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => handleRemove(index)}
-                disabled={disabled}
-                aria-label={`Remove ${file.name}`}
-                className={cn(
-                  'absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full',
-                  'border border-zinc-700 bg-black/80 text-zinc-300',
-                  'transition-colors hover:border-red-500/60 hover:text-red-400'
-                )}
-              >
-                <X className="h-3 w-3" aria-hidden />
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      {previewGrid}
     </div>
   )
 }

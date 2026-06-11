@@ -2,10 +2,11 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, LogOut } from 'lucide-react'
 
 import { updateProfile } from '@/app/community/actions/profile'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/utils/supabase/client'
 
 const MAX_BIO_CHARS = 160
 
@@ -70,6 +71,25 @@ export function ProfileSettingsForm({ initialProfile }: ProfileSettingsFormProps
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [isSigningOut, setIsSigningOut] = useState(false)
+
+  async function handleSignOut() {
+    setIsSigningOut(true)
+    setError(null)
+    try {
+      const supabase = createClient()
+      const { error: signOutError } = await supabase.auth.signOut()
+      if (signOutError) {
+        setError(signOutError.message)
+        setIsSigningOut(false)
+        return
+      }
+      router.push('/founders-lounge')
+    } catch {
+      setError('Could not sign out. Please try again.')
+      setIsSigningOut(false)
+    }
+  }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -228,6 +248,37 @@ export function ProfileSettingsForm({ initialProfile }: ProfileSettingsFormProps
             Profile updated. Changes are live across the lounge.
           </p>
         ) : null}
+      </div>
+
+      <div className="border-t border-zinc-900 pt-6">
+        <p className={LABEL_CLASS}>Session</p>
+        <p className="mt-2 text-sm text-zinc-500">
+          Sign out of the Founders Lounge on this device. You can rejoin anytime from
+          the public entry page.
+        </p>
+        <button
+          type="button"
+          onClick={() => void handleSignOut()}
+          disabled={isPending || isSigningOut}
+          className={cn(
+            'mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md border border-red-500/40',
+            'bg-red-950/20 px-5 py-3 font-mono text-xs font-bold uppercase tracking-widest',
+            'text-red-500 transition-colors hover:bg-red-500/10',
+            'disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
+          )}
+        >
+          {isSigningOut ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+              Signing out…
+            </>
+          ) : (
+            <>
+              <LogOut className="h-3.5 w-3.5" aria-hidden />
+              Sign Out
+            </>
+          )}
+        </button>
       </div>
     </form>
   )

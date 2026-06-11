@@ -13,6 +13,7 @@ export const createCommentSchema = z.object({
       MIN_COMMENT_BODY_CHARS,
       `Constructive or silent — comments must be at least ${MIN_COMMENT_BODY_CHARS} characters to earn Karma.`
     ),
+  parentId: z.string().uuid('Invalid parent comment reference.').optional(),
 })
 
 export type CreateCommentInput = z.infer<typeof createCommentSchema>

@@ -11,10 +11,6 @@ import {
 import { runPreWriteGate, scheduleModeration } from '@/lib/community/moderation'
 import type { RequestFingerprint } from '@/lib/community/types'
 import { getSupabaseAdmin } from '@/lib/supabase'
-import {
-  extractCommunityImageFiles,
-  uploadCommunityImages,
-} from '@/lib/supabase/storage'
 import { createClient } from '@/utils/supabase/server'
 
 export type ToggleUpvoteResult = {
@@ -204,8 +200,13 @@ export async function createCommunityComment(
 ): Promise<CreateCommentResult> {
   const bodyValue = formData.get('body')
   const body = typeof bodyValue === 'string' ? bodyValue : ''
+  const parentIdValue = formData.get('parentId')
+  const parentId =
+    typeof parentIdValue === 'string' && parentIdValue.trim() !== ''
+      ? parentIdValue.trim()
+      : undefined
 
-  const parsed = createCommentSchema.safeParse({ postId, body })
+  const parsed = createCommentSchema.safeParse({ postId, body, parentId })
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'Invalid comment.' }
   }
@@ -233,19 +234,34 @@ export async function createCommunityComment(
     return { error: 'You are posting too quickly. Please wait a moment.' }
   }
 
-  const imageFiles = extractCommunityImageFiles(formData)
-  const imageUrls = await uploadCommunityImages(imageFiles)
-
   const supabase = await createClient()
+
+  if (parsed.data.parentId) {
+    const { data: parentRow, error: parentError } = await supabase
+      .from('comments')
+      .select('post_id')
+      .eq('id', parsed.data.parentId)
+      .maybeSingle<{ post_id: string }>()
+
+    if (parentError) {
+      console.error('[community] parent comment lookup failed:', parentError.message)
+      return { error: 'Could not verify reply target.' }
+    }
+
+    if (!parentRow || parentRow.post_id !== parsed.data.postId) {
+      return { error: 'Invalid reply target.' }
+    }
+  }
+
   const { data: commentRow, error: insertError } = await supabase
     .from('comments')
     .insert({
       post_id: parsed.data.postId,
+      parent_id: parsed.data.parentId ?? null,
       author_id: userId,
       body: parsed.data.body,
       status: 'published',
       is_bot: false,
-      image_urls: imageUrls.length > 0 ? imageUrls : null,
     })
     .select('id')
     .single<{ id: string }>()

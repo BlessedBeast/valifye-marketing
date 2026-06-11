@@ -278,9 +278,17 @@ export function CreateThreadForm({ todayTheme, karmaPoints }: CreateThreadFormPr
 
         <div className="space-y-2">
           <p className="text-sm font-medium text-foreground">
-            Attachments <span className="text-muted-foreground">(optional, up to 3 images)</span>
+            Pitch media{' '}
+            <span className="text-muted-foreground">
+              (optional — screenshots, mockups, or traction proof)
+            </span>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Drag files into the zone or click to browse. Images attach to your thread
+            and display in the feed.
           </p>
           <ImageAttachmentInput
+            variant="dropzone"
             files={images}
             onChange={setImages}
             disabled={isPending}
