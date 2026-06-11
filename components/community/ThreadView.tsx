@@ -17,6 +17,8 @@ const BADGE_LABELS: Record<NonNullable<ProfileBadge>, string> = {
   verified_founder: 'Verified Founder',
 }
 
+const VALIFYE_DASHBOARD_URL = 'https://app.valifye.com/'
+
 type ThreadViewProps = {
   data: CommunityThreadPageData
 }
@@ -141,16 +143,9 @@ export function ThreadView({ data }: ThreadViewProps) {
           className="space-y-4 rounded-lg border border-emerald-500/35 bg-emerald-950/20 p-5 shadow-[0_0_40px_-16px_rgba(16,185,129,0.25)]"
           aria-label="Valifye autonomous market audit"
         >
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-emerald-300">
-              🤖 Valifye Autonomous Market Audit
-            </h2>
-            {botScan.verdict ? (
-              <p className="rounded border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-300">
-                Verdict: {botScan.verdict}
-              </p>
-            ) : null}
-          </div>
+          <h2 className="text-sm font-semibold text-emerald-300">
+            🤖 Valifye Autonomous Market Audit
+          </h2>
 
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div className="rounded-md border border-emerald-500/20 bg-emerald-950/30 px-3 py-2">
@@ -206,16 +201,14 @@ export function ThreadView({ data }: ThreadViewProps) {
             </div>
           ) : null}
 
-          {botScan.fullReportUrl ? (
-            <a
-              href={botScan.fullReportUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block font-mono text-xs font-bold uppercase tracking-widest text-emerald-300 underline-offset-4 hover:underline"
-            >
-              Open Valifye dashboard →
-            </a>
-          ) : null}
+          <a
+            href={VALIFYE_DASHBOARD_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block font-mono text-xs font-bold uppercase tracking-widest text-emerald-300 underline-offset-4 hover:underline"
+          >
+            Open full forensic report →
+          </a>
         </section>
       ) : null}
 

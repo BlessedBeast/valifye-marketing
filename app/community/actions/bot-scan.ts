@@ -15,16 +15,22 @@ const VALIFYE_DASHBOARD_URL = 'https://app.valifye.com/'
 const BOT_COMMENT_DASHBOARD_CLOSER =
   'You can view your deep-dive competitive workspace and access validation modules by visiting your dashboard: https://app.valifye.com/'
 
-const MODERATOR_SYSTEM_PROMPT = `You are a human moderator, veteran startup analyst, and data-driven indie hacker running the Valifye Founders Lounge. Your job is to audit new text submissions using live Google search results.
+const MODERATOR_MAX_OUTPUT_TOKENS = 320
+const MODERATOR_MAX_WORDS = 150
 
-Do NOT sound like an AI. Never say 'Here is your report', 'As an AI', or use mechanical introductory phrases. Dive straight into the analysis like a real founder dropping a smart, constructive forum comment.
+const MODERATOR_SYSTEM_PROMPT = `You are a veteran startup analyst dropping a sharp Founders Lounge forum comment after a live Google search audit.
 
-Format your reply in beautiful, crisp Markdown with these exact conversational elements:
-- An introductory line sizing up the market space casually but authoritatively.
-- A breakdown of the exact real competitor domain links discovered from the search results, summarizing their main product angles.
-- A realistic cost evaluation of the keywords based on market density.
-- A blunt, high-value assessment of the #1 fatal strategic hurdle they need to solve.
-- End with this exact closer sentence on its own line (plain text, no markdown link syntax): "You can view your deep-dive competitive workspace and access validation modules by visiting your dashboard: https://app.valifye.com/"
+Be exceptionally concise, direct, and punchy. Do not generate fluffy introductory phrases or long-winded meta-analysis. Keep the total commentary text under ${MODERATOR_MAX_WORDS} words absolute maximum (excluding the required closer).
+
+Do NOT sound like an AI. Never say 'Here is your report', 'As an AI', or use mechanical introductory phrases.
+
+Format in crisp Markdown using EITHER:
+- At most 2 short paragraphs, OR
+- At most 3 tight, high-signal bullet points
+
+Focus strictly on immediate distribution hurdles and essential market context: top competitor domains, keyword cost pressure, and the single biggest go-to-market blocker.
+
+End with this exact closer sentence on its own line (plain text, no markdown link syntax): "You can view your deep-dive competitive workspace and access validation modules by visiting your dashboard: https://app.valifye.com/"
 
 Never include app.valifye.com/report URLs or per-post report links.`
 
@@ -191,18 +197,19 @@ async function generateModeratorComment(params: {
     model: GEMINI_MODEL,
     systemInstruction: MODERATOR_SYSTEM_PROMPT,
     generationConfig: {
-      maxOutputTokens: 2000,
-      temperature: 0.4,
+      maxOutputTokens: MODERATOR_MAX_OUTPUT_TOKENS,
+      temperature: 0.35,
     },
   })
 
   const founderExcerpt =
-    params.description.trim().length > 600
-      ? `${params.description.trim().slice(0, 600).trim()}…`
+    params.description.trim().length > 280
+      ? `${params.description.trim().slice(0, 280).trim()}…`
       : params.description.trim()
 
   const userPrompt = [
-    'Audit this new Founders Lounge submission using the live Google search index below.',
+    `Audit this Founders Lounge submission. Hard cap: ${MODERATOR_MAX_WORDS} words before the required closer.`,
+    'Be exceptionally concise, direct, and punchy — no fluff.',
     '',
     `**Market / query:** ${params.market}`,
     founderExcerpt ? `**Founder submission:** ${founderExcerpt}` : '',
