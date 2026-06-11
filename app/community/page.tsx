@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
+import { CommunityFeedList } from '@/components/community/CommunityFeedList'
 import { FeedSortToggle } from '@/components/community/FeedSortToggle'
-import { PostCard } from '@/components/community/PostCard'
 import { COMMUNITY_SPACES, COMMUNITY_SPACE_IDS } from '@/lib/community/constants'
 import {
   DEFAULT_COMMUNITY_FEED_LIMIT,
@@ -73,12 +73,17 @@ export default async function CommunityFeedPage({
           Create a New Post
         </Link>
         <p className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-          {posts.length} thread{posts.length === 1 ? '' : 's'} indexed
+          {posts.length}
+          {posts.length >= DEFAULT_COMMUNITY_FEED_LIMIT ? '+' : ''} thread
+          {posts.length === 1 ? '' : 's'} loaded
         </p>
       </section>
 
-      <section className="space-y-3">
-        {posts.length === 0 ? (
+      <CommunityFeedList
+        key={sort}
+        initialPosts={posts}
+        sort={sort}
+        emptyState={
           <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-900/20 px-4 py-12 text-center">
             <p className="text-sm text-zinc-500">
               No threads yet. Be the first to post in the community.
@@ -90,10 +95,8 @@ export default async function CommunityFeedPage({
               Start a thread
             </Link>
           </div>
-        ) : (
-          posts.map((post) => <PostCard key={post.slug} post={post} />)
-        )}
-      </section>
+        }
+      />
 
       <section className="space-y-4 border-t border-zinc-900 pt-10">
         <h2 className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">

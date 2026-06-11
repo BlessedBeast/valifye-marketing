@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-import { PostCard } from '@/components/community/PostCard'
+import { CommunityFeedList } from '@/components/community/CommunityFeedList'
+import { FeedSortToggle } from '@/components/community/FeedSortToggle'
 import { ThreadView } from '@/components/community/ThreadView'
 import {
   COMMUNITY_SPACES,
@@ -54,16 +55,21 @@ async function SpaceFeedView({
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2 border-b border-border pb-6">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
-          Space
-        </p>
-        <h1 className="text-2xl font-bold text-foreground">
-          {space.label} Feed
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {SPACE_FEED_SUBTITLES[spaceId]}
-        </p>
+      <header className="space-y-4 border-b border-border pb-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+              Space
+            </p>
+            <h1 className="text-2xl font-bold text-foreground">
+              {space.label} Feed
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {SPACE_FEED_SUBTITLES[spaceId]}
+            </p>
+          </div>
+          <FeedSortToggle active={sort} basePath={`/community/${spaceId}`} />
+        </div>
       </header>
 
       <div className="flex items-center justify-between gap-3">
@@ -74,12 +80,18 @@ async function SpaceFeedView({
           Start a thread in {space.label}
         </Link>
         <p className="text-xs text-muted-foreground">
-          {posts.length} thread{posts.length === 1 ? '' : 's'}
+          {posts.length}
+          {posts.length >= DEFAULT_COMMUNITY_FEED_LIMIT ? '+' : ''} thread
+          {posts.length === 1 ? '' : 's'} loaded
         </p>
       </div>
 
-      <section className="space-y-3">
-        {posts.length === 0 ? (
+      <CommunityFeedList
+        key={`${spaceId}-${sort}`}
+        initialPosts={posts}
+        sort={sort}
+        space={spaceId}
+        emptyState={
           <div className="rounded-lg border border-dashed border-border bg-card/50 px-4 py-10 text-center">
             <p className="text-sm text-muted-foreground">
               No threads in {space.label} yet.
@@ -91,10 +103,8 @@ async function SpaceFeedView({
               Create the first post
             </Link>
           </div>
-        ) : (
-          posts.map((post) => <PostCard key={post.slug} post={post} />)
-        )}
-      </section>
+        }
+      />
     </div>
   )
 }
