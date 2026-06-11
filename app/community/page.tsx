@@ -8,23 +8,17 @@ import {
   getCommunityPosts,
   type CommunityPostSort,
 } from '@/lib/community/queries'
+import {
+  getSpaceDirectoryCardClass,
+  getSpaceDirectoryTagClass,
+} from '@/lib/community/space-theme'
 import { getTodayTheme } from '@/lib/community/themes'
-import { cn } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
 type CommunityFeedPageProps = {
   searchParams: Promise<{ sort?: string }>
 }
-
-/** Shared card chrome — identical border, padding, and hover for every space. */
-const SPACE_CARD_CLASS = cn(
-  'group block rounded-xl border border-zinc-900 bg-zinc-900/40 p-4 transition-all duration-200',
-  'hover:border-amber-500/40 hover:bg-zinc-900/50',
-  'hover:shadow-[0_0_24px_rgba(245,158,11,0.08)]'
-)
-
-const SPACE_TAG_CLASS = 'font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500'
 
 function parseSort(raw: string | undefined): CommunityPostSort {
   return raw === 'top' ? 'top' : 'new'
@@ -108,13 +102,11 @@ export default async function CommunityFeedPage({
 
             return (
               <li key={spaceId}>
-                <Link href={`/community/${spaceId}`} className={SPACE_CARD_CLASS}>
-                  <span
-                    className={cn(
-                      SPACE_TAG_CLASS,
-                      'transition-colors group-hover:text-amber-500'
-                    )}
-                  >
+                <Link
+                  href={`/community/${spaceId}`}
+                  className={getSpaceDirectoryCardClass(spaceId)}
+                >
+                  <span className={getSpaceDirectoryTagClass(spaceId)}>
                     {`// ${space.label}`}
                   </span>
                   <p className="mt-2 text-sm font-bold text-zinc-100 transition-colors group-hover:text-white">

@@ -10,7 +10,7 @@ import type {
   CommunityKarmaEventItem,
   CommunityPostFeedItem,
   CommunityUserProfile,
-} from '@/lib/community/queries'
+} from '@/types/community'
 import { getTierForKarma } from '@/lib/community/constants'
 import type { ProfileBadge } from '@/types/supabase'
 import { cn } from '@/lib/utils'

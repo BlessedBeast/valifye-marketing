@@ -1,12 +1,12 @@
 'use server'
 
 import type { CommunitySpaceId } from '@/lib/community/constants'
+import { getCommunityPosts } from '@/lib/community/queries'
 import {
   DEFAULT_COMMUNITY_FEED_LIMIT,
-  getCommunityPosts,
   type CommunityPostFeedItem,
   type CommunityPostSort,
-} from '@/lib/community/queries'
+} from '@/types/community'
 
 export type LoadMoreCommunityPostsInput = {
   sort: CommunityPostSort

@@ -1,7 +1,7 @@
-import { verifySignatureAppRouter } from '@upstash/qstash/nextjs'
 import { google } from 'googleapis'
 import { NextResponse } from 'next/server'
 
+import { wrapQStashCronHandler } from '@/lib/qstash/cron-verify'
 import { getSupabaseAdmin } from '@/lib/supabase'
 
 /**
@@ -96,7 +96,7 @@ async function handler(): Promise<Response> {
   return NextResponse.json({ published: rows.length })
 }
 
-export const POST = verifySignatureAppRouter(handler)
+export const POST = wrapQStashCronHandler(handler)
 
 const METHOD_NOT_ALLOWED = () =>
   NextResponse.json(

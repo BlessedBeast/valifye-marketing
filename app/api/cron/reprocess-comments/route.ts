@@ -1,7 +1,7 @@
-import { verifySignatureAppRouter } from '@upstash/qstash/nextjs'
 import { NextResponse } from 'next/server'
 
 import { reprocessOrphanedComments } from '@/lib/community/moderation'
+import { wrapQStashCronHandler } from '@/lib/qstash/cron-verify'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +20,7 @@ async function handler(): Promise<Response> {
   }
 }
 
-export const POST = verifySignatureAppRouter(handler)
+export const POST = wrapQStashCronHandler(handler)
 
 const METHOD_NOT_ALLOWED = () =>
   NextResponse.json(

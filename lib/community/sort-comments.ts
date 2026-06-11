@@ -1,4 +1,4 @@
-import type { CommunityCommentItem } from '@/lib/community/queries'
+import type { CommunityCommentItem } from '@/types/community'
 
 export type FlatThreadComment = CommunityCommentItem & {
   parentId?: string | null

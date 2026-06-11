@@ -2,10 +2,11 @@ import Link from 'next/link'
 import { MessageSquare, Pencil, ThumbsUp } from 'lucide-react'
 
 import { CommunityImageGrid } from '@/components/community/CommunityImageGrid'
-import { COMMUNITY_SPACES } from '@/lib/community/constants'
+import { COMMUNITY_SPACES, type CommunitySpaceId } from '@/lib/community/constants'
+import { getSpacePillClass } from '@/lib/community/space-theme'
 import { formatTimeAgo } from '@/lib/community/format-time-ago'
 import { POST_STAGE_LABELS, type PostStage } from '@/lib/community/post-schema'
-import type { CommunityPostFeedItem } from '@/lib/community/queries'
+import type { CommunityPostFeedItem } from '@/types/community'
 import type { ProfileBadge } from '@/types/supabase'
 import { cn } from '@/lib/utils'
 
@@ -35,13 +36,6 @@ const STAGE_TAG_STYLES: Record<
     label: 'LIVE',
     className: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.15)]',
   },
-}
-
-const SPACE_TAG_STYLES: Record<string, string> = {
-  validate: 'border-amber-500/30 text-amber-500/90',
-  build: 'border-sky-500/30 text-sky-400/90',
-  launch: 'border-emerald-500/30 text-emerald-400/90',
-  grow: 'border-violet-500/30 text-violet-400/90',
 }
 
 type PostCardProps = {
@@ -98,7 +92,10 @@ export function PostCard({ post }: PostCardProps) {
     ? POST_STAGE_LABELS[post.stage] ?? post.stage
     : 'Unstaged'
   const badgeLabel = post.author.badge ? BADGE_LABELS[post.author.badge] : null
-  const spaceTagClass = SPACE_TAG_STYLES[post.space] ?? 'border-zinc-700 text-zinc-400'
+  const spaceTagClass =
+    post.space in COMMUNITY_SPACES
+      ? getSpacePillClass(post.space as CommunitySpaceId)
+      : 'border-zinc-700 text-zinc-400'
 
   return (
     <Link

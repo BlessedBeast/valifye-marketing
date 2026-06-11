@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import type { CommunityPostSort } from '@/lib/community/queries'
+import type { CommunityPostSort } from '@/types/community'
 import { cn } from '@/lib/utils'
 
 type FeedSortToggleProps = {

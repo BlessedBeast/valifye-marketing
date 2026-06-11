@@ -4,11 +4,16 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Settings } from 'lucide-react'
 
-import { cn } from '@/lib/utils'
+import type { CommunitySpaceId } from '@/lib/community/constants'
+import {
+  getSettingsNavLinkClass,
+  getSpaceNavLinkClass,
+} from '@/lib/community/space-theme'
 
 export type CommunityNavItem = {
   href: string
   label: string
+  spaceId?: CommunitySpaceId
 }
 
 type CommunitySidebarNavProps = {
@@ -33,12 +38,7 @@ export function CommunitySidebarNav({ items }: CommunitySidebarNavProps) {
           <Link
             key={item.href}
             href={item.href}
-            className={cn(
-              'rounded-lg px-3 py-2.5 font-mono text-xs uppercase tracking-wide transition-colors duration-150',
-              active
-                ? 'bg-amber-500/10 font-bold text-amber-500'
-                : 'text-zinc-500 hover:bg-zinc-900/60 hover:text-amber-500'
-            )}
+            className={getSpaceNavLinkClass(item.spaceId, active)}
           >
             {item.label}
           </Link>
@@ -49,12 +49,7 @@ export function CommunitySidebarNav({ items }: CommunitySidebarNavProps) {
 
       <Link
         href="/community/settings"
-        className={cn(
-          'flex items-center gap-2 rounded-lg px-3 py-2.5 font-mono text-xs uppercase tracking-wide transition-colors duration-150',
-          isNavActive(pathname, '/community/settings')
-            ? 'bg-amber-500/10 font-bold text-amber-500'
-            : 'text-zinc-500 hover:bg-zinc-900/60 hover:text-amber-500'
-        )}
+        className={getSettingsNavLinkClass(isNavActive(pathname, '/community/settings'))}
       >
         <Settings className="h-3.5 w-3.5" aria-hidden />
         Settings

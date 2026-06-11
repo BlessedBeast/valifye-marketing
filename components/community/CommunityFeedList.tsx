@@ -10,7 +10,7 @@ import {
   DEFAULT_COMMUNITY_FEED_LIMIT,
   type CommunityPostFeedItem,
   type CommunityPostSort,
-} from '@/lib/community/queries'
+} from '@/types/community'
 import { cn } from '@/lib/utils'
 
 type CommunityFeedListProps = {

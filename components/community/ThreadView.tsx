@@ -7,7 +7,7 @@ import { UpvoteButton } from '@/components/community/UpvoteButton'
 import { COMMUNITY_SPACES } from '@/lib/community/constants'
 import { formatTimeAgo } from '@/lib/community/format-time-ago'
 import { POST_STAGE_LABELS } from '@/lib/community/post-schema'
-import type { CommunityThreadPageData } from '@/lib/community/queries'
+import type { CommunityThreadPageData } from '@/types/community'
 import type { ProfileBadge } from '@/types/supabase'
 import { cn } from '@/lib/utils'
 
