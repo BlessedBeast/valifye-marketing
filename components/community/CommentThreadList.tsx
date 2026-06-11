@@ -166,6 +166,7 @@ function CommentNode({
                 key={`${node.id}-${node.upvotes}-${node.hasUpvoted}`}
                 targetId={node.id}
                 targetType="comment"
+                threadSlug={postSlug}
                 initialUpvoteCount={node.upvotes}
                 initialHasUpvoted={node.hasUpvoted}
                 disabled={!isAuthenticated}

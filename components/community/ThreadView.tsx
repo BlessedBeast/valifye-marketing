@@ -129,6 +129,7 @@ export function ThreadView({ data }: ThreadViewProps) {
           key={`${post.id}-${post.upvotes}-${post.hasUpvoted}`}
           targetId={post.id}
           targetType="post"
+          threadSlug={post.slug}
           initialUpvoteCount={post.upvotes}
           initialHasUpvoted={post.hasUpvoted}
           disabled={!isAuthenticated}
@@ -212,7 +213,7 @@ export function ThreadView({ data }: ThreadViewProps) {
               rel="noopener noreferrer"
               className="inline-block font-mono text-xs font-bold uppercase tracking-widest text-emerald-300 underline-offset-4 hover:underline"
             >
-              Open full forensic report →
+              Open Valifye dashboard →
             </a>
           ) : null}
         </section>

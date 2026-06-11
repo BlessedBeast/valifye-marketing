@@ -10,6 +10,11 @@ const SERPER_SEARCH_URL = 'https://google.serper.dev/search'
 const GEMINI_MODEL = 'gemini-2.5-flash'
 const MAX_ORGANIC_RESULTS = 5
 
+const VALIFYE_DASHBOARD_URL = 'https://app.valifye.com/'
+
+const BOT_COMMENT_DASHBOARD_CLOSER =
+  'You can view your deep-dive competitive workspace and access validation modules by visiting your dashboard: https://app.valifye.com/'
+
 const MODERATOR_SYSTEM_PROMPT = `You are a human moderator, veteran startup analyst, and data-driven indie hacker running the Valifye Founders Lounge. Your job is to audit new text submissions using live Google search results.
 
 Do NOT sound like an AI. Never say 'Here is your report', 'As an AI', or use mechanical introductory phrases. Dive straight into the analysis like a real founder dropping a smart, constructive forum comment.
@@ -19,7 +24,9 @@ Format your reply in beautiful, crisp Markdown with these exact conversational e
 - A breakdown of the exact real competitor domain links discovered from the search results, summarizing their main product angles.
 - A realistic cost evaluation of the keywords based on market density.
 - A blunt, high-value assessment of the #1 fatal strategic hurdle they need to solve.
-- End with a natural, encouraging closer telling them they can view the full deep-dive competitive footprint by clicking their custom report link.`
+- End with this exact closer sentence on its own line (plain text, no markdown link syntax): "You can view your deep-dive competitive workspace and access validation modules by visiting your dashboard: https://app.valifye.com/"
+
+Never include app.valifye.com/report URLs or per-post report links.`
 
 type SerperOrganicResult = {
   title?: string
@@ -150,13 +157,29 @@ function buildRiskFlags(params: {
   }
 }
 
+function normalizeBotCommentCloser(body: string): string {
+  let normalized = body
+    .replace(
+      /\[https?:\/\/app\.valifye\.com\/report\/[^\]]*\]\([^)]*\)/gi,
+      ''
+    )
+    .replace(/https?:\/\/app\.valifye\.com\/report\/[^\s)\]]+/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+  if (!normalized.includes(VALIFYE_DASHBOARD_URL)) {
+    normalized = `${normalized}\n\n${BOT_COMMENT_DASHBOARD_CLOSER}`
+  }
+
+  return normalized
+}
+
 async function generateModeratorComment(params: {
   market: string
   description: string
   searchResults: OrganicSearchHit[]
   cpc: number
   competitorCount: number
-  reportUrl: string
 }): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
@@ -186,7 +209,7 @@ async function generateModeratorComment(params: {
     '',
     `**Mapped competitor count:** ${params.competitorCount}`,
     `**Estimated keyword CPC (market density model):** $${params.cpc.toFixed(2)}`,
-    `**Custom report link (use this exact URL in your closer):** ${params.reportUrl}`,
+    `**Required closer (copy verbatim as the final line):** ${BOT_COMMENT_DASHBOARD_CLOSER}`,
     '',
     '**Live Google organic results:**',
     formatSearchResultsForPrompt(params.searchResults),
@@ -201,7 +224,7 @@ async function generateModeratorComment(params: {
     throw new Error('Gemini returned an empty moderator comment')
   }
 
-  return text
+  return normalizeBotCommentCloser(text)
 }
 
 /**
@@ -234,15 +257,12 @@ export async function triggerAutonomousBotScan(
       competitorCount,
       marketQuery: searchQuery,
     })
-    const fullReportUrl = `https://app.valifye.com/report/${postId}`
-
     const botCommentBody = await generateModeratorComment({
       market: searchQuery,
       description,
       searchResults: organicResults,
       cpc: keywordCpc,
       competitorCount,
-      reportUrl: fullReportUrl,
     })
 
     const supabase = getSupabaseAdmin()
@@ -254,7 +274,7 @@ export async function triggerAutonomousBotScan(
         competitor_count: competitorCount,
         competitors: competitorEntries,
         risk_flags: riskFlags,
-        full_report_url: fullReportUrl,
+        full_report_url: VALIFYE_DASHBOARD_URL,
       },
       { onConflict: 'post_id' }
     )

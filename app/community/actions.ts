@@ -79,24 +79,52 @@ function isUniqueViolation(error: { code?: string } | null): boolean {
   return error?.code === '23505'
 }
 
+function isForeignKeyViolation(error: { code?: string } | null): boolean {
+  return error?.code === '23503'
+}
+
+function mapUpvoteWriteError(
+  error: { code?: string; message?: string },
+  attemptedHasUpvoted: boolean
+): ToggleUpvoteResult {
+  if (isForeignKeyViolation(error)) {
+    return {
+      upvoteCount: 0,
+      userHasUpvoted: false,
+      error:
+        'Community profile is not ready yet. Finish setting up your profile, then try again.',
+    }
+  }
+
+  return {
+    upvoteCount: 0,
+    userHasUpvoted: attemptedHasUpvoted,
+    error: error.message ?? 'Failed to update upvote.',
+  }
+}
+
 /**
  * Idempotent upvote toggle: DELETE when a row exists, INSERT when it does not.
  * Handles duplicate-key races by falling back to DELETE on conflict.
+ *
+ * Uses the service-role client after server-side auth verification so writes
+ * are not blocked by RLS on posts/comments/upvotes while still scoping every
+ * mutation to the authenticated user id.
  */
 async function toggleUpvoteRecord(
   userId: string,
   targetId: string,
   targetType: UpvoteTargetType
 ): Promise<ToggleUpvoteResult> {
-  const supabase = await createClient()
+  const admin = getSupabaseAdmin()
 
-  const { data: existing, error: lookupError } = await supabase
+  const { data: existing, error: lookupError } = await admin
     .from('upvotes')
-    .select('id')
+    .select('user_id')
     .eq('user_id', userId)
     .eq('target_id', targetId)
     .eq('target_type', targetType)
-    .maybeSingle<{ id: string }>()
+    .maybeSingle<{ user_id: string }>()
 
   if (lookupError) {
     return { upvoteCount: 0, userHasUpvoted: false, error: lookupError.message }
@@ -104,8 +132,8 @@ async function toggleUpvoteRecord(
 
   let hasUpvoted: boolean
 
-  if (existing?.id) {
-    const { error: deleteError } = await supabase
+  if (existing?.user_id) {
+    const { error: deleteError } = await admin
       .from('upvotes')
       .delete()
       .eq('user_id', userId)
@@ -113,12 +141,12 @@ async function toggleUpvoteRecord(
       .eq('target_type', targetType)
 
     if (deleteError) {
-      return { upvoteCount: 0, userHasUpvoted: true, error: deleteError.message }
+      return mapUpvoteWriteError(deleteError, true)
     }
 
     hasUpvoted = false
   } else {
-    const { error: insertError } = await supabase.from('upvotes').insert({
+    const { error: insertError } = await admin.from('upvotes').insert({
       user_id: userId,
       target_id: targetId,
       target_type: targetType,
@@ -126,7 +154,7 @@ async function toggleUpvoteRecord(
 
     if (insertError) {
       if (isUniqueViolation(insertError)) {
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await admin
           .from('upvotes')
           .delete()
           .eq('user_id', userId)
@@ -134,12 +162,12 @@ async function toggleUpvoteRecord(
           .eq('target_type', targetType)
 
         if (deleteError) {
-          return { upvoteCount: 0, userHasUpvoted: true, error: deleteError.message }
+          return mapUpvoteWriteError(deleteError, true)
         }
 
         hasUpvoted = false
       } else {
-        return { upvoteCount: 0, userHasUpvoted: false, error: insertError.message }
+        return mapUpvoteWriteError(insertError, false)
       }
     } else {
       hasUpvoted = true
@@ -156,7 +184,8 @@ async function toggleUpvoteRecord(
 
 export async function toggleCommunityUpvote(
   targetId: string,
-  targetType: UpvoteTargetType
+  targetType: UpvoteTargetType,
+  threadSlug?: string
 ): Promise<ToggleUpvoteResult> {
   const parsed = upvoteTargetSchema.safeParse({ targetId, targetType })
   if (!parsed.success) {
@@ -174,7 +203,20 @@ export async function toggleCommunityUpvote(
     return { upvoteCount: 0, userHasUpvoted: false, error: 'Unauthorized' }
   }
 
-  return toggleUpvoteRecord(userId, parsed.data.targetId, parsed.data.targetType)
+  const result = await toggleUpvoteRecord(
+    userId,
+    parsed.data.targetId,
+    parsed.data.targetType
+  )
+
+  if (!result.error) {
+    revalidatePath('/community')
+    if (threadSlug) {
+      revalidatePath(`/community/${threadSlug}`)
+    }
+  }
+
+  return result
 }
 
 async function buildRequestFingerprint(
