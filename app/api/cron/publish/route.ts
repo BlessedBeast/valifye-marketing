@@ -1,17 +1,15 @@
-import { getSupabaseAdmin } from '@/lib/supabase'
+import { verifySignatureAppRouter } from '@upstash/qstash/nextjs'
 import { google } from 'googleapis'
 import { NextResponse } from 'next/server'
 
-export async function GET(req: Request) {
-  // 🔐 Verify CRON secret
-  if (
-    req.headers.get('authorization') !==
-    `Bearer ${process.env.CRON_SECRET}`
-  ) {
-    return new NextResponse('Unauthorized', { status: 401 })
-  }
+import { getSupabaseAdmin } from '@/lib/supabase'
 
-  // 🛡️ Securely instantiate the admin client on the server
+/**
+ * Publishes draft market_data rows, revalidates pages, and optionally
+ * submits URLs to the Google Indexing API. Secured by QStash signature
+ * verification (Upstash-Signature header).
+ */
+async function handler(): Promise<Response> {
   const supabaseAdmin = getSupabaseAdmin()
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL
@@ -20,7 +18,6 @@ export async function GET(req: Request) {
     !baseUrl.includes('localhost') &&
     (baseUrl.startsWith('https://') || baseUrl.startsWith('http://'))
 
-  // 1️⃣ Get draft rows
   const { data: rows, error } = await supabaseAdmin
     .from('market_data')
     .select('id, slug')
@@ -34,42 +31,40 @@ export async function GET(req: Request) {
   if (!rows || rows.length === 0) {
     return NextResponse.json({
       message: 'No drafts to publish',
-      published: 0
+      published: 0,
     })
   }
 
-  // 2️⃣ Publish rows (🚨 Now aligned with your Forensic Database Schema)
   await supabaseAdmin
     .from('market_data')
     .update({
       status: 'published',
-      google_index_status: 'submitted', // Keeps your Slack Audit accurate
+      google_index_status: 'submitted',
       published_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
-    .in('id', rows.map((r) => r.id))
+    .in(
+      'id',
+      rows.map((r) => r.id)
+    )
 
-  // 3️⃣ Revalidate each page (only when production URL is set)
   if (baseUrl) {
     for (const row of rows) {
       try {
         await fetch(
           `${baseUrl}/api/revalidate?slug=${row.slug}&secret=${process.env.REVALIDATION_SECRET}`
         )
-      } catch (e) {
+      } catch {
         console.error('Revalidate failed for:', row.slug)
       }
     }
   }
 
-  // 4️⃣ Google Indexing API — only when GOOGLE_SERVICE_ACCOUNT_JSON and a production NEXT_PUBLIC_APP_URL are set
   if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON && isProductionUrl && baseUrl) {
     try {
       const auth = new google.auth.GoogleAuth({
-        credentials: JSON.parse(
-          process.env.GOOGLE_SERVICE_ACCOUNT_JSON
-        ),
-        scopes: ['https://www.googleapis.com/auth/indexing']
+        credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
+        scopes: ['https://www.googleapis.com/auth/indexing'],
       })
 
       const indexing = google.indexing({ version: 'v3', auth })
@@ -79,18 +74,17 @@ export async function GET(req: Request) {
           await indexing.urlNotifications.publish({
             requestBody: {
               url: `${baseUrl}/ideas/${row.slug}`,
-              type: 'URL_UPDATED'
-            }
+              type: 'URL_UPDATED',
+            },
           })
 
-          // Stamp the exact time Google was pinged
           await supabaseAdmin
             .from('market_data')
             .update({ indexed_at: new Date().toISOString() })
             .eq('id', row.id)
 
           await new Promise((r) => setTimeout(r, 150))
-        } catch (e) {
+        } catch {
           console.error('Indexing failed for:', row.slug)
         }
       }
@@ -101,3 +95,16 @@ export async function GET(req: Request) {
 
   return NextResponse.json({ published: rows.length })
 }
+
+export const POST = verifySignatureAppRouter(handler)
+
+const METHOD_NOT_ALLOWED = () =>
+  NextResponse.json(
+    { error: 'Method not allowed.' },
+    { status: 405, headers: { Allow: 'POST' } }
+  )
+
+export const GET = METHOD_NOT_ALLOWED
+export const PUT = METHOD_NOT_ALLOWED
+export const DELETE = METHOD_NOT_ALLOWED
+export const PATCH = METHOD_NOT_ALLOWED
