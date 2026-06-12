@@ -129,6 +129,7 @@ export async function updateCommunityComment(
     profileId: userId,
     userId,
     body: parsed.data.body,
+    postSlug: parsed.data.postSlug,
     isBot: false,
   })
 

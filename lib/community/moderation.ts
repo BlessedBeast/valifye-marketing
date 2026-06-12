@@ -1,4 +1,5 @@
 import { after } from 'next/server'
+import { revalidatePath } from 'next/cache'
 
 import { detectBotRequest } from '@/lib/community/bot-detection'
 import { scoreContent } from '@/lib/community/content-scoring'
@@ -29,7 +30,7 @@ const NEW_ACCOUNT_PENALTY = 10
 /** Final scores below this mark the comment 'low_quality'. */
 const LOW_QUALITY_THRESHOLD = 35
 /** Final scores at or above this trigger the atomic karma award. */
-const KARMA_AWARD_THRESHOLD = 60
+const KARMA_AWARD_THRESHOLD = 35
 /** Thread post scores below this mark the post 'removed'. */
 const POST_REMOVAL_THRESHOLD = 35
 /** Max orphaned comments recovered per cron invocation. */
@@ -95,6 +96,8 @@ export type ScheduleModerationParams = {
   /** Auth user id of the author. */
   userId: string
   body: string
+  /** Thread slug for cache revalidation after a karma award. */
+  postSlug?: string
   /** True for Valifye Bot comments — these bypass moderation entirely. */
   isBot: boolean
 }
@@ -115,6 +118,34 @@ export function scheduleModeration(params: ScheduleModerationParams): void {
       console.error('[community] moderation pass failed:', error)
     }
   })
+}
+
+async function resolvePostSlugForComment(commentId: string): Promise<string | null> {
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase
+    .from('comments')
+    .select('posts:post_id ( slug )')
+    .eq('id', commentId)
+    .maybeSingle<{ posts: { slug: string } | { slug: string }[] | null }>()
+
+  if (error) {
+    console.error('[community] post slug lookup failed:', error.message)
+    return null
+  }
+
+  const posts = data?.posts
+  if (posts == null) return null
+  if (Array.isArray(posts)) return posts[0]?.slug ?? null
+  return posts.slug ?? null
+}
+
+async function revalidateAfterKarmaAward(postSlug?: string): Promise<void> {
+  revalidatePath('/community', 'layout')
+
+  const slug = postSlug ?? null
+  if (slug) {
+    revalidatePath(`/community/${slug}`, 'page')
+  }
 }
 
 async function getAccountCreatedAt(userId: string): Promise<Date | null> {
@@ -182,11 +213,17 @@ async function runModerationPass(params: ScheduleModerationParams): Promise<void
   }
 
   if (score >= KARMA_AWARD_THRESHOLD) {
-    await awardCommentKarma({
+    const awarded = await awardCommentKarma({
       commentId: params.commentId,
       profileId: params.profileId,
       userId: params.userId,
     })
+
+    if (awarded) {
+      const postSlug =
+        params.postSlug ?? (await resolvePostSlugForComment(params.commentId))
+      await revalidateAfterKarmaAward(postSlug ?? undefined)
+    }
   }
 }
 

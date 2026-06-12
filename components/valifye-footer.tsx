@@ -9,6 +9,9 @@ const FOOTER_COLS = [
       { label: 'Local Reports', href: '/local-reports' },
       { label: 'Market Blueprints', href: '/markets' },
       { label: 'Compare Markets', href: '/compare' },
+      { label: 'Niche Profitability', href: '/is-saas-profitable' },
+      { label: 'Market Saturation', href: '/is-ai-saas-too-crowded' },
+      { label: 'Build / Kill Matrix', href: '/should-i-build-ai-wrapper' },
     ],
   },
   {
@@ -27,6 +30,9 @@ const FOOTER_COLS = [
       { label: 'Showcase Reports', href: '/showcase' },
       { label: 'Solutions', href: '/solutions' },
       { label: 'Market Database', href: '/ideas' },
+      { label: 'SaaS Vertical Playbooks', href: '/best-saas-ideas-for-creators' },
+      { label: 'Validation Guides', href: '/how-to-validate-micro-saas' },
+      { label: 'Regional Opportunities', href: '/startup-opportunities-mumbai' },
     ],
   },
   {

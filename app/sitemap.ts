@@ -11,9 +11,9 @@ export const dynamic = 'force-static'
 /**
  * Dynamic sitemap engine.
  *
- * Sub-sitemaps are served at /sitemap/0.xml ... /sitemap/8.xml
+ * Sub-sitemaps are served at /sitemap/0.xml ... /sitemap/14.xml
  * (Next.js generateSitemaps does NOT emit an index file — the index lives
- * in app/sitemap.xml/route.ts).
+ * in app/sitemap-index.xml/route.ts).
  *
  * Section map (tables verified against the live route pages — the original
  * spec's table names `ideas`, `reports`, `markets`, etc. do not exist):
@@ -27,9 +27,15 @@ export const dynamic = 'force-static'
  *   6 — /showcase/{slug}                    <- marketing_showcase
  *   7 — /tools/* (static routes) + /blueprints/{slug} <- bpk_audits + aeo_scans
  *   8 — /community/{slug}                   <- posts (status active/archived only)
+ *   9 — /is-{slug}-profitable               <- profitable_niche_pages (is_published = true)
+ *  10 — /best-saas-ideas-for-{slug}         <- saas_ideas_vertical_pages (is_published = true)
+ *  11 — /is-{slug}-too-crowded              <- market_saturation_pages (is_published = true)
+ *  12 — /should-i-build-{slug}              <- should_i_build_pages (is_published = true)
+ *  13 — /how-to-validate-{slug}             <- validation_guide_pages (is_published = true)
+ *  14 — /startup-opportunities-{slug}       <- local_opportunity_pages (is_published = true)
  */
 
-const SECTION_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const
+const SECTION_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14] as const
 
 /** Sitemap protocol hard limit per file. */
 const MAX_URLS_PER_SECTION = 50_000
@@ -118,6 +124,48 @@ export default async function sitemap(props: {
         return await fetchCommunityThreadsSitemap()
       } catch (error) {
         console.error('[sitemap] Section 8 failed:', error)
+        return []
+      }
+    case 9:
+      try {
+        return await fetchProfitableNicheSitemap()
+      } catch (error) {
+        console.error('[sitemap] Section 9 failed:', error)
+        return []
+      }
+    case 10:
+      try {
+        return await fetchSaasVerticalSitemap()
+      } catch (error) {
+        console.error('[sitemap] Section 10 failed:', error)
+        return []
+      }
+    case 11:
+      try {
+        return await fetchMarketSaturationSitemap()
+      } catch (error) {
+        console.error('[sitemap] Section 11 failed:', error)
+        return []
+      }
+    case 12:
+      try {
+        return await fetchShouldIBuildSitemap()
+      } catch (error) {
+        console.error('[sitemap] Section 12 failed:', error)
+        return []
+      }
+    case 13:
+      try {
+        return await fetchValidationGuideSitemap()
+      } catch (error) {
+        console.error('[sitemap] Section 13 failed:', error)
+        return []
+      }
+    case 14:
+      try {
+        return await fetchLocalOpportunitySitemap()
+      } catch (error) {
+        console.error('[sitemap] Section 14 failed:', error)
         return []
       }
     default:
@@ -484,4 +532,92 @@ async function fetchCommunityThreadsSitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: row.status === 'active' ? ('daily' as const) : ('monthly' as const),
       priority: row.status === 'active' ? 0.7 : 0.4,
     }))
+}
+
+/* ------------------------------------------------------------------ */
+/* Sections 9–14: pSEO pages (is_published = true)                       */
+/* ------------------------------------------------------------------ */
+
+interface PseoRow {
+  slug: string
+  updated_at: string | null
+}
+
+type PseoSitemapEntry = {
+  changeFrequency: NonNullable<MetadataRoute.Sitemap[number]['changeFrequency']>
+  priority: number
+}
+
+async function fetchPublishedPseoSitemap(
+  table: string,
+  buildUrl: (slug: string) => string,
+  entry: PseoSitemapEntry
+): Promise<MetadataRoute.Sitemap> {
+  const supabase: SupabaseClient = await createClient()
+
+  const rows = await fetchAllRows<PseoRow>((from, to) =>
+    supabase
+      .from(table)
+      .select('slug, updated_at')
+      .eq('is_published', true)
+      .order('slug', { ascending: true })
+      .range(from, to)
+  )
+
+  return rows
+    .filter((row) => isNonEmptyString(row.slug))
+    .map((row) => ({
+      url: buildUrl(row.slug),
+      lastModified: row.updated_at ?? undefined,
+      changeFrequency: entry.changeFrequency,
+      priority: entry.priority,
+    }))
+}
+
+async function fetchProfitableNicheSitemap(): Promise<MetadataRoute.Sitemap> {
+  return fetchPublishedPseoSitemap(
+    'profitable_niche_pages',
+    (slug) => `${SITE_URL}/is-${slug}-profitable`,
+    { changeFrequency: 'monthly', priority: 0.8 }
+  )
+}
+
+async function fetchSaasVerticalSitemap(): Promise<MetadataRoute.Sitemap> {
+  return fetchPublishedPseoSitemap(
+    'saas_ideas_vertical_pages',
+    (slug) => `${SITE_URL}/best-saas-ideas-for-${slug}`,
+    { changeFrequency: 'monthly', priority: 0.8 }
+  )
+}
+
+async function fetchMarketSaturationSitemap(): Promise<MetadataRoute.Sitemap> {
+  return fetchPublishedPseoSitemap(
+    'market_saturation_pages',
+    (slug) => `${SITE_URL}/is-${slug}-too-crowded`,
+    { changeFrequency: 'monthly', priority: 0.7 }
+  )
+}
+
+async function fetchShouldIBuildSitemap(): Promise<MetadataRoute.Sitemap> {
+  return fetchPublishedPseoSitemap(
+    'should_i_build_pages',
+    (slug) => `${SITE_URL}/should-i-build-${slug}`,
+    { changeFrequency: 'monthly', priority: 0.8 }
+  )
+}
+
+async function fetchValidationGuideSitemap(): Promise<MetadataRoute.Sitemap> {
+  return fetchPublishedPseoSitemap(
+    'validation_guide_pages',
+    (slug) => `${SITE_URL}/how-to-validate-${slug}`,
+    { changeFrequency: 'monthly', priority: 0.7 }
+  )
+}
+
+async function fetchLocalOpportunitySitemap(): Promise<MetadataRoute.Sitemap> {
+  return fetchPublishedPseoSitemap(
+    'local_opportunity_pages',
+    (slug) => `${SITE_URL}/startup-opportunities-${slug}`,
+    { changeFrequency: 'yearly', priority: 0.6 }
+  )
 }

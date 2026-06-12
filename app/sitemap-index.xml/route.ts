@@ -8,7 +8,7 @@ export const dynamic = 'force-static'
  *
  * Next.js generateSitemaps() (app/sitemap.ts) only emits the sub-sitemaps at
  * /sitemap/{id}.xml — it never produces an index file — so this route hands
- * crawlers the master index pointing at all nine sections.
+ * crawlers the master index pointing at all fifteen sections.
  *
  * It cannot live at /sitemap.xml: a route folder named app/sitemap.xml
  * breaks the build alongside app/sitemap.ts (verified:
@@ -16,7 +16,7 @@ export const dynamic = 'force-static'
  * legacy static public/sitemap.xml still occupies that path anyway.
  */
 
-const SECTION_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const
+const SECTION_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14] as const
 
 export function GET(): Response {
   const lastmod = new Date().toISOString()

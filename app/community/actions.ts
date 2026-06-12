@@ -321,6 +321,7 @@ export async function createCommunityComment(
     profileId: userId,
     userId,
     body: parsed.data.body,
+    postSlug,
     isBot: false,
   })
 

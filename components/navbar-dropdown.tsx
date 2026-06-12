@@ -40,6 +40,24 @@ export const INTELLIGENCE_NAV_ITEMS: NavDropdownItem[] = [
     href: '/compare',
     description: 'Head-to-head market comparison',
     icon: '⚖️'
+  },
+  {
+    label: 'Niche Profitability',
+    href: '/is-saas-profitable',
+    description: 'Cost-to-fee monetization viability scans',
+    icon: '💰'
+  },
+  {
+    label: 'Market Saturation Checks',
+    href: '/is-ai-saas-too-crowded',
+    description: 'Crowding density and defensive positioning',
+    icon: '📉'
+  },
+  {
+    label: 'Build/Kill Frameworks',
+    href: '/should-i-build-ai-wrapper',
+    description: 'Core risk assessments before you ship',
+    icon: '🎯'
   }
 ]
 
@@ -68,6 +86,24 @@ export const RESOURCES_NAV_ITEMS: NavDropdownItem[] = [
     href: '/markets',
     description: 'Blueprint by region & sector',
     icon: '🗾'
+  },
+  {
+    label: 'SaaS Verticals',
+    href: '/best-saas-ideas-for-creators',
+    description: 'Sub-niche ideas by industry friction',
+    icon: '🧩'
+  },
+  {
+    label: 'Validation Guides',
+    href: '/how-to-validate-micro-saas',
+    description: 'Smoke tests, landing pages, and pre-sales',
+    icon: '📋'
+  },
+  {
+    label: 'Hyper-Local Blueprints',
+    href: '/startup-opportunities-mumbai',
+    description: 'Regional demand gaps and cluster maps',
+    icon: '📍'
   }
 ]
 
@@ -162,7 +198,7 @@ export function NavbarDropdown({
   useEffect(() => () => clearClose(), [clearClose])
 
   const engines = variant === 'mega' ? items.slice(0, 2) : items
-  const analysis = variant === 'mega' ? items.slice(2, 4) : []
+  const analysis = variant === 'mega' ? items.slice(2) : []
 
   return (
     <div

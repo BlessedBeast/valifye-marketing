@@ -9,6 +9,14 @@ import { SITE_URL } from '@/lib/seo'
 import { getLatestIdeas } from '@/lib/marketData'
 import { getLatestReports } from '@/lib/reportData'
 import { getAllShowcaseReports, type ShowcaseTemplate } from '@/lib/marketingShowcase'
+import {
+  getLatestLocalOpportunitySlug,
+  getLatestMarketSaturationSlug,
+  getLatestProfitableNicheSlug,
+  getLatestSaasVerticalSlug,
+  getLatestShouldIBuildSlug,
+  getLatestValidationGuideSlug,
+} from '@/lib/pseo-queries'
 
 export const metadata: Metadata = {
   title: 'Valifye | Forensic Market Intelligence Engine for Founders',
@@ -78,6 +86,71 @@ const ENGINES = [
     cta: 'VIEW BLUEPRINTS',
   },
 ] as const
+
+function resolveSettledSlug(result: PromiseSettledResult<string>, fallback: string): string {
+  if (result.status === 'fulfilled' && result.value.trim()) {
+    return result.value.trim()
+  }
+  return fallback
+}
+
+function buildDeepDiveScans(slugs: {
+  profitable: string
+  vertical: string
+  saturation: string
+  shouldBuild: string
+  validation: string
+  local: string
+}) {
+  return [
+    {
+      tag: 'PROFITABILITY',
+      name: 'Niche Monetization Checks',
+      description:
+        'Granular cost-to-fee breakdowns verifying if a vertical can support a bootstrapping founder.',
+      href: `/is-${slugs.profitable}-profitable`,
+      cta: 'VIEW PROFITABILITY SCAN',
+    },
+    {
+      tag: 'IDEATION',
+      name: 'SaaS Vertical Playbooks',
+      description:
+        'Aggregated sub-niche application ideas engineered around specific industry friction points.',
+      href: `/best-saas-ideas-for-${slugs.vertical}`,
+      cta: 'BROWSE VERTICAL IDEAS',
+    },
+    {
+      tag: 'COMPETITION',
+      name: 'Market Saturation Audits',
+      description:
+        'Crowding density and defensive positioning metrics mapping alternative solutions.',
+      href: `/is-${slugs.saturation}-too-crowded`,
+      cta: 'CHECK SATURATION',
+    },
+    {
+      tag: 'DECISION ENGINE',
+      name: 'Build / Pivot / Kill Matrix',
+      description: 'Core risk assessments analyzing if an idea justifies development overhead.',
+      href: `/should-i-build-${slugs.shouldBuild}`,
+      cta: 'GET VERDICT',
+    },
+    {
+      tag: 'PLAYBOOKS',
+      name: 'Validation Execution Guides',
+      description:
+        'Step-by-step instructions on setting up smoke tests, landed message testing, and pre-sales.',
+      href: `/how-to-validate-${slugs.validation}`,
+      cta: 'READ PLAYBOOK',
+    },
+    {
+      tag: 'LOCALIZED',
+      name: 'Regional Opportunity Maps',
+      description: 'Regional business clusters matching hyper-local business demand gaps.',
+      href: `/startup-opportunities-${slugs.local}`,
+      cta: 'EXPLORE LOCAL MAP',
+    },
+  ] as const
+}
 
 const VERDICTS = [
   {
@@ -195,12 +268,38 @@ function excerpt(text: string, max: number) {
 }
 
 export default async function HomePage() {
-  const [latestIdeas, latestReports, showcaseReports] = await Promise.all([
+  const [latestIdeas, latestReports, showcaseReports, pseoSlugResults] = await Promise.all([
     getLatestIdeas(3),
     getLatestReports(3),
     getAllShowcaseReports(),
+    Promise.allSettled([
+      getLatestProfitableNicheSlug(),
+      getLatestSaasVerticalSlug(),
+      getLatestMarketSaturationSlug(),
+      getLatestShouldIBuildSlug(),
+      getLatestValidationGuideSlug(),
+      getLatestLocalOpportunitySlug(),
+    ]),
   ])
   const featuredShowcase = showcaseReports.slice(0, 3)
+
+  const [
+    profitableSlugResult,
+    verticalSlugResult,
+    saturationSlugResult,
+    shouldBuildSlugResult,
+    validationSlugResult,
+    localSlugResult,
+  ] = pseoSlugResults
+
+  const deepDiveScans = buildDeepDiveScans({
+    profitable: resolveSettledSlug(profitableSlugResult, 'saas'),
+    vertical: resolveSettledSlug(verticalSlugResult, 'saas'),
+    saturation: resolveSettledSlug(saturationSlugResult, 'marketing'),
+    shouldBuild: resolveSettledSlug(shouldBuildSlugResult, 'saas'),
+    validation: resolveSettledSlug(validationSlugResult, 'marketing'),
+    local: resolveSettledSlug(localSlugResult, 'retail'),
+  })
 
   const faqJsonLd = {
     '@context': 'https://schema.org',
@@ -363,6 +462,40 @@ export default async function HomePage() {
                 </div>
                 <div className="relative flex items-center gap-1 font-mono text-[11px] tracking-wide text-[#f5a623]">
                   {engine.cta}{' '}
+                  <span className="transition-transform group-hover:translate-x-1" aria-hidden>
+                    →
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-[#1f2937] bg-[#0a0a0a] px-6 py-20 md:px-12 lg:px-24">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="mb-2 text-3xl font-black text-white md:text-4xl">On-Demand Market Intelligence</h2>
+          <p className="mb-10 max-w-2xl text-sm leading-relaxed text-[#6b7280] md:text-base">
+            Six answer-first forensic scans — profitability, saturation, build decisions, validation playbooks, and
+            regional opportunity maps. Each links to a live published report.
+          </p>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {deepDiveScans.map((scan) => (
+              <Link
+                key={scan.href}
+                href={scan.href}
+                className="group relative block overflow-hidden rounded-2xl border border-[#1f2937] bg-[#0d0d0d] p-7 transition-all duration-200 hover:border-[#f5a623]/40 hover:bg-[#111111]"
+              >
+                <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-[#f5a623]/5 blur-2xl" />
+                <p className="relative mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-[#f5a623]">
+                  {scan.tag}
+                </p>
+                <h3 className="relative mb-2 text-2xl font-black text-white transition-colors group-hover:text-[#f5a623]">
+                  {scan.name}
+                </h3>
+                <p className="relative mb-5 text-sm leading-relaxed text-[#6b7280]">{scan.description}</p>
+                <div className="relative flex items-center gap-1 font-mono text-[11px] tracking-wide text-[#f5a623]">
+                  {scan.cta}{' '}
                   <span className="transition-transform group-hover:translate-x-1" aria-hidden>
                     →
                   </span>
