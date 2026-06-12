@@ -1,3 +1,4 @@
+import { safeNormalizePseoRow } from '@/lib/pseoNormalize'
 import { supabase } from '@/lib/supabase'
 import type { FaqItem } from '@/lib/seo/generateFaqSchema'
 
@@ -180,5 +181,10 @@ export async function getMarketSaturationBySlug(
 
   if (!data) return null
 
-  return normalizeMarketSaturationRow(data)
+  return safeNormalizePseoRow(
+    TABLE_NAME,
+    cleanSlug,
+    data,
+    normalizeMarketSaturationRow
+  )
 }

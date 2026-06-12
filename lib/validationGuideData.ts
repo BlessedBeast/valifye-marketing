@@ -1,3 +1,4 @@
+import { safeNormalizePseoRow } from '@/lib/pseoNormalize'
 import { supabase } from '@/lib/supabase'
 import type { FaqItem } from '@/lib/seo/generateFaqSchema'
 
@@ -186,5 +187,10 @@ export async function getValidationGuideBySlug(
 
   if (!data) return null
 
-  return normalizeValidationGuideRow(data)
+  return safeNormalizePseoRow(
+    TABLE_NAME,
+    cleanSlug,
+    data,
+    normalizeValidationGuideRow
+  )
 }

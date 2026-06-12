@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+import { buildPseoRedirects } from "./lib/pseo-redirects";
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -11,12 +13,15 @@ const nextConfig: NextConfig = {
     ],
   },
   async redirects() {
+    const pseoRedirects = await buildPseoRedirects();
+
     return [
       {
         source: "/local-reports/:slug",
         destination: "/local-reports/report/:slug",
         permanent: true,
       },
+      ...pseoRedirects,
     ];
   },
 };

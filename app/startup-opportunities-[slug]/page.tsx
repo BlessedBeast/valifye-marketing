@@ -23,8 +23,25 @@ import { generateArticleSchema } from '@/lib/seo/generateArticleSchema'
 import { generateFaqSchema } from '@/lib/seo/generateFaqSchema'
 import { generateLocalPlaceSchema } from '@/lib/seo/generateLocalPlaceSchema'
 import { SITE_URL } from '@/lib/seo'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
+
+export const dynamicParams = true
 
 export const revalidate = 86400
+
+export async function generateStaticParams() {
+  const { data, error } = await supabaseAdmin
+    .from('local_opportunity_pages')
+    .select('slug')
+    .eq('is_published', true)
+
+  if (error) {
+    console.error('Build fetch failed for local_opportunity_pages:', error)
+    return []
+  }
+
+  return (data ?? []).map((row) => ({ slug: row.slug }))
+}
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -82,8 +99,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function LocalOpportunityPage({ params }: Props) {
-  const { slug } = await params
+  const resolvedParams = await params
+  console.log(`[PSEO DEBUG] table: local_opportunity_pages | raw params:`, resolvedParams)
+  const { slug } = resolvedParams
+  console.log(`[PSEO DEBUG] extracted slug: "${slug}"`)
+  const cleanSlug = decodeURIComponent(slug).trim()
   const row = await getLocalOpportunityBySlug(slug)
+  console.log(
+    `[PSEO DEBUG] query slug: "${cleanSlug}" | result:`,
+    row ? `FOUND (id: ${String((row as Record<string, unknown>).id ?? row.slug)})` : 'NULL — will 404'
+  )
 
   if (!row) notFound()
 

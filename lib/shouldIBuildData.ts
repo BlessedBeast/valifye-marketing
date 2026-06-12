@@ -1,3 +1,4 @@
+import { safeNormalizePseoRow } from '@/lib/pseoNormalize'
 import { supabase } from '@/lib/supabase'
 import type { VerdictType } from '@/lib/reportData'
 import type { FaqItem } from '@/lib/seo/generateFaqSchema'
@@ -214,5 +215,5 @@ export async function getShouldIBuildBySlug(
 
   if (!data) return null
 
-  return normalizeShouldIBuildRow(data)
+  return safeNormalizePseoRow(TABLE_NAME, cleanSlug, data, normalizeShouldIBuildRow)
 }
