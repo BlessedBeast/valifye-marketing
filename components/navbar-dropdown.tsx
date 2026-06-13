@@ -43,19 +43,19 @@ export const INTELLIGENCE_NAV_ITEMS: NavDropdownItem[] = [
   },
   {
     label: 'Niche Profitability',
-    href: '/is-saas-profitable',
+    href: '/profitable-niches',
     description: 'Cost-to-fee monetization viability scans',
     icon: '💰'
   },
   {
     label: 'Market Saturation Checks',
-    href: '/is-ai-saas-too-crowded',
+    href: '/market-saturation',
     description: 'Crowding density and defensive positioning',
     icon: '📉'
   },
   {
     label: 'Build/Kill Frameworks',
-    href: '/should-i-build-ai-wrapper',
+    href: '/build-verdicts',
     description: 'Core risk assessments before you ship',
     icon: '🎯'
   }
@@ -89,19 +89,19 @@ export const RESOURCES_NAV_ITEMS: NavDropdownItem[] = [
   },
   {
     label: 'SaaS Verticals',
-    href: '/best-saas-ideas-for-creators',
+    href: '/saas-verticals',
     description: 'Sub-niche ideas by industry friction',
     icon: '🧩'
   },
   {
     label: 'Validation Guides',
-    href: '/how-to-validate-micro-saas',
+    href: '/validation-guides',
     description: 'Smoke tests, landing pages, and pre-sales',
     icon: '📋'
   },
   {
     label: 'Hyper-Local Blueprints',
-    href: '/startup-opportunities-mumbai',
+    href: '/local-opportunities',
     description: 'Regional demand gaps and cluster maps',
     icon: '📍'
   }

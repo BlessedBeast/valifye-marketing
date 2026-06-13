@@ -1,6 +1,12 @@
 import type { MetadataRoute } from 'next'
 
 import { SITE_URL } from '@/lib/seo'
+import { localOpportunityPath } from '@/lib/localOpportunityData'
+import { marketSaturationPath } from '@/lib/marketSaturationData'
+import { profitableNichePath } from '@/lib/profitableNicheData'
+import { saasIdeasVerticalPath } from '@/lib/saasIdeasVerticalData'
+import { shouldIBuildPath } from '@/lib/shouldIBuildData'
+import { validationGuidePath } from '@/lib/validationGuideData'
 import { buildMarketPath } from '@/lib/slugify'
 import { extractGlobalRegionHubCode } from '@/lib/marketsStateHub'
 import { createClient } from '@/utils/supabase/server'
@@ -27,12 +33,12 @@ export const dynamic = 'force-static'
  *   6 — /showcase/{slug}                    <- marketing_showcase
  *   7 — /tools/* (static routes) + /blueprints/{slug} <- bpk_audits + aeo_scans
  *   8 — /community/{slug}                   <- posts (status active/archived only)
- *   9 — /is-{slug}-profitable               <- profitable_niche_pages (is_published = true)
- *  10 — /best-saas-ideas-for-{slug}         <- saas_ideas_vertical_pages (is_published = true)
- *  11 — /is-{slug}-too-crowded              <- market_saturation_pages (is_published = true)
- *  12 — /should-i-build-{slug}              <- should_i_build_pages (is_published = true)
- *  13 — /how-to-validate-{slug}             <- validation_guide_pages (is_published = true)
- *  14 — /startup-opportunities-{slug}       <- local_opportunity_pages (is_published = true)
+ *   9 — /profitable-niches/{slug}           <- profitable_niche_pages (is_published = true)
+ *  10 — /saas-verticals/{slug}               <- saas_ideas_vertical_pages (is_published = true)
+ *  11 — /market-saturation/{slug}            <- market_saturation_pages (is_published = true)
+ *  12 — /build-verdicts/{slug}              <- should_i_build_pages (is_published = true)
+ *  13 — /validation-guides/{slug}           <- validation_guide_pages (is_published = true)
+ *  14 — /local-opportunities/{slug}         <- local_opportunity_pages (is_published = true)
  */
 
 const SECTION_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14] as const
@@ -54,6 +60,12 @@ const STATIC_PAGES: MetadataRoute.Sitemap = [
   { url: `${SITE_URL}/blueprints`, lastModified: new Date().toISOString(), changeFrequency: 'monthly', priority: 0.75 },
   { url: `${SITE_URL}/compare`, lastModified: new Date().toISOString(), changeFrequency: 'weekly', priority: 0.8 },
   { url: `${SITE_URL}/local-market-scout`, lastModified: new Date().toISOString(), changeFrequency: 'weekly', priority: 0.8 },
+  { url: `${SITE_URL}/profitable-niches`, lastModified: new Date().toISOString(), changeFrequency: 'weekly', priority: 0.85 },
+  { url: `${SITE_URL}/saas-verticals`, lastModified: new Date().toISOString(), changeFrequency: 'weekly', priority: 0.85 },
+  { url: `${SITE_URL}/market-saturation`, lastModified: new Date().toISOString(), changeFrequency: 'weekly', priority: 0.85 },
+  { url: `${SITE_URL}/build-verdicts`, lastModified: new Date().toISOString(), changeFrequency: 'weekly', priority: 0.85 },
+  { url: `${SITE_URL}/validation-guides`, lastModified: new Date().toISOString(), changeFrequency: 'weekly', priority: 0.85 },
+  { url: `${SITE_URL}/local-opportunities`, lastModified: new Date().toISOString(), changeFrequency: 'weekly', priority: 0.85 },
 ]
 
 export async function generateSitemaps() {
@@ -577,7 +589,7 @@ async function fetchPublishedPseoSitemap(
 async function fetchProfitableNicheSitemap(): Promise<MetadataRoute.Sitemap> {
   return fetchPublishedPseoSitemap(
     'profitable_niche_pages',
-    (slug) => `${SITE_URL}/is-${slug}-profitable`,
+    (slug) => `${SITE_URL}${profitableNichePath(slug)}`,
     { changeFrequency: 'monthly', priority: 0.8 }
   )
 }
@@ -585,7 +597,7 @@ async function fetchProfitableNicheSitemap(): Promise<MetadataRoute.Sitemap> {
 async function fetchSaasVerticalSitemap(): Promise<MetadataRoute.Sitemap> {
   return fetchPublishedPseoSitemap(
     'saas_ideas_vertical_pages',
-    (slug) => `${SITE_URL}/best-saas-ideas-for-${slug}`,
+    (slug) => `${SITE_URL}${saasIdeasVerticalPath(slug)}`,
     { changeFrequency: 'monthly', priority: 0.8 }
   )
 }
@@ -593,7 +605,7 @@ async function fetchSaasVerticalSitemap(): Promise<MetadataRoute.Sitemap> {
 async function fetchMarketSaturationSitemap(): Promise<MetadataRoute.Sitemap> {
   return fetchPublishedPseoSitemap(
     'market_saturation_pages',
-    (slug) => `${SITE_URL}/is-${slug}-too-crowded`,
+    (slug) => `${SITE_URL}${marketSaturationPath(slug)}`,
     { changeFrequency: 'monthly', priority: 0.7 }
   )
 }
@@ -601,7 +613,7 @@ async function fetchMarketSaturationSitemap(): Promise<MetadataRoute.Sitemap> {
 async function fetchShouldIBuildSitemap(): Promise<MetadataRoute.Sitemap> {
   return fetchPublishedPseoSitemap(
     'should_i_build_pages',
-    (slug) => `${SITE_URL}/should-i-build-${slug}`,
+    (slug) => `${SITE_URL}${shouldIBuildPath(slug)}`,
     { changeFrequency: 'monthly', priority: 0.8 }
   )
 }
@@ -609,7 +621,7 @@ async function fetchShouldIBuildSitemap(): Promise<MetadataRoute.Sitemap> {
 async function fetchValidationGuideSitemap(): Promise<MetadataRoute.Sitemap> {
   return fetchPublishedPseoSitemap(
     'validation_guide_pages',
-    (slug) => `${SITE_URL}/how-to-validate-${slug}`,
+    (slug) => `${SITE_URL}${validationGuidePath(slug)}`,
     { changeFrequency: 'monthly', priority: 0.7 }
   )
 }
@@ -617,7 +629,7 @@ async function fetchValidationGuideSitemap(): Promise<MetadataRoute.Sitemap> {
 async function fetchLocalOpportunitySitemap(): Promise<MetadataRoute.Sitemap> {
   return fetchPublishedPseoSitemap(
     'local_opportunity_pages',
-    (slug) => `${SITE_URL}/startup-opportunities-${slug}`,
+    (slug) => `${SITE_URL}${localOpportunityPath(slug)}`,
     { changeFrequency: 'yearly', priority: 0.6 }
   )
 }

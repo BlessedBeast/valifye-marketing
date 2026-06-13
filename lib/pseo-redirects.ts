@@ -1,5 +1,13 @@
 import type { Redirect } from 'next/dist/lib/load-custom-routes'
 
+import {
+  localOpportunityPath,
+  marketSaturationPath,
+  profitableNichePath,
+  saasIdeasVerticalPath,
+  shouldIBuildPath,
+  validationGuidePath,
+} from './pseoPaths'
 import { supabaseAdmin } from './supabaseAdmin'
 
 type PseoRedirect = Redirect & { permanent: true }
@@ -31,8 +39,9 @@ function addRedirect(
 }
 
 /**
- * Build permanent (308) redirects for alternate pSEO URLs → canonical routes.
- * Only emits rules whose destination slug exists in the DB (published).
+ * Build permanent (308) redirects:
+ * 1. Legacy conversational spoke URLs → new hub-and-spoke canonical URLs
+ * 2. Alternate SEO entry patterns → new canonical URLs (only if slug exists)
  */
 export async function buildPseoRedirects(): Promise<PseoRedirect[]> {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -60,87 +69,109 @@ export async function buildPseoRedirects(): Promise<PseoRedirect[]> {
 
   const redirects: PseoRedirect[] = []
 
-  const explicit: Array<{ source: string; destination: string; slug: string }> = [
+  /* ── Legacy conversational URLs → new canonical spokes ── */
+  for (const slug of validationSlugs) {
+    addRedirect(redirects, `/how-to-validate-${slug}`, validationGuidePath(slug))
+  }
+
+  for (const slug of profitableSlugs) {
+    addRedirect(redirects, `/is-${slug}-profitable`, profitableNichePath(slug))
+  }
+
+  for (const slug of verticalSlugs) {
+    addRedirect(redirects, `/best-saas-ideas-for-${slug}`, saasIdeasVerticalPath(slug))
+  }
+
+  for (const slug of saturationSlugs) {
+    addRedirect(redirects, `/is-${slug}-too-crowded`, marketSaturationPath(slug))
+  }
+
+  for (const slug of shouldBuildSlugs) {
+    addRedirect(redirects, `/should-i-build-${slug}`, shouldIBuildPath(slug))
+  }
+
+  for (const slug of localSlugs) {
+    addRedirect(redirects, `/startup-opportunities-${slug}`, localOpportunityPath(slug))
+  }
+
+  /* ── Explicit edge-case SEO URLs → new canonical spokes ── */
+  const explicit: Array<{ source: string; destination: string; slug: string; table: Set<string> }> = [
     {
       source: '/best-micro-saas-ideas-local-business',
-      destination: '/best-saas-ideas-for-local-business',
+      destination: saasIdeasVerticalPath('local-business'),
       slug: 'local-business',
+      table: verticalSlugs,
     },
     {
       source: '/best-saas-ideas-solo-founders-2025',
-      destination: '/best-saas-ideas-for-solo-founders-2025',
+      destination: saasIdeasVerticalPath('solo-founders-2025'),
       slug: 'solo-founders-2025',
+      table: verticalSlugs,
     },
     {
       source: '/how-to-know-if-startup-idea-is-good',
-      destination: '/how-to-validate-startup-idea-is-good',
+      destination: validationGuidePath('startup-idea-is-good'),
       slug: 'startup-idea-is-good',
+      table: validationSlugs,
     },
     {
       source: '/how-to-do-market-research-startup-free',
-      destination: '/how-to-validate-market-research-startup-free',
+      destination: validationGuidePath('market-research-startup-free'),
       slug: 'market-research-startup-free',
+      table: validationSlugs,
     },
   ]
 
   for (const rule of explicit) {
-    const table = rule.destination.startsWith('/how-to-validate-')
-      ? validationSlugs
-      : verticalSlugs
-    if (table.has(rule.slug)) {
+    if (rule.table.has(rule.slug)) {
       addRedirect(redirects, rule.source, rule.destination)
     }
   }
 
+  /* ── Alternate entry patterns → new canonical spokes ── */
   for (const slug of validationSlugs) {
-    addRedirect(redirects, `/validate-${slug}`, `/how-to-validate-${slug}`)
-    addRedirect(redirects, `/validation-guide-${slug}`, `/how-to-validate-${slug}`)
-    addRedirect(redirects, `/how-to-validate-your-${slug}`, `/how-to-validate-${slug}`)
+    const canonical = validationGuidePath(slug)
+    addRedirect(redirects, `/validate-${slug}`, canonical)
+    addRedirect(redirects, `/validation-guide-${slug}`, canonical)
+    addRedirect(redirects, `/how-to-validate-your-${slug}`, canonical)
   }
 
   for (const slug of verticalSlugs) {
+    const canonical = saasIdeasVerticalPath(slug)
     const yearMatch = slug.match(/^(.+)-(\d{4})$/)
     if (yearMatch) {
       const [, keyword, year] = yearMatch
-      addRedirect(
-        redirects,
-        `/${keyword}-saas-ideas-${year}`,
-        `/best-saas-ideas-for-${slug}`
-      )
+      addRedirect(redirects, `/${keyword}-saas-ideas-${year}`, canonical)
     }
-    addRedirect(redirects, `/saas-ideas-for-${slug}`, `/best-saas-ideas-for-${slug}`)
-    addRedirect(redirects, `/top-saas-ideas-for-${slug}`, `/best-saas-ideas-for-${slug}`)
+    addRedirect(redirects, `/saas-ideas-for-${slug}`, canonical)
+    addRedirect(redirects, `/top-saas-ideas-for-${slug}`, canonical)
   }
 
   for (const slug of profitableSlugs) {
-    addRedirect(redirects, `/niche-profitability-${slug}`, `/is-${slug}-profitable`)
-    addRedirect(redirects, `/profitable-niche-${slug}`, `/is-${slug}-profitable`)
+    const canonical = profitableNichePath(slug)
+    addRedirect(redirects, `/niche-profitability-${slug}`, canonical)
+    addRedirect(redirects, `/profitable-niche-${slug}`, canonical)
   }
 
   for (const slug of saturationSlugs) {
-    addRedirect(redirects, `/market-saturation-${slug}`, `/is-${slug}-too-crowded`)
-    addRedirect(redirects, `/is-${slug}-crowded`, `/is-${slug}-too-crowded`)
-    addRedirect(redirects, `/is-${slug}-oversaturated`, `/is-${slug}-too-crowded`)
+    const canonical = marketSaturationPath(slug)
+    addRedirect(redirects, `/market-saturation-${slug}`, canonical)
+    addRedirect(redirects, `/is-${slug}-crowded`, canonical)
+    addRedirect(redirects, `/is-${slug}-oversaturated`, canonical)
   }
 
   for (const slug of shouldBuildSlugs) {
-    addRedirect(redirects, `/should-you-build-${slug}`, `/should-i-build-${slug}`)
-    addRedirect(redirects, `/build-or-kill-${slug}`, `/should-i-build-${slug}`)
-    addRedirect(redirects, `/should-i-build-your-${slug}`, `/should-i-build-${slug}`)
+    const canonical = shouldIBuildPath(slug)
+    addRedirect(redirects, `/should-you-build-${slug}`, canonical)
+    addRedirect(redirects, `/build-or-kill-${slug}`, canonical)
+    addRedirect(redirects, `/should-i-build-your-${slug}`, canonical)
   }
 
   for (const slug of localSlugs) {
-    addRedirect(
-      redirects,
-      `/startup-opportunities-in-${slug}`,
-      `/startup-opportunities-${slug}`
-    )
-    addRedirect(redirects, `/local-opportunities-${slug}`, `/startup-opportunities-${slug}`)
-    addRedirect(
-      redirects,
-      `/regional-opportunities-${slug}`,
-      `/startup-opportunities-${slug}`
-    )
+    const canonical = localOpportunityPath(slug)
+    addRedirect(redirects, `/startup-opportunities-in-${slug}`, canonical)
+    addRedirect(redirects, `/local-opportunities-${slug}`, canonical)
+    addRedirect(redirects, `/regional-opportunities-${slug}`, canonical)
   }
 
   return redirects

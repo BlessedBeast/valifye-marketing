@@ -140,9 +140,10 @@ function normalizeSaasIdeasVerticalRow(
   }
 }
 
-export function saasIdeasVerticalPath(slug: string): string {
-  return `/best-saas-ideas-for-${slug}`
-}
+export {
+  saasIdeasVerticalHubPath,
+  saasIdeasVerticalPath,
+} from '@/lib/pseoPaths'
 
 /**
  * Fetch a single published saas_ideas_vertical_pages row by slug.

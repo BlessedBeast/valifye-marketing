@@ -210,9 +210,10 @@ function normalizeLocalOpportunityRow(
   }
 }
 
-export function localOpportunityPath(slug: string): string {
-  return `/startup-opportunities-${slug}`
-}
+export {
+  localOpportunityHubPath,
+  localOpportunityPath,
+} from '@/lib/pseoPaths'
 
 /**
  * Fetch a single published local_opportunity_pages row by slug.

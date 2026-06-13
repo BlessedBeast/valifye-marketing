@@ -17,6 +17,12 @@ import {
   getLatestShouldIBuildSlug,
   getLatestValidationGuideSlug,
 } from '@/lib/pseo-queries'
+import { localOpportunityPath } from '@/lib/localOpportunityData'
+import { marketSaturationPath } from '@/lib/marketSaturationData'
+import { profitableNichePath } from '@/lib/profitableNicheData'
+import { saasIdeasVerticalPath } from '@/lib/saasIdeasVerticalData'
+import { shouldIBuildPath } from '@/lib/shouldIBuildData'
+import { validationGuidePath } from '@/lib/validationGuideData'
 
 export const metadata: Metadata = {
   title: 'Valifye | Forensic Market Intelligence Engine for Founders',
@@ -108,7 +114,7 @@ function buildDeepDiveScans(slugs: {
       name: 'Niche Monetization Checks',
       description:
         'Granular cost-to-fee breakdowns verifying if a vertical can support a bootstrapping founder.',
-      href: `/is-${slugs.profitable}-profitable`,
+      href: profitableNichePath(slugs.profitable),
       cta: 'VIEW PROFITABILITY SCAN',
     },
     {
@@ -116,7 +122,7 @@ function buildDeepDiveScans(slugs: {
       name: 'SaaS Vertical Playbooks',
       description:
         'Aggregated sub-niche application ideas engineered around specific industry friction points.',
-      href: `/best-saas-ideas-for-${slugs.vertical}`,
+      href: saasIdeasVerticalPath(slugs.vertical),
       cta: 'BROWSE VERTICAL IDEAS',
     },
     {
@@ -124,14 +130,14 @@ function buildDeepDiveScans(slugs: {
       name: 'Market Saturation Audits',
       description:
         'Crowding density and defensive positioning metrics mapping alternative solutions.',
-      href: `/is-${slugs.saturation}-too-crowded`,
+      href: marketSaturationPath(slugs.saturation),
       cta: 'CHECK SATURATION',
     },
     {
       tag: 'DECISION ENGINE',
       name: 'Build / Pivot / Kill Matrix',
       description: 'Core risk assessments analyzing if an idea justifies development overhead.',
-      href: `/should-i-build-${slugs.shouldBuild}`,
+      href: shouldIBuildPath(slugs.shouldBuild),
       cta: 'GET VERDICT',
     },
     {
@@ -139,14 +145,14 @@ function buildDeepDiveScans(slugs: {
       name: 'Validation Execution Guides',
       description:
         'Step-by-step instructions on setting up smoke tests, landed message testing, and pre-sales.',
-      href: `/how-to-validate-${slugs.validation}`,
+      href: validationGuidePath(slugs.validation),
       cta: 'READ PLAYBOOK',
     },
     {
       tag: 'LOCALIZED',
       name: 'Regional Opportunity Maps',
       description: 'Regional business clusters matching hyper-local business demand gaps.',
-      href: `/startup-opportunities-${slugs.local}`,
+      href: localOpportunityPath(slugs.local),
       cta: 'EXPLORE LOCAL MAP',
     },
   ] as const

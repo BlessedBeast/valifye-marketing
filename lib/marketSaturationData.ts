@@ -149,9 +149,10 @@ function normalizeMarketSaturationRow(
   }
 }
 
-export function marketSaturationPath(slug: string): string {
-  return `/is-${slug}-too-crowded`
-}
+export {
+  marketSaturationHubPath,
+  marketSaturationPath,
+} from '@/lib/pseoPaths'
 
 /**
  * Fetch a single published market_saturation_pages row by slug.

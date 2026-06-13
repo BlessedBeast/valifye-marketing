@@ -183,9 +183,10 @@ function normalizeShouldIBuildRow(row: ShouldIBuildRow): ShouldIBuildPage {
   }
 }
 
-export function shouldIBuildPath(slug: string): string {
-  return `/should-i-build-${slug}`
-}
+export {
+  shouldIBuildHubPath,
+  shouldIBuildPath,
+} from '@/lib/pseoPaths'
 
 /**
  * Fetch a single published should_i_build_pages row by slug.

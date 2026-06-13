@@ -56,7 +56,9 @@ async function getCommunitySession(): Promise<CommunitySession | null> {
   } = await supabase.auth.getUser()
 
   if (error) {
-    console.error('[community] session lookup failed:', error.message)
+    if (error.message !== 'Auth session missing!') {
+      console.error('[community] session lookup failed:', error.message)
+    }
     return null
   }
 

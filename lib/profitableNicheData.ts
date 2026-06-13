@@ -144,9 +144,10 @@ function normalizeProfitableNicheRow(row: ProfitableNicheRow): ProfitableNichePa
   }
 }
 
-export function profitableNichePath(slug: string): string {
-  return `/is-${slug}-profitable`
-}
+export {
+  profitableNicheHubPath,
+  profitableNichePath,
+} from '@/lib/pseoPaths'
 
 /**
  * Fetch a single published profitable_niche_pages row by slug.

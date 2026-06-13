@@ -155,9 +155,10 @@ function normalizeValidationGuideRow(
   }
 }
 
-export function validationGuidePath(slug: string): string {
-  return `/how-to-validate-${slug}`
-}
+export {
+  validationGuideHubPath,
+  validationGuidePath,
+} from '@/lib/pseoPaths'
 
 /**
  * Fetch a single published validation_guide_pages row by slug.

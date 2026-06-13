@@ -2,9 +2,23 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 
 import { getIdeaBySlug } from '@/lib/marketData'
-import { profitableNichePath } from '@/lib/profitableNicheData'
-import { saasIdeasVerticalPath } from '@/lib/saasIdeasVerticalData'
-import { shouldIBuildPath } from '@/lib/shouldIBuildData'
+import {
+  buildVerdictsHubPath,
+  localOpportunitiesHubPath,
+  localOpportunityPath,
+  profitableNicheHubPath,
+  profitableNichePath,
+  saasIdeasVerticalHubPath,
+  saasIdeasVerticalPath,
+  shouldIBuildPath,
+  validationGuideHubPath,
+  validationGuidePath,
+} from '@/lib/pseoPaths'
+import {
+  isPseoSlugPublished,
+  isValidToolSlug,
+  type PseoRegistrySection,
+} from '@/lib/pseoSlugRegistry'
 
 export type RelatedIntelligencePageType =
   | 'profitable'
@@ -18,14 +32,21 @@ export interface RelatedIntelligenceProps {
   relatedIdeaSlugs: string[]
   relatedToolSlugs: string[]
   currentPageType: RelatedIntelligencePageType
-  /** Current pSEO page slug — used for cross-links between page types */
   currentSlug?: string
-  /** Niche, product, city, or vertical label for contextual copy */
   cityOrNiche?: string
-  /** Idea slugs from on-page content (e.g. vertical ideas list) */
   contentIdeaSlugs?: string[]
-  /** Vertical slugs for local-page cross-links into SaaS vertical hubs */
   suggestedVerticalSlugs?: string[]
+}
+
+type NavLink = {
+  href: string
+  label: string
+  isFreeTool?: boolean
+}
+
+type CrossLink = {
+  href: string
+  label: string
 }
 
 const TOOL_DISPLAY_NAMES: Record<string, string> = {
@@ -35,20 +56,20 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
   'uk-vat-cliff-scanner': 'UK VAT Cliff Scanner',
   'local-scout': 'Local Market Scout',
   'aeo-scanner': 'AEO Shadow Scanner',
-  'build-pivot-kill': 'Build / Pivot / Kill Analyst'
+  'build-pivot-kill': 'Build / Pivot / Kill Analyst',
 }
 
-const VALIDATION_TOOL_SUGGESTIONS = [
-  'build-pivot-kill',
-  'aeo-scanner',
-  'local-scout',
-  'delivery-calculator'
-] as const
+const FALLBACK_DEEP_DIVE_LINKS: NavLink[] = [
+  { href: '/ideas', label: 'Browse Ideas Database' },
+  { href: '/reports', label: 'Forensic Verdict Reports' },
+  { href: '/markets', label: 'Market Blueprints' },
+]
 
-type CrossLink = {
-  href: string
-  label: string
-}
+const FALLBACK_TOOL_LINKS: NavLink[] = [
+  { href: '/tools/build-pivot-kill', label: 'Build / Pivot / Kill Analyst', isFreeTool: true },
+  { href: '/tools/delivery-calculator', label: 'Delivery Margin Calculator', isFreeTool: true },
+  { href: '/tools/aeo-scanner', label: 'AEO Shadow Scanner', isFreeTool: true },
+]
 
 function slugToTitle(slug: string): string {
   return slug
@@ -58,160 +79,200 @@ function slugToTitle(slug: string): string {
     .join(' ')
 }
 
-function slugifyLabel(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-}
-
 function getToolDisplayName(slug: string): string {
   return TOOL_DISPLAY_NAMES[slug] ?? slugToTitle(slug)
 }
 
-async function resolveIdeaLabels(
-  slugs: string[]
-): Promise<Map<string, string>> {
-  const unique = [...new Set(slugs.filter(Boolean))]
-  const entries = await Promise.all(
-    unique.map(async (slug) => {
-      const idea = await getIdeaBySlug(slug)
-      if (!idea) return [slug, slugToTitle(slug)] as const
-      const label =
-        idea.niche && idea.city
-          ? `${idea.niche} in ${idea.city}`
-          : idea.niche || slugToTitle(slug)
-      return [slug, label] as const
-    })
-  )
-  return new Map(entries)
+function resolveSpokeOrHub(
+  section: PseoRegistrySection,
+  slug: string | undefined,
+  spokePath: (slug: string) => string,
+  hubPath: () => string,
+  spokeLabel: (slug: string) => string,
+  hubLabel: string
+): CrossLink {
+  const clean = slug?.trim()
+  if (clean && isPseoSlugPublished(section, clean)) {
+    return { href: spokePath(clean), label: spokeLabel(clean) }
+  }
+  return { href: hubPath(), label: hubLabel }
 }
 
-function detectVerticalSlug(
-  cityOrNiche?: string,
-  currentSlug?: string
-): string | null {
-  if (cityOrNiche) {
-    const slug = slugifyLabel(cityOrNiche)
-    if (slug.length > 1) return slug
-  }
-  if (currentSlug) {
-    const slug = slugifyLabel(currentSlug)
-    if (slug.length > 1) return slug
-  }
-  return null
-}
+async function resolveValidatedIdeaLinks(slugs: string[]): Promise<NavLink[]> {
+  const unique = [...new Set(slugs.map((s) => s.trim()).filter(Boolean))]
+  const links: NavLink[] = []
 
-function buildCrossLinks({
-  currentPageType,
-  currentSlug,
-  cityOrNiche,
-  contentIdeaSlugs,
-  suggestedVerticalSlugs,
-  relatedToolSlugs
-}: RelatedIntelligenceProps): CrossLink[] {
-  const links: CrossLink[] = []
-  const subject = cityOrNiche || (currentSlug ? slugToTitle(currentSlug) : 'this market')
-
-  switch (currentPageType) {
-    case 'profitable': {
-      if (currentSlug) {
-        links.push({
-          href: shouldIBuildPath(currentSlug),
-          label: `Should I build ${subject}?`
-        })
-      }
-      const verticalSlug = detectVerticalSlug(cityOrNiche, currentSlug)
-      if (verticalSlug) {
-        links.push({
-          href: saasIdeasVerticalPath(verticalSlug),
-          label: `Best SaaS ideas for ${cityOrNiche || slugToTitle(verticalSlug)}`
-        })
-      }
-      break
-    }
-    case 'vertical': {
-      const slugs = [...new Set((contentIdeaSlugs ?? []).filter(Boolean))].slice(
-        0,
-        3
-      )
-      for (const slug of slugs) {
-        links.push({
-          href: profitableNichePath(slug),
-          label: `Is ${slugToTitle(slug)} profitable?`
-        })
-      }
-      break
-    }
-    case 'saturation': {
-      if (currentSlug) {
-        links.push({
-          href: shouldIBuildPath(currentSlug),
-          label: `Should I build in ${subject}?`
-        })
-      }
-      break
-    }
-    case 'should-build': {
-      if (currentSlug) {
-        links.push({
-          href: profitableNichePath(currentSlug),
-          label: `Is ${subject} profitable?`
-        })
-      }
-      break
-    }
-    case 'validation': {
-      links.push({
-        href: '/community',
-        label: 'Founders Lounge'
-      })
-      const toolSlugs = VALIDATION_TOOL_SUGGESTIONS.filter(
-        (slug) => !relatedToolSlugs.includes(slug)
-      ).slice(0, 2)
-      for (const slug of toolSlugs) {
-        links.push({
-          href: `/tools/${slug}`,
-          label: getToolDisplayName(slug)
-        })
-      }
-      break
-    }
-    case 'local': {
-      const verticals = [
-        ...new Set(
-          (suggestedVerticalSlugs ?? [])
-            .map((slug) => slugifyLabel(slug))
-            .filter(Boolean)
-        )
-      ].slice(0, 2)
-      if (verticals.length === 0) {
-        const fallback = detectVerticalSlug(cityOrNiche, currentSlug)
-        if (fallback) verticals.push(fallback)
-      }
-      for (const verticalSlug of verticals) {
-        links.push({
-          href: saasIdeasVerticalPath(verticalSlug),
-          label: `Best SaaS ideas for ${slugToTitle(verticalSlug)}`
-        })
-      }
-      break
-    }
+  for (const slug of unique) {
+    const idea = await getIdeaBySlug(slug)
+    if (!idea) continue
+    const label =
+      idea.niche && idea.city
+        ? `${idea.niche} in ${idea.city}`
+        : idea.niche || slugToTitle(slug)
+    links.push({ href: `/ideas/${slug}`, label })
   }
 
   return links
 }
 
-export async function RelatedIntelligence(props: RelatedIntelligenceProps) {
-  const {
-    relatedIdeaSlugs,
-    relatedToolSlugs,
-    cityOrNiche,
-    currentPageType
-  } = props
+function resolveValidatedToolLinks(slugs: string[]): NavLink[] {
+  const unique = [...new Set(slugs.map((s) => s.trim()).filter(Boolean))]
+  return unique
+    .filter(isValidToolSlug)
+    .map((slug) => ({
+      href: `/tools/${slug}`,
+      label: getToolDisplayName(slug),
+      isFreeTool: true,
+    }))
+}
 
-  const ideaLabels = await resolveIdeaLabels(relatedIdeaSlugs)
+function pickProfitableCandidateSlugs(props: RelatedIntelligenceProps): string[] {
+  const candidates = [
+    ...(props.contentIdeaSlugs ?? []),
+    props.currentSlug,
+  ].filter((s): s is string => Boolean(s?.trim()))
+
+  return [...new Set(candidates)]
+}
+
+function buildCrossLinks(props: RelatedIntelligenceProps): CrossLink[] {
+  const { currentPageType, currentSlug, cityOrNiche, suggestedVerticalSlugs } = props
+  const subject = cityOrNiche || (currentSlug ? slugToTitle(currentSlug) : 'this market')
+  const links: CrossLink[] = []
+
+  switch (currentPageType) {
+    case 'profitable': {
+      links.push(
+        resolveSpokeOrHub(
+          'build-verdict',
+          currentSlug,
+          shouldIBuildPath,
+          buildVerdictsHubPath,
+          (slug) => `Should I build ${subject}?`,
+          'Browse Market Build Verdicts'
+        )
+      )
+      break
+    }
+
+    case 'vertical': {
+      const profitableCandidates = pickProfitableCandidateSlugs(props)
+      const matched = profitableCandidates.find((slug) =>
+        isPseoSlugPublished('profitable', slug)
+      )
+
+      links.push(
+        resolveSpokeOrHub(
+          'profitable',
+          matched ?? currentSlug,
+          profitableNichePath,
+          profitableNicheHubPath,
+          (slug) => `Is ${slugToTitle(slug)} profitable?`,
+          'Browse Profitable Niches'
+        )
+      )
+      break
+    }
+
+    case 'saturation': {
+      links.push(
+        resolveSpokeOrHub(
+          'build-verdict',
+          currentSlug,
+          shouldIBuildPath,
+          buildVerdictsHubPath,
+          (slug) => `Should I build in ${subject}?`,
+          'Browse Market Build Verdicts'
+        )
+      )
+      break
+    }
+
+    case 'should-build': {
+      links.push(
+        resolveSpokeOrHub(
+          'profitable',
+          currentSlug,
+          profitableNichePath,
+          profitableNicheHubPath,
+          (slug) => `Is ${subject} profitable?`,
+          'Browse Profitable Niches'
+        )
+      )
+      break
+    }
+
+    case 'validation': {
+      links.push({ href: '/community', label: 'Founders Lounge' })
+      links.push(
+        resolveSpokeOrHub(
+          'validation',
+          currentSlug,
+          validationGuidePath,
+          validationGuideHubPath,
+          (slug) => slugToTitle(slug),
+          'Browse Validation Guides'
+        )
+      )
+      for (const slug of ['build-pivot-kill', 'aeo-scanner'] as const) {
+        if (isValidToolSlug(slug)) {
+          links.push({
+            href: `/tools/${slug}`,
+            label: getToolDisplayName(slug),
+          })
+        }
+      }
+      break
+    }
+
+    case 'local': {
+      const verticalCandidate =
+        suggestedVerticalSlugs?.find((slug) => isPseoSlugPublished('vertical', slug)) ??
+        (currentSlug && isPseoSlugPublished('vertical', currentSlug) ? currentSlug : undefined)
+
+      links.push(
+        resolveSpokeOrHub(
+          'vertical',
+          verticalCandidate,
+          saasIdeasVerticalPath,
+          saasIdeasVerticalHubPath,
+          (slug) => `Best SaaS ideas for ${slugToTitle(slug)}`,
+          'Browse SaaS Vertical Playbooks'
+        )
+      )
+
+      links.push(
+        resolveSpokeOrHub(
+          'local',
+          currentSlug,
+          localOpportunityPath,
+          localOpportunitiesHubPath,
+          (slug) => `Startup opportunities in ${slugToTitle(slug)}`,
+          'Browse Regional Opportunity Maps'
+        )
+      )
+      break
+    }
+  }
+
+  const seen = new Set<string>()
+  return links.filter((link) => {
+    if (seen.has(link.href)) return false
+    seen.add(link.href)
+    return true
+  })
+}
+
+export async function RelatedIntelligence(props: RelatedIntelligenceProps) {
+  const { relatedIdeaSlugs, relatedToolSlugs, cityOrNiche, currentPageType } = props
+
+  const validatedIdeas = await resolveValidatedIdeaLinks(relatedIdeaSlugs)
+  const deepDiveLinks =
+    validatedIdeas.length > 0 ? validatedIdeas : FALLBACK_DEEP_DIVE_LINKS
+
+  const validatedTools = resolveValidatedToolLinks(relatedToolSlugs)
+  const toolLinks = validatedTools.length > 0 ? validatedTools : FALLBACK_TOOL_LINKS
+
   const crossLinks = buildCrossLinks(props)
 
   return (
@@ -233,49 +294,43 @@ export async function RelatedIntelligence(props: RelatedIntelligenceProps) {
           <p className="font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-500">
             Deep Dive Reports
           </p>
-          {relatedIdeaSlugs.length > 0 ? (
-            <ul className="space-y-2">
-              {relatedIdeaSlugs.map((ideaSlug) => (
-                <li key={ideaSlug}>
-                  <Link
-                    href={`/ideas/${ideaSlug}`}
-                    className="inline-flex items-center gap-2 font-mono text-sm text-zinc-300 transition-colors hover:text-amber-400"
-                  >
-                    {ideaLabels.get(ideaSlug) ?? slugToTitle(ideaSlug)}
-                    <ArrowRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-zinc-500">No blueprint links indexed.</p>
-          )}
+          <ul className="space-y-2">
+            {deepDiveLinks.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="inline-flex items-center gap-2 font-mono text-sm text-zinc-300 transition-colors hover:text-amber-400"
+                >
+                  {item.label}
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="space-y-3">
           <p className="font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-500">
             Free Tools
           </p>
-          {relatedToolSlugs.length > 0 ? (
-            <ul className="space-y-2">
-              {relatedToolSlugs.map((toolSlug) => (
-                <li key={toolSlug}>
-                  <Link
-                    href={`/tools/${toolSlug}`}
-                    className="group inline-flex max-w-full flex-wrap items-center gap-2 rounded-lg border border-zinc-800/90 bg-zinc-900/40 px-3 py-2 font-mono text-sm text-zinc-200 transition-colors hover:border-emerald-500/40 hover:text-emerald-200"
-                  >
-                    <span>{getToolDisplayName(toolSlug)}</span>
+          <ul className="space-y-2">
+            {toolLinks.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="group inline-flex max-w-full flex-wrap items-center gap-2 rounded-lg border border-zinc-800/90 bg-zinc-900/40 px-3 py-2 font-mono text-sm text-zinc-200 transition-colors hover:border-emerald-500/40 hover:text-emerald-200"
+                >
+                  <span>{item.label}</span>
+                  {item.isFreeTool ? (
                     <span className="rounded border border-emerald-500/40 bg-emerald-500/[0.08] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-emerald-200">
                       Free
                     </span>
-                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-emerald-400/80 transition-transform group-hover:translate-x-0.5" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-zinc-500">No tool links indexed.</p>
-          )}
+                  ) : null}
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-emerald-400/80 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="space-y-3">
@@ -297,28 +352,25 @@ export async function RelatedIntelligence(props: RelatedIntelligenceProps) {
         </div>
       </div>
 
-      {crossLinks.length > 0 ? (
-        <>
-          <hr className="border-zinc-800/90" />
-          <div className="space-y-4">
-            <h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-zinc-500">
-              You might also be interested in
-            </h3>
-            <div className="flex flex-wrap gap-3">
-              {crossLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="inline-flex items-center gap-2 rounded-md border border-zinc-700/60 bg-zinc-900/50 px-3 py-2 font-mono text-xs text-zinc-300 transition-colors hover:border-amber-500/40 hover:text-amber-300"
-                >
-                  {link.label}
-                  <ArrowRight className="h-3 w-3 shrink-0" aria-hidden />
-                </Link>
-              ))}
-            </div>
-          </div>
-        </>
-      ) : null}
+      <hr className="border-zinc-800/90" />
+
+      <div className="space-y-4">
+        <h3 className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-zinc-500">
+          You might also be interested in
+        </h3>
+        <div className="flex flex-wrap gap-3">
+          {crossLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="inline-flex items-center gap-2 rounded-md border border-zinc-700/60 bg-zinc-900/50 px-3 py-2 font-mono text-xs text-zinc-300 transition-colors hover:border-amber-500/40 hover:text-amber-300"
+            >
+              {link.label}
+              <ArrowRight className="h-3 w-3 shrink-0" aria-hidden />
+            </Link>
+          ))}
+        </div>
+      </div>
     </section>
   )
 }
