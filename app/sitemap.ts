@@ -7,6 +7,24 @@ import { profitableNichePath } from '@/lib/profitableNicheData'
 import { saasIdeasVerticalPath } from '@/lib/saasIdeasVerticalData'
 import { shouldIBuildPath } from '@/lib/shouldIBuildData'
 import { validationGuidePath } from '@/lib/validationGuideData'
+import {
+  indiaDigitalBattlefieldHubPath,
+  indiaHubPath,
+  indiaLocalFeasibilityHubPath,
+  indiaLocalFeasibilityPath,
+  indiaLocalOpportunityHubPath,
+  indiaLocalOpportunityPath,
+  indiaMarketSaturationHubPath,
+  indiaMarketSaturationPath,
+  indiaProfitableNicheHubPath,
+  indiaProfitableNichePath,
+  indiaSaasIdeasVerticalHubPath,
+  indiaSaasIdeasVerticalPath,
+  indiaShouldIBuildHubPath,
+  indiaShouldIBuildPath,
+  indiaValidationGuideHubPath,
+  indiaValidationGuidePath,
+} from '@/lib/pseoPaths'
 import { buildMarketPath } from '@/lib/slugify'
 import { extractGlobalRegionHubCode } from '@/lib/marketsStateHub'
 import { createClient } from '@/utils/supabase/server'
@@ -17,7 +35,7 @@ export const dynamic = 'force-static'
 /**
  * Dynamic sitemap engine.
  *
- * Sub-sitemaps are served at /sitemap/0.xml ... /sitemap/14.xml
+ * Sub-sitemaps are served at /sitemap/0.xml ... /sitemap/22.xml
  * (Next.js generateSitemaps does NOT emit an index file — the index lives
  * in app/sitemap-index.xml/route.ts).
  *
@@ -39,9 +57,19 @@ export const dynamic = 'force-static'
  *  12 — /build-verdicts/{slug}              <- should_i_build_pages (is_published = true)
  *  13 — /validation-guides/{slug}           <- validation_guide_pages (is_published = true)
  *  14 — /local-opportunities/{slug}         <- local_opportunity_pages (is_published = true)
+ *  15 — India hub pages (no DB)
+ *  16 — /india/local-market-scout/{slug}    <- local_feasibility_pages (country = India, is_published = true)
+ *  17 — /india/digital-battlefield/profitable-niches/{slug}   <- india_profitable_niche_pages
+ *  18 — /india/digital-battlefield/build-verdicts/{slug}        <- india_should_i_build_pages
+ *  19 — /india/digital-battlefield/saas-verticals/{slug}        <- india_saas_ideas_vertical_pages
+ *  20 — /india/digital-battlefield/market-saturation/{slug}    <- india_market_saturation_pages
+ *  21 — /india/digital-battlefield/local-opportunities/{slug}    <- india_local_opportunity_pages
+ *  22 — /india/digital-battlefield/validation-guides/{slug}    <- india_validation_guide_pages
  */
 
-const SECTION_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14] as const
+const SECTION_IDS = [
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+] as const
 
 /** Sitemap protocol hard limit per file. */
 const MAX_URLS_PER_SECTION = 50_000
@@ -178,6 +206,57 @@ export default async function sitemap(props: {
         return await fetchLocalOpportunitySitemap()
       } catch (error) {
         console.error('[sitemap] Section 14 failed:', error)
+        return []
+      }
+    case 15:
+      return INDIA_HUB_PAGES
+    case 16:
+      try {
+        return await fetchIndiaLocalFeasibilitySitemap()
+      } catch (error) {
+        console.error('[sitemap] Section 16 failed:', error)
+        return []
+      }
+    case 17:
+      try {
+        return await fetchIndiaProfitableNicheSitemap()
+      } catch (error) {
+        console.error('[sitemap] Section 17 failed:', error)
+        return []
+      }
+    case 18:
+      try {
+        return await fetchIndiaShouldIBuildSitemap()
+      } catch (error) {
+        console.error('[sitemap] Section 18 failed:', error)
+        return []
+      }
+    case 19:
+      try {
+        return await fetchIndiaSaasVerticalSitemap()
+      } catch (error) {
+        console.error('[sitemap] Section 19 failed:', error)
+        return []
+      }
+    case 20:
+      try {
+        return await fetchIndiaMarketSaturationSitemap()
+      } catch (error) {
+        console.error('[sitemap] Section 20 failed:', error)
+        return []
+      }
+    case 21:
+      try {
+        return await fetchIndiaLocalOpportunitySitemap()
+      } catch (error) {
+        console.error('[sitemap] Section 21 failed:', error)
+        return []
+      }
+    case 22:
+      try {
+        return await fetchIndiaValidationGuideSitemap()
+      } catch (error) {
+        console.error('[sitemap] Section 22 failed:', error)
         return []
       }
     default:
@@ -631,5 +710,140 @@ async function fetchLocalOpportunitySitemap(): Promise<MetadataRoute.Sitemap> {
     'local_opportunity_pages',
     (slug) => `${SITE_URL}${localOpportunityPath(slug)}`,
     { changeFrequency: 'yearly', priority: 0.6 }
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Sections 15–22: India pSEO pages                                    */
+/* ------------------------------------------------------------------ */
+
+const INDIA_MONTHLY_HUB: PseoSitemapEntry = { changeFrequency: 'monthly', priority: 0.7 }
+const INDIA_MONTHLY_DETAIL: PseoSitemapEntry = { changeFrequency: 'monthly', priority: 0.8 }
+
+const INDIA_HUB_PAGES: MetadataRoute.Sitemap = [
+  {
+    url: `${SITE_URL}${indiaHubPath()}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: INDIA_MONTHLY_HUB.changeFrequency,
+    priority: INDIA_MONTHLY_HUB.priority,
+  },
+  {
+    url: `${SITE_URL}${indiaLocalFeasibilityHubPath()}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: INDIA_MONTHLY_HUB.changeFrequency,
+    priority: INDIA_MONTHLY_HUB.priority,
+  },
+  {
+    url: `${SITE_URL}${indiaDigitalBattlefieldHubPath()}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: INDIA_MONTHLY_HUB.changeFrequency,
+    priority: INDIA_MONTHLY_HUB.priority,
+  },
+  {
+    url: `${SITE_URL}${indiaProfitableNicheHubPath()}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: INDIA_MONTHLY_HUB.changeFrequency,
+    priority: INDIA_MONTHLY_HUB.priority,
+  },
+  {
+    url: `${SITE_URL}${indiaShouldIBuildHubPath()}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: INDIA_MONTHLY_HUB.changeFrequency,
+    priority: INDIA_MONTHLY_HUB.priority,
+  },
+  {
+    url: `${SITE_URL}${indiaSaasIdeasVerticalHubPath()}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: INDIA_MONTHLY_HUB.changeFrequency,
+    priority: INDIA_MONTHLY_HUB.priority,
+  },
+  {
+    url: `${SITE_URL}${indiaMarketSaturationHubPath()}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: INDIA_MONTHLY_HUB.changeFrequency,
+    priority: INDIA_MONTHLY_HUB.priority,
+  },
+  {
+    url: `${SITE_URL}${indiaLocalOpportunityHubPath()}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: INDIA_MONTHLY_HUB.changeFrequency,
+    priority: INDIA_MONTHLY_HUB.priority,
+  },
+  {
+    url: `${SITE_URL}${indiaValidationGuideHubPath()}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: INDIA_MONTHLY_HUB.changeFrequency,
+    priority: INDIA_MONTHLY_HUB.priority,
+  },
+]
+
+async function fetchIndiaLocalFeasibilitySitemap(): Promise<MetadataRoute.Sitemap> {
+  const supabase: SupabaseClient = await createClient()
+
+  const rows = await fetchAllRows<PseoRow>((from, to) =>
+    supabase
+      .from('local_feasibility_pages')
+      .select('slug, updated_at')
+      .eq('is_published', true)
+      .eq('country', 'India')
+      .order('slug', { ascending: true })
+      .range(from, to)
+  )
+
+  return rows
+    .filter((row) => isNonEmptyString(row.slug))
+    .map((row) => ({
+      url: `${SITE_URL}${indiaLocalFeasibilityPath(row.slug)}`,
+      lastModified: row.updated_at ?? undefined,
+      changeFrequency: INDIA_MONTHLY_DETAIL.changeFrequency,
+      priority: INDIA_MONTHLY_DETAIL.priority,
+    }))
+}
+
+async function fetchIndiaProfitableNicheSitemap(): Promise<MetadataRoute.Sitemap> {
+  return fetchPublishedPseoSitemap(
+    'india_profitable_niche_pages',
+    (slug) => `${SITE_URL}${indiaProfitableNichePath(slug)}`,
+    INDIA_MONTHLY_DETAIL
+  )
+}
+
+async function fetchIndiaShouldIBuildSitemap(): Promise<MetadataRoute.Sitemap> {
+  return fetchPublishedPseoSitemap(
+    'india_should_i_build_pages',
+    (slug) => `${SITE_URL}${indiaShouldIBuildPath(slug)}`,
+    INDIA_MONTHLY_DETAIL
+  )
+}
+
+async function fetchIndiaSaasVerticalSitemap(): Promise<MetadataRoute.Sitemap> {
+  return fetchPublishedPseoSitemap(
+    'india_saas_ideas_vertical_pages',
+    (slug) => `${SITE_URL}${indiaSaasIdeasVerticalPath(slug)}`,
+    INDIA_MONTHLY_DETAIL
+  )
+}
+
+async function fetchIndiaMarketSaturationSitemap(): Promise<MetadataRoute.Sitemap> {
+  return fetchPublishedPseoSitemap(
+    'india_market_saturation_pages',
+    (slug) => `${SITE_URL}${indiaMarketSaturationPath(slug)}`,
+    INDIA_MONTHLY_DETAIL
+  )
+}
+
+async function fetchIndiaLocalOpportunitySitemap(): Promise<MetadataRoute.Sitemap> {
+  return fetchPublishedPseoSitemap(
+    'india_local_opportunity_pages',
+    (slug) => `${SITE_URL}${indiaLocalOpportunityPath(slug)}`,
+    INDIA_MONTHLY_DETAIL
+  )
+}
+
+async function fetchIndiaValidationGuideSitemap(): Promise<MetadataRoute.Sitemap> {
+  return fetchPublishedPseoSitemap(
+    'india_validation_guide_pages',
+    (slug) => `${SITE_URL}${indiaValidationGuidePath(slug)}`,
+    INDIA_MONTHLY_DETAIL
   )
 }
