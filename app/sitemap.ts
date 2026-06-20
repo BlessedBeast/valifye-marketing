@@ -12,7 +12,6 @@ import {
   indiaHubPath,
   indiaLocalFeasibilityHubPath,
   indiaLocalFeasibilityPath,
-  indiaLocalOpportunityHubPath,
   indiaLocalOpportunityPath,
   indiaMarketSaturationHubPath,
   indiaMarketSaturationPath,
@@ -759,12 +758,6 @@ const INDIA_HUB_PAGES: MetadataRoute.Sitemap = [
   },
   {
     url: `${SITE_URL}${indiaMarketSaturationHubPath()}`,
-    lastModified: new Date().toISOString(),
-    changeFrequency: INDIA_MONTHLY_HUB.changeFrequency,
-    priority: INDIA_MONTHLY_HUB.priority,
-  },
-  {
-    url: `${SITE_URL}${indiaLocalOpportunityHubPath()}`,
     lastModified: new Date().toISOString(),
     changeFrequency: INDIA_MONTHLY_HUB.changeFrequency,
     priority: INDIA_MONTHLY_HUB.priority,

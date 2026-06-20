@@ -44,6 +44,7 @@ export type IndiaLocalFeasibilityPage = {
 export type IndiaLocalFeasibilityHubRow = {
   slug: string
   business_type: string
+  business_category: string
   city_name: string
   state_or_region: string
   feasibility_zone: FeasibilityZone
@@ -227,6 +228,7 @@ function normalizeIndiaLocalFeasibilityHubRow(
   return {
     slug: asString(row.slug),
     business_type: asString(row.business_type),
+    business_category: asString(row.business_category),
     city_name: asString(row.city_name),
     state_or_region: asString(row.state_or_region),
     feasibility_zone: coerceFeasibilityZone(row.feasibility_zone)
@@ -252,15 +254,23 @@ export function formatIndiaReportPrice(
 /**
  * Fetch all published India local_feasibility_pages rows for the hub grid.
  */
-export async function getIndiaLocalFeasibilityHubRows(): Promise<
-  IndiaLocalFeasibilityHubRow[]
-> {
-  const { data, error } = await supabase
+export async function getIndiaLocalFeasibilityHubRows(options?: {
+  category?: string
+}): Promise<IndiaLocalFeasibilityHubRow[]> {
+  let query = supabase
     .from(TABLE_NAME)
-    .select('slug, business_type, city_name, state_or_region, feasibility_zone')
+    .select(
+      'slug, business_type, business_category, city_name, state_or_region, feasibility_zone'
+    )
     .eq('country', INDIA_COUNTRY)
     .eq('is_published', true)
-    .order('created_at', { ascending: false })
+
+  const category = options?.category?.trim()
+  if (category) {
+    query = query.eq('business_category', category)
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: false })
 
   if (error) {
     console.error(

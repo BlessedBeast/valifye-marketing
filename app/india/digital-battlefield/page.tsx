@@ -4,7 +4,6 @@ import {
   ArrowRight,
   BookOpen,
   Crosshair,
-  MapPin,
   Scale,
   Target,
   TrendingUp
@@ -128,23 +127,6 @@ const SECTIONS: SectionConfig[] = [
     statText: 'text-rose-200'
   },
   {
-    table: 'india_local_opportunity_pages',
-    title: 'Local Opportunities',
-    description:
-      'City-level startup opportunity maps for India — regional demand gaps, ecosystem signals, and best niches by metro.',
-    href: '/india/digital-battlefield/local-opportunities',
-    countLabel: 'opportunity maps',
-    countLabelSingular: 'opportunity map',
-    icon: MapPin,
-    accentTag: 'text-amber-400/90',
-    accentBorder: 'hover:border-amber-500/40',
-    accentGlow: 'bg-amber-500/5',
-    accentCta: 'text-amber-400',
-    accentHoverTitle: 'group-hover:text-amber-400',
-    statBorder: 'border-amber-500/30 bg-amber-500/[0.06]',
-    statText: 'text-amber-200'
-  },
-  {
     table: 'india_validation_guide_pages',
     title: 'Validation Guides',
     description:
@@ -219,7 +201,7 @@ export default async function IndiaDigitalBattlefieldHubPage() {
               {totalPublished.toLocaleString('en-IN')} published reports
             </span>
             <span className="rounded-full border border-zinc-700/80 bg-zinc-900/80 px-3 py-1 text-zinc-400">
-              6 intelligence engines
+              5 intelligence engines
             </span>
           </div>
         ) : null}
