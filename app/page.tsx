@@ -435,6 +435,62 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section
+        aria-labelledby="india-coverage-heading"
+        className="border-t border-[#1f2937] bg-[#0a0a0a] px-6 py-20 md:px-12 lg:px-24"
+      >
+        <div className="mx-auto max-w-6xl">
+          <div className="relative overflow-hidden rounded-2xl p-[1px] bg-gradient-to-br from-[#f5a623]/50 via-amber-500/25 to-[#f5a623]/20">
+            <div className="relative rounded-[15px] bg-[#0d0d0d] px-6 py-12 md:px-12 md:py-16">
+              <div
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(245,166,35,0.1)_0%,_transparent_50%)]"
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(251,191,36,0.06)_0%,_transparent_50%)]"
+                aria-hidden
+              />
+              <div className="relative mx-auto max-w-3xl text-center">
+                <p className="mb-4 font-mono text-[11px] font-bold uppercase tracking-[0.25em] text-[#f5a623]">
+                  Valifye India
+                </p>
+                <h2
+                  id="india-coverage-heading"
+                  className="text-balance text-3xl font-black leading-tight text-white md:text-4xl lg:text-5xl"
+                >
+                  India Market Intelligence — Now Live
+                </h2>
+                <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-[#9ca3af] md:text-lg">
+                  Valifye now runs India-specific forensic validation — city-level local business feasibility
+                  scans and a full digital battlefield for Indian SaaS niches, with BUILD / PIVOT / KILL verdicts
+                  priced and scored for the Indian market.
+                </p>
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+                  {['Local Market Scout', 'Digital Battlefield', 'Society Management SaaS', 'Tier-2 Cities'].map(
+                    (sample) => (
+                      <span
+                        key={sample}
+                        className="rounded px-2 py-1 font-mono text-[10px] tracking-wide text-[#9ca3af] bg-[#1f2937]"
+                      >
+                        {sample}
+                      </span>
+                    )
+                  )}
+                </div>
+                <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                  <Link
+                    href="/india"
+                    className="inline-flex items-center justify-center rounded-full bg-[#f5a623] px-8 py-3.5 font-mono text-sm font-extrabold uppercase tracking-[0.12em] text-black transition hover:bg-[#f5a623]/90"
+                  >
+                    Explore India Intelligence
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="border-t border-[#1f2937] bg-[#0a0a0a] px-6 py-20 md:px-12 lg:px-24">
         <div className="mx-auto max-w-6xl">
           <h2 className="mb-2 text-3xl font-black text-white md:text-4xl">Four Engines. One Verdict.</h2>

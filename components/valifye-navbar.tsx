@@ -167,6 +167,17 @@ export function ValifyeNavbar() {
               Markets
             </Link>
             <Link
+              href="/india"
+              className={cn(
+                'inline-flex h-11 items-center rounded-lg px-3 font-mono text-xs font-bold uppercase tracking-[0.18em] transition-colors',
+                pathActive(pathname, '/india')
+                  ? 'text-[#f5a623]'
+                  : 'text-white hover:text-[#f5a623]'
+              )}
+            >
+              India
+            </Link>
+            <Link
               href={TOOLS_HREF}
               className={cn(
                 'inline-flex h-11 items-center rounded-lg px-3 font-mono text-xs font-bold uppercase tracking-[0.18em] transition-colors',
@@ -287,6 +298,13 @@ export function ValifyeNavbar() {
                 className="min-h-[48px] border-b border-[#1f2937] py-4 font-mono text-xs font-bold uppercase tracking-[0.2em] text-white"
               >
                 Markets
+              </Link>
+              <Link
+                href="/india"
+                onClick={closeDrawer}
+                className="min-h-[48px] border-b border-[#1f2937] py-4 font-mono text-xs font-bold uppercase tracking-[0.2em] text-white"
+              >
+                India
               </Link>
               <Link
                 href={TOOLS_HREF}
