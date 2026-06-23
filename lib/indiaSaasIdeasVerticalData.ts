@@ -16,7 +16,7 @@ export type SaasVerticalIdea = {
   competition: string
   why_now: string
   idea_slug: string | null
-}
+} & Record<string, unknown>
 
 export type SaasIdeasVerticalPage = {
   slug: string
@@ -48,7 +48,9 @@ function safeParseJSON<T>(value: unknown): T | null {
 }
 
 function asString(value: unknown, fallback = ''): string {
-  return typeof value === 'string' ? value.trim() : fallback
+  if (typeof value === 'string') return value.trim()
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  return fallback
 }
 
 function asNumber(value: unknown, fallback = 0): number {
@@ -102,13 +104,16 @@ function asIdeas(value: unknown): SaasVerticalIdea[] {
       if (!item || typeof item !== 'object') return null
       const row = item as Record<string, unknown>
       const title = asString(row.title)
-      const one_liner = asString(row.one_liner)
       if (!title) return null
 
+      const one_liner =
+        asString(row.one_liner) || asString(row.problem) || asString(row.solution)
       const ideaSlug = asString(row.idea_slug)
+
       return {
+        ...row,
         title,
-        one_liner: one_liner || asString(row.problem) || asString(row.solution),
+        one_liner,
         verdict: coerceVerdict(row.verdict),
         score: asNumber(row.score ?? row.whitespace_score),
         target_audience: asString(row.target_audience),
