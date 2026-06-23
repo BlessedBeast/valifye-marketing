@@ -10,7 +10,7 @@ export type SaasVerticalIdea = {
   title: string
   one_liner: string
   verdict: VerdictType
-  whitespace_score: number
+  score: number
   target_audience: string
   market_size: string
   competition: string
@@ -108,9 +108,9 @@ function asIdeas(value: unknown): SaasVerticalIdea[] {
       const ideaSlug = asString(row.idea_slug)
       return {
         title,
-        one_liner,
+        one_liner: one_liner || asString(row.problem) || asString(row.solution),
         verdict: coerceVerdict(row.verdict),
-        whitespace_score: asNumber(row.whitespace_score),
+        score: asNumber(row.score ?? row.whitespace_score),
         target_audience: asString(row.target_audience),
         market_size: asString(row.market_size),
         competition: asString(row.competition),

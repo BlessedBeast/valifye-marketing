@@ -236,9 +236,9 @@ function IdeaCard({ idea, rank }: { idea: SaasVerticalIdea; rank: number }) {
               <VerdictBadge verdict={idea.verdict} size="sm" />
               <div className="min-w-[200px] flex-1">
                 <WhitespaceScore
-                  score={idea.whitespace_score}
+                  score={idea.score}
                   size="sm"
-                  label="Whitespace"
+                  label="Score"
                 />
               </div>
             </div>
