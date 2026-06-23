@@ -25,7 +25,7 @@ import { generateFaqSchema } from '@/lib/seo/generateFaqSchema'
 import { generateLocalPlaceSchema } from '@/lib/seo/generateLocalPlaceSchema'
 import { SITE_URL } from '@/lib/seo'
 
-export const dynamicParams = false
+export const dynamicParams = true
 
 export const revalidate = 86400
 

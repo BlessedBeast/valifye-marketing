@@ -20,7 +20,7 @@ import { generateFaqSchema } from '@/lib/seo/generateFaqSchema'
 import { generateItemListSchema } from '@/lib/seo/generateItemListSchema'
 import { SITE_URL } from '@/lib/seo'
 
-export const dynamicParams = false
+export const dynamicParams = true
 
 export const revalidate = 3600
 
