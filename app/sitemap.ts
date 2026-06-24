@@ -10,6 +10,7 @@ import { validationGuidePath } from '@/lib/validationGuideData'
 import {
   indiaDigitalBattlefieldHubPath,
   indiaHubPath,
+  indiaLocalFeasibilityCategoryPath,
   indiaLocalFeasibilityHubPath,
   indiaLocalFeasibilityPath,
   indiaLocalOpportunityPath,
@@ -34,7 +35,7 @@ export const dynamic = 'force-static'
 /**
  * Dynamic sitemap engine.
  *
- * Sub-sitemaps are served at /sitemap/0.xml ... /sitemap/22.xml
+ * Sub-sitemaps are served at /sitemap/0.xml ... /sitemap/23.xml
  * (Next.js generateSitemaps does NOT emit an index file — the index lives
  * in app/sitemap-index.xml/route.ts).
  *
@@ -64,10 +65,11 @@ export const dynamic = 'force-static'
  *  20 — /india/digital-battlefield/market-saturation/{slug}    <- india_market_saturation_pages
  *  21 — /india/digital-battlefield/local-opportunities/{slug}    <- india_local_opportunity_pages
  *  22 — /india/digital-battlefield/validation-guides/{slug}    <- india_validation_guide_pages
+ *  23 — /india/local-market-scout/category/{slug} <- local_feasibility_categories (is_published = true)
  */
 
 const SECTION_IDS = [
-  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
 ] as const
 
 /** Sitemap protocol hard limit per file. */
@@ -256,6 +258,13 @@ export default async function sitemap(props: {
         return await fetchIndiaValidationGuideSitemap()
       } catch (error) {
         console.error('[sitemap] Section 22 failed:', error)
+        return []
+      }
+    case 23:
+      try {
+        return await fetchIndiaLocalFeasibilityCategorySitemap()
+      } catch (error) {
+        console.error('[sitemap] Section 23 failed:', error)
         return []
       }
     default:
@@ -791,6 +800,14 @@ async function fetchIndiaLocalFeasibilitySitemap(): Promise<MetadataRoute.Sitema
       changeFrequency: INDIA_MONTHLY_DETAIL.changeFrequency,
       priority: INDIA_MONTHLY_DETAIL.priority,
     }))
+}
+
+async function fetchIndiaLocalFeasibilityCategorySitemap(): Promise<MetadataRoute.Sitemap> {
+  return fetchPublishedPseoSitemap(
+    'local_feasibility_categories',
+    (slug) => `${SITE_URL}${indiaLocalFeasibilityCategoryPath(slug)}`,
+    { changeFrequency: 'monthly', priority: 0.75 }
+  )
 }
 
 async function fetchIndiaProfitableNicheSitemap(): Promise<MetadataRoute.Sitemap> {

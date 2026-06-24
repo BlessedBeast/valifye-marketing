@@ -56,6 +56,10 @@ export function indiaLocalFeasibilityHubPath(): string {
   return '/india/local-market-scout'
 }
 
+export function indiaLocalFeasibilityCategoryPath(slug: string): string {
+  return `/india/local-market-scout/category/${slug}`
+}
+
 export function indiaHubPath(): string {
   return '/india'
 }
